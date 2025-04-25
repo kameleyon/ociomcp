@@ -1,0 +1,55 @@
+{
+  "name": "@optimuscode/mcp",
+  "version": "0.1.0",
+  "description": "Enhanced MCP server for AI-powered development with Claude",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "bin": {
+    "optimuscode": "dist/index.js",
+    "setup": "dist/setup-claude-server.js"
+  },
+  "files": [
+    "dist",
+    "logo.png"
+  ],
+  "scripts": {
+    "build": "tsc && copy setup-claude-server.js dist\\",
+    "watch": "tsc --watch",
+    "start": "concurrently \"cd ../ocagent && node dist/index.js || echo 'Failed to start ocagent'\" \"node dist/index.js\"",
+    "start:optimuscode": "node dist/index.js",
+    "start:ocagent": "cd ../ocagent && node dist/index.js",
+    "setup": "npm install && npm run build && node dist/setup-claude-server.js",
+    "test": "node test.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "ai",
+    "development",
+    "code-editing",
+    "project-planning",
+    "context-management"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.8.0",
+    "@nestjs/swagger": "^11.1.5",
+    "@types/semver": "^7.7.0",
+    "@types/uuid": "^10.0.0",
+    "@vscode/ripgrep": "^1.15.9",
+    "concurrently": "^8.2.2",
+    "cross-fetch": "^4.1.0",
+    "glob": "^10.3.10",
+    "semver": "^7.7.1",
+    "uuid": "^11.1.0",
+    "zod": "^3.24.1",
+    "zod-to-json-schema": "^3.23.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.24",
+    "typescript": "^5.3.3"
+  }
+}

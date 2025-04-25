@@ -1,0 +1,719 @@
+#!/usr/bin/env node
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { CallToolRequestSchema, ListToolsRequestSchema, ListResourcesRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { zodToJsonSchema } from "zod-to-json-schema";
+import { z } from "zod";
+import { performance } from 'perf_hooks';
+import { ChatTransitionManager, SessionState } from "./context-management/chat-transition.js";
+import { SessionStateManager } from "./persistence/session-state.js";
+import { FilteredStdioServerTransport } from "./custom-stdio.js";
+import * as ProjectPlanning from "./project-planning/index.js";
+import * as UIGeneration from "./ui-generation/index.js";
+import * as ProjectOrganization from "./project-organization/index.js";
+import * as AdvancedFeatures from "./advanced-features/index.js";
+import * as Filesystem from "./filesystem/index.js";
+import * as Command from "./command/index.js";
+import { logger, LogCategory, LogLevel } from "./logging/index.js";
+import * as LoggingTools from "./logging/tools/index.js";
+import { applyLoggingToTools } from "./logging/middleware.js";
+
+// Define schemas for our new tools
+const TrackContextSizeSchema = z.object({
+  message: z.string(),
+});
+
+const TriggerContinuationSchema = z.object({
+  state: z.any(),
+  summary: z.string(),
+});
+
+// Project planning schemas
+const GenerateProjectPlanSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  type: z.enum(['web-application', 'mobile-app', 'api-service', 'desktop-application', 'custom']),
+  features: z.array(z.string()),
+  timeline: z.object({
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
+  }).optional(),
+  teamSize: z.number().optional(),
+  customPhases: z.array(z.string()).optional(),
+});
+
+const VisualizeProjectPlanSchema = z.object({
+  planId: z.string(),
+  format: z.enum(['markdown', 'gantt', 'html']).default('markdown'),
+});
+
+const UpdateTaskStatusSchema = z.object({
+  planId: z.string(),
+  phaseId: z.string(),
+  taskId: z.string(),
+  status: z.enum(['not-started', 'in-progress', 'completed']),
+});
+
+// UI Generation schemas
+const GenerateComponentSchema = z.object({
+  name: z.string(),
+  style: z.enum([
+    'basic',
+    'card',
+    'form',
+    'list',
+    'table',
+    'hero',
+    'feature',
+    'pricing',
+    'cta',
+    'footer'
+  ]).optional(),
+  props: z.array(z.string()).optional(),
+  description: z.string().optional(),
+});
+
+const GeneratePageSchema = z.object({
+  name: z.string(),
+  type: z.enum([
+    'landing',
+    'dashboard',
+    'auth',
+    'profile',
+    'settings',
+    'documentation',
+    'blog',
+    'product',
+    'checkout',
+    'error'
+  ]).optional(),
+  sections: z.array(
+    z.object({
+      type: z.string(),
+      name: z.string(),
+      props: z.record(z.any()).optional(),
+    })
+  ).optional(),
+  meta: z.object({
+    title: z.string().optional(),
+    description: z.string().optional(),
+    keywords: z.array(z.string()).optional(),
+  }).optional(),
+});
+
+const GenerateProjectSchema = z.object({
+  name: z.string(),
+  type: z.enum([
+    'landing-page',
+    'marketing-site',
+    'dashboard',
+    'e-commerce',
+    'blog',
+    'documentation',
+    'portfolio',
+    'saas'
+  ]).optional(),
+  framework: z.enum([
+    'react-vite',
+    'next-js',
+    'remix',
+    'gatsby'
+  ]).optional(),
+  styling: z.enum([
+    'tailwind',
+    'styled-components',
+    'emotion',
+    'css-modules'
+  ]).optional(),
+  database: z.enum([
+    'supabase',
+    'firebase',
+    'mongodb',
+    'postgresql',
+    'mysql',
+    'none'
+  ]).optional(),
+  pages: z.array(
+    z.object({
+      name: z.string(),
+      type: z.string(),
+      path: z.string(),
+    })
+  ).optional(),
+});
+
+// Project Organization schemas
+const GenerateDirectoryStructureSchema = z.object({
+  name: z.string(),
+  type: z.enum([
+    'web-app',
+    'mobile-app',
+    'api',
+    'library',
+    'monorepo',
+    'desktop-app',
+    'static-site',
+    'documentation',
+  ]),
+  framework: z.enum([
+    'react',
+    'next-js',
+    'vue',
+    'angular',
+    'express',
+    'nest-js',
+    'django',
+    'flask',
+    'spring-boot',
+    'laravel',
+    'electron',
+    'react-native',
+    'flutter',
+  ]).optional(),
+  features: z.array(z.string()).optional(),
+});
+
+const GenerateDocumentationSchema = z.object({
+  projectName: z.string(),
+  projectDescription: z.string(),
+  type: z.enum([
+    'readme',
+    'api-docs',
+    'user-guide',
+    'developer-guide',
+    'contributing',
+    'code-of-conduct',
+    'changelog',
+  ]),
+  format: z.enum(['markdown', 'html', 'asciidoc', 'rst']).optional(),
+});
+
+const AnalyzeFileSizesSchema = z.object({
+  files: z.array(z.object({
+    path: z.string(),
+    size: z.number(),
+    lastModified: z.string().optional(),
+  })),
+});
+
+// Advanced Features schemas
+const TrackVersionChangesSchema = z.object({
+  path: z.string(),
+  type: z.enum(['add', 'modify', 'delete', 'rename']),
+  content: z.string().optional(),
+  oldContent: z.string().optional(),
+  oldPath: z.string().optional(),
+  message: z.string().optional(),
+});
+
+const RevertToSnapshotSchema = z.object({
+  snapshotId: z.string(),
+});
+
+const CreateSnapshotSchema = z.object({
+  name: z.string(),
+  description: z.string().optional(),
+  author: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+});
+
+const GenerateContentSchema = z.object({
+  type: z.enum(['legal', 'seo', 'marketing', 'documentation', 'email', 'social']),
+  subtype: z.string(),
+  company: z.object({
+    name: z.string(),
+    description: z.string(),
+    website: z.string().optional(),
+    industry: z.string().optional(),
+  }).optional(),
+  website: z.object({
+    url: z.string(),
+    title: z.string(),
+    description: z.string(),
+    keywords: z.array(z.string()).optional(),
+  }).optional(),
+  legal: z.object({
+    jurisdiction: z.string().optional(),
+    effectiveDate: z.string().optional(),
+    contactEmail: z.string().optional(),
+  }).optional(),
+});
+
+const GenerateTranslationsSchema = z.object({
+  keys: z.array(z.string()),
+  locales: z.array(z.string()),
+  baseTranslations: z.record(z.string()).optional(),
+});
+
+// Logging schemas
+const GetLogsSchema = LoggingTools.GetLogsSchema;
+const AnalyzeLogsSchema = LoggingTools.AnalyzeLogsSchema;
+const SetLogLevelSchema = LoggingTools.SetLogLevelSchema;
+
+// Create instances of our managers
+const chatTransitionManager = new ChatTransitionManager();
+const sessionStateManager = new SessionStateManager();
+
+// Store for project plans
+const projectPlans = new Map<string, ProjectPlanning.ProjectPlan>();
+
+// Store for generated UI components
+const uiComponents = new Map<string, string>();
+
+// Store for generated UI pages
+const uiPages = new Map<string, string>();
+
+// Store for generated UI projects
+const uiProjects = new Map<string, UIGeneration.ProjectFile[]>();
+
+// Store for version control state
+const versionControlState = AdvancedFeatures.createVersionControlState();
+
+// Store for generated content
+const generatedContent = new Map<string, string>();
+
+// Store for translation files
+const translationFiles = new Map<string, Record<string, Record<string, string>>>();
+
+// Memory and performance systems have been removed to streamline the app generation process
+
+// Initialize the server
+const server = new Server({
+  name: "optimuscode",
+  version: "0.1.0",
+}, {
+  capabilities: {
+    tools: {},
+    resources: {}, 
+    prompts: {},
+  },
+});
+
+// Add handler for resources/list method
+server.setRequestHandler(ListResourcesRequestSchema, async () => {
+  return {
+    resources: [],
+  };
+});
+
+// Add handler for tools/list method
+server.setRequestHandler(ListToolsRequestSchema, async () => {
+  return {
+    tools: [
+      // Filesystem tools
+      {
+        name: "read_file",
+        description: "Read the complete contents of a file from the file system or a URL.",
+        inputSchema: zodToJsonSchema(Filesystem.ReadFileArgsSchema),
+      },
+      {
+        name: "read_multiple_files",
+        description: "Read the contents of multiple files simultaneously.",
+        inputSchema: zodToJsonSchema(Filesystem.ReadMultipleFilesArgsSchema),
+      },
+      {
+        name: "write_file",
+        description: "Completely replace file contents.",
+        inputSchema: zodToJsonSchema(Filesystem.WriteFileArgsSchema),
+      },
+      {
+        name: "create_directory",
+        description: "Create a new directory or ensure a directory exists.",
+        inputSchema: zodToJsonSchema(Filesystem.CreateDirectoryArgsSchema),
+      },
+      {
+        name: "list_directory",
+        description: "Get a detailed listing of all files and directories in a specified path.",
+        inputSchema: zodToJsonSchema(Filesystem.ListDirectoryArgsSchema),
+      },
+      {
+        name: "move_file",
+        description: "Move or rename files and directories.",
+        inputSchema: zodToJsonSchema(Filesystem.MoveFileArgsSchema),
+      },
+      {
+        name: "get_file_info",
+        description: "Retrieve detailed metadata about a file or directory.",
+        inputSchema: zodToJsonSchema(Filesystem.GetFileInfoArgsSchema),
+      },
+      {
+        name: "search_files",
+        description: "Finds files by name using a case-insensitive substring matching.",
+        inputSchema: zodToJsonSchema(Filesystem.SearchFilesArgsSchema),
+      },
+      {
+        name: "search_code",
+        description: "Search for text/code patterns within file contents.",
+        inputSchema: zodToJsonSchema(Filesystem.SearchCodeArgsSchema),
+      },
+      {
+        name: "edit_block",
+        description: "Apply surgical text replacements to files.",
+        inputSchema: zodToJsonSchema(Filesystem.EditBlockArgsSchema),
+      },
+      
+      // Command execution tools
+      {
+        name: "execute_command",
+        description: "Execute a terminal command with timeout.",
+        inputSchema: zodToJsonSchema(Command.ExecuteCommandArgsSchema),
+      },
+      {
+        name: "read_output",
+        description: "Read new output from a running terminal session.",
+        inputSchema: zodToJsonSchema(Command.ReadOutputArgsSchema),
+      },
+      {
+        name: "force_terminate",
+        description: "Force terminate a running terminal session.",
+        inputSchema: zodToJsonSchema(Command.ForceTerminateArgsSchema),
+      },
+      {
+        name: "list_sessions",
+        description: "List all active terminal sessions.",
+        inputSchema: zodToJsonSchema(Command.ListSessionsArgsSchema),
+      },
+      {
+        name: "list_processes",
+        description: "List all running processes.",
+        inputSchema: zodToJsonSchema(Command.ListProcessesArgsSchema),
+      },
+      {
+        name: "kill_process",
+        description: "Terminate a running process by PID.",
+        inputSchema: zodToJsonSchema(Command.KillProcessArgsSchema),
+      },
+      
+      // Context management tools
+      {
+        name: "track_context_size",
+        description: "Track the current context size and determine if a new chat should be created",
+        inputSchema: zodToJsonSchema(TrackContextSizeSchema),
+      },
+      {
+        name: "trigger_continuation",
+        description: "Trigger a new chat with the current context preserved",
+        inputSchema: zodToJsonSchema(TriggerContinuationSchema),
+      },
+      // Project planning tools
+      {
+        name: "generate_project_plan",
+        description: "Generate a detailed project plan with phases and tasks based on requirements",
+        inputSchema: zodToJsonSchema(GenerateProjectPlanSchema),
+      },
+      {
+        name: "visualize_project_plan",
+        description: "Visualize a project plan in different formats (markdown, gantt chart, HTML)",
+        inputSchema: zodToJsonSchema(VisualizeProjectPlanSchema),
+      },
+      {
+        name: "update_task_status",
+        description: "Update the status of a task in a project plan",
+        inputSchema: zodToJsonSchema(UpdateTaskStatusSchema),
+      },
+      // UI Generation tools
+      {
+        name: "generate_component",
+        description: "Generate a UI component with the specified options",
+        inputSchema: zodToJsonSchema(GenerateComponentSchema),
+      },
+      {
+        name: "generate_page",
+        description: "Generate a UI page with the specified options",
+        inputSchema: zodToJsonSchema(GeneratePageSchema),
+      },
+      {
+        name: "generate_project",
+        description: "Generate a complete UI project with the specified options",
+        inputSchema: zodToJsonSchema(GenerateProjectSchema),
+      },
+      // Project Organization tools
+      {
+        name: "generate_directory_structure",
+        description: "Generate a directory structure for a project",
+        inputSchema: zodToJsonSchema(GenerateDirectoryStructureSchema),
+      },
+      {
+        name: "generate_documentation",
+        description: "Generate documentation for a project",
+        inputSchema: zodToJsonSchema(GenerateDocumentationSchema),
+      },
+      {
+        name: "analyze_file_sizes",
+        description: "Analyze file sizes and suggest optimizations",
+        inputSchema: zodToJsonSchema(AnalyzeFileSizesSchema),
+      },
+      // Advanced Features tools
+      {
+        name: "track_version_changes",
+        description: "Track changes to files for version control",
+        inputSchema: zodToJsonSchema(TrackVersionChangesSchema),
+      },
+      {
+        name: "create_snapshot",
+        description: "Create a snapshot of the current state",
+        inputSchema: zodToJsonSchema(CreateSnapshotSchema),
+      },
+      {
+        name: "revert_to_snapshot",
+        description: "Revert to a previous snapshot",
+        inputSchema: zodToJsonSchema(RevertToSnapshotSchema),
+      },
+      {
+        name: "generate_content",
+        description: "Generate content for various purposes",
+        inputSchema: zodToJsonSchema(GenerateContentSchema),
+      },
+      {
+        name: "generate_translations",
+        description: "Generate translation files for multiple locales",
+        inputSchema: zodToJsonSchema(GenerateTranslationsSchema),
+      },
+      // Logging tools
+      {
+        name: "get_logs",
+        description: "Retrieve recent log entries with optional filtering",
+        inputSchema: zodToJsonSchema(GetLogsSchema),
+      },
+      {
+        name: "analyze_logs",
+        description: "Analyze logs and generate reports with statistics",
+        inputSchema: zodToJsonSchema(AnalyzeLogsSchema),
+      },
+      {
+        name: "set_log_level",
+        description: "Set the logging level (DEBUG, INFO, WARN, ERROR, CRITICAL)",
+        inputSchema: zodToJsonSchema(SetLogLevelSchema),
+      }
+    ],
+  };
+});
+// Apply logging middleware to tool handlers
+const filesystemTools = applyLoggingToTools(Filesystem, LogCategory.FILESYSTEM);
+const commandTools = applyLoggingToTools(Command, LogCategory.COMMAND);
+const projectPlanningTools = applyLoggingToTools(ProjectPlanning, LogCategory.PROJECT_PLANNING);
+const uiGenerationTools = applyLoggingToTools(UIGeneration, LogCategory.UI_GENERATION);
+const projectOrganizationTools = applyLoggingToTools(ProjectOrganization, LogCategory.PROJECT_ORGANIZATION);
+const advancedFeaturesTools = applyLoggingToTools(AdvancedFeatures, LogCategory.ADVANCED_FEATURES);
+
+// Add handler for tools/call method
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  try {
+    const { name, arguments: args } = request.params;
+    
+    // Log the tool call
+    logger.info(LogCategory.TOOL_CALL, `Tool called: ${name}`, args);
+    
+    // Record start time for performance measurement
+    const startTime = performance.now();
+    let result;
+    
+    try {
+    
+    switch (name) {
+      // Filesystem tools
+      case "read_file":
+        result = await filesystemTools.handleReadFile(args);
+        break;
+      case "read_multiple_files":
+        result = await filesystemTools.handleReadMultipleFiles(args);
+        break;
+      case "write_file":
+        result = await filesystemTools.handleWriteFile(args);
+        break;
+      case "create_directory":
+        result = await filesystemTools.handleCreateDirectory(args);
+        break;
+      case "list_directory":
+        result = await filesystemTools.handleListDirectory(args);
+        break;
+      case "move_file":
+        result = await filesystemTools.handleMoveFile(args);
+        break;
+      case "get_file_info":
+        result = await filesystemTools.handleGetFileInfo(args);
+        break;
+      case "search_files":
+        result = await filesystemTools.handleSearchFiles(args);
+        break;
+      case "search_code":
+        result = await filesystemTools.handleSearchCode(args);
+        break;
+      case "edit_block":
+        result = await filesystemTools.handleEditBlock(args);
+        break;
+        
+      // Command execution tools
+      case "execute_command":
+        result = await commandTools.handleExecuteCommand(args);
+        break;
+      case "read_output":
+        result = await commandTools.handleReadOutput(args);
+        break;
+      case "force_terminate":
+        result = await commandTools.handleForceTerminate(args);
+        break;
+      case "list_sessions":
+        result = await commandTools.handleListSessions();
+        break;
+      case "list_processes":
+        result = await commandTools.handleListProcesses();
+        break;
+      case "kill_process":
+        result = await commandTools.handleKillProcess(args);
+        break;
+        
+      // Context management tools
+      case "track_context_size":
+        if (args && typeof args === 'object' && 'message' in args && typeof args.message === 'string') {
+          chatTransitionManager.trackMessage(args.message);
+          result = {
+            content: [{
+              type: "text",
+              text: `Context size tracked. Current token count: ${chatTransitionManager.getTokenCount()}. Should transition: ${chatTransitionManager.shouldCreateNewChat()}`
+            }],
+          };
+        } else {
+          result = {
+            content: [{ type: "text", text: "Error: Invalid arguments for track_context_size" }],
+            isError: true,
+          };
+        }
+        break;
+        
+      case "trigger_continuation":
+        if (args && typeof args === 'object' && 'state' in args && 'summary' in args && typeof args.summary === 'string') {
+          const state: SessionState = {
+            projectState: args.state,
+            activeFiles: [],
+            activeSessions: [],
+            currentTask: args.summary,
+            contextSummary: args.summary
+          };
+          
+          // Generate a unique session ID
+          const sessionId = `session-${Date.now()}`;
+          
+          // Save the state
+          await sessionStateManager.initialize();
+          await sessionStateManager.saveState(sessionId, state);
+          
+          result = {
+            content: [{
+              type: "text",
+              text: chatTransitionManager.createTransitionMessage(state) + `\nSession ID: ${sessionId}`
+            }],
+          };
+        } else {
+          result = {
+            content: [{ type: "text", text: "Error: Invalid arguments for trigger_continuation" }],
+            isError: true,
+          };
+        }
+        break;
+        
+      // Logging tools
+      case "get_logs":
+        result = await LoggingTools.get_logs(args);
+        break;
+      case "analyze_logs":
+        result = await LoggingTools.analyze_logs(args);
+        break;
+      case "set_log_level":
+        result = await LoggingTools.set_log_level(args);
+        break;
+        
+      default:
+        result = {
+          content: [{ type: "text", text: `Error: Unknown tool: ${name}` }],
+          isError: true,
+        };
+    }
+    
+    // Calculate execution time
+    const executionTime = performance.now() - startTime;
+    
+    // Log the result and performance
+    logger.info(LogCategory.TOOL_RESULT, `Tool result: ${name}`, {
+      isError: result.isError || false,
+      executionTime
+    });
+    logger.debug(LogCategory.PERFORMANCE, `Tool execution time: ${name}`, {
+      executionTime,
+      args
+    });
+    
+    return result;
+  } catch (error) {
+    // Calculate execution time even for errors
+    const executionTime = performance.now() - startTime;
+    
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Log the error
+    logger.error(LogCategory.TOOL_RESULT, `Tool error: ${name}`, {
+      error: errorMessage,
+      executionTime
+    });
+    
+    return {
+      content: [{ type: "text", text: `Error: ${errorMessage}` }],
+      isError: true,
+    };
+  }
+});
+
+// Main function to run the server
+async function runServer() {
+  try {
+    console.error("Initializing OptimusCode MCP server...");
+    
+    // Initialize logger
+    logger.info(LogCategory.SYSTEM, "Starting OptimusCode MCP server");
+    
+    // Initialize the session state manager
+    await sessionStateManager.initialize();
+    logger.info(LogCategory.SYSTEM, "Session state manager initialized");
+    
+    // Use our custom FilteredStdioServerTransport
+    const transport = new FilteredStdioServerTransport();
+    
+    console.error("Connecting server...");
+    logger.info(LogCategory.SYSTEM, "Connecting server to transport");
+    await server.connect(transport);
+    console.error("Server connected successfully");
+    logger.info(LogCategory.SYSTEM, "Server connected successfully");
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`FATAL ERROR: ${errorMessage}`);
+    logger.critical(LogCategory.SYSTEM, `Fatal error during server initialization: ${errorMessage}`, error);
+    process.exit(1);
+  }
+}
+
+// Run the server
+runServer().catch((error) => {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  console.error(`RUNTIME ERROR: ${errorMessage}`);
+  logger.critical(LogCategory.SYSTEM, `Runtime error: ${errorMessage}`, error);
+  process.exit(1);
+});
+
+// Log server shutdown on process exit
+process.on('exit', () => {
+  logger.info(LogCategory.SYSTEM, "Server shutting down");
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  logger.critical(LogCategory.SYSTEM, `Uncaught exception: ${errorMessage}`, error);
+  console.error(`UNCAUGHT EXCEPTION: ${errorMessage}`);
+  process.exit(1);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  logger.critical(LogCategory.SYSTEM, `Unhandled promise rejection`, { reason, promise });
+  console.error(`UNHANDLED REJECTION: ${reason}`);
+  process.exit(1);
+});
