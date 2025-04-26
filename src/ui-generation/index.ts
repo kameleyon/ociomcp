@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod';
-import { GenerateComponentSchema, ComponentStyle } from './component-gen';
+import { GenerateComponentSchema, ComponentStyle } from './component-gen.js';
 import { GeneratePageSchema, PageSection, PageOptions, PageType } from './page-gen';
 import { GenerateProjectSchema } from './project-gen';
 import { GenerateFlowSchema, FlowOptions } from './flow-designer';
