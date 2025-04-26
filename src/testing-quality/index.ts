@@ -9,7 +9,7 @@ import {
   GenerateE2ETestsSchema,
   handleGenerateUnitTests,
   handleGenerateE2ETests
-} from './test-generator';
+} from './test-generator.js';
 
 import {
   AnalyzeErrorSchema,
@@ -18,42 +18,42 @@ import {
   handleAnalyzeError,
   handleGenerateFix,
   handleExplainError
-} from './debug-assist';
+} from './debug-assist.js';
 
 import {
   ProfileCodeSchema,
   AnalyzeHotPathsSchema,
   handleProfileCode,
   handleAnalyzeHotPaths
-} from './performance-profiler';
+} from './performance-profiler.js';
 
 import {
   RunTestsSchema,
   AnalyzeTestCoverageSchema,
   handleRunTests,
   handleAnalyzeTestCoverage
-} from './test-manager';
+} from './test-manager.js';
 
 import {
   CheckAccessibilitySchema,
   GenerateAccessibilityReportSchema,
   handleCheckAccessibility,
   handleGenerateAccessibilityReport
-} from './access-checker';
+} from './access-checker.js';
 
 import {
   ReviewCodeSchema,
   AnalyzeCodeQualitySchema,
   handleReviewCode,
   handleAnalyzeCodeQuality
-} from './code-reviewer';
+} from './code-reviewer.js';
 
 import {
   AnalyzeComplexitySchema,
   IdentifyRefactoringOpportunitiesSchema,
   handleAnalyzeComplexity,
   handleIdentifyRefactoringOpportunities
-} from './complexity-tool';
+} from './complexity-tool.js';
 
 
 // Export all imported items
@@ -102,7 +102,6 @@ export {
   handleAnalyzeComplexity,
   handleIdentifyRefactoringOpportunities,
   
-  // Mock Data Generator - Removed
 };
 
 // Re-export with consistent names for index.ts

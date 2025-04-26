@@ -1,4 +1,122 @@
 import axios from 'axios';
+
+/**
+ * CMS Connector class for interacting with various CMS platforms
+ */
+export class CMSConnector {
+  private platform: 'contentful' | 'strapi' | 'sanity' | 'wordpress' | 'custom';
+  private apiKey: string;
+  private apiUrl: string;
+  private contentType: string;
+  private connection: any;
+
+  /**
+   * Create a new CMS Connector
+   * 
+   * @param options Connection options
+   */
+  constructor(options: {
+    platform: 'contentful' | 'strapi' | 'sanity' | 'wordpress' | 'custom';
+    apiKey: string;
+    apiUrl: string;
+    contentType: string;
+  }) {
+    this.platform = options.platform;
+    this.apiKey = options.apiKey;
+    this.apiUrl = options.apiUrl;
+    this.contentType = options.contentType;
+  }
+
+  /**
+   * Connect to the CMS
+   */
+  private async connect(): Promise<void> {
+    if (!this.connection) {
+      const result = await connectCMS({
+        platform: this.platform,
+        apiKey: this.apiKey,
+        apiUrl: this.apiUrl,
+      });
+
+      if (!result.success) {
+        throw new Error(`Failed to connect to CMS: ${result.error}`);
+      }
+
+      this.connection = result.connection;
+    }
+  }
+
+  /**
+   * Fetch content from the CMS
+   * 
+   * @param query Query parameters
+   * @returns Fetched content
+   */
+  async fetch(query: Record<string, any> = {}): Promise<any> {
+    await this.connect();
+    
+    const client = createCMSClient(this.connection);
+    
+    return client.fetchContent({
+      contentType: this.contentType,
+      query,
+    });
+  }
+
+  /**
+   * Create content in the CMS
+   * 
+   * @param data Content data
+   * @returns Created content
+   */
+  async create(data: Record<string, any>): Promise<any> {
+    await this.connect();
+    
+    const client = createCMSClient(this.connection);
+    
+    return client.createContent({
+      contentType: this.contentType,
+      fields: data,
+    });
+  }
+
+  /**
+   * Update content in the CMS
+   * 
+   * @param id Content ID
+   * @param data Content data
+   * @returns Updated content
+   */
+  async update(id: string, data: Record<string, any>): Promise<any> {
+    await this.connect();
+    
+    const client = createCMSClient(this.connection);
+    
+    return client.updateContent({
+      contentType: this.contentType,
+      id,
+      fields: data,
+    });
+  }
+
+  /**
+   * Delete content from the CMS
+   * 
+   * @param id Content ID
+   * @returns Deletion result
+   */
+  async delete(id: string): Promise<any> {
+    await this.connect();
+    
+    const client = createCMSClient(this.connection);
+    
+    return client.deleteContent({
+      contentType: this.contentType,
+      id,
+    });
+  }
+}
+
 /**
  * Map field type to platform-specific type
  * 

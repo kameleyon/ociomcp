@@ -5,6 +5,29 @@
 
 import { readFile, readMultipleFiles, writeFile, createDirectory, listDirectory, moveFile, getFileInfo } from './filesystem.js';
 import { searchFiles, searchCode, applyDiff } from './search.js';
+import { handleApplyDiff } from './diff-applier.js';
+import { handleFormatCode } from './code-formatter.js';
+import { handleConvertToMarkdown, handleFormatMarkdown } from './markdown-tool.js';
+import { 
+  handleAddDependency, 
+  handleRemoveDependency, 
+  handleUpdateDependency, 
+  handleListDependencies, 
+  handleCheckForUpdates 
+} from './dependency-tool.js';
+import {
+  handleGitInit,
+  handleGitClone,
+  handleGitAdd,
+  handleGitCommit,
+  handleGitPush,
+  handleGitPull,
+  handleGitBranch,
+  handleGitCheckout,
+  handleGitMerge,
+  handleGitStatus,
+  handleGitLog
+} from './git-tool.js';
 
 /**
  * Handle read_file command
@@ -376,3 +399,27 @@ export async function handleEditBlock(args: any) {
     };
   }
 }
+
+// Re-export the handlers from the imported modules
+export {
+  handleApplyDiff,
+  handleFormatCode,
+  handleConvertToMarkdown,
+  handleFormatMarkdown,
+  handleAddDependency,
+  handleRemoveDependency,
+  handleUpdateDependency,
+  handleListDependencies,
+  handleCheckForUpdates,
+  handleGitInit,
+  handleGitClone,
+  handleGitAdd,
+  handleGitCommit,
+  handleGitPush,
+  handleGitPull,
+  handleGitBranch,
+  handleGitCheckout,
+  handleGitMerge,
+  handleGitStatus,
+  handleGitLog
+};

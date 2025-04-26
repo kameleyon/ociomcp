@@ -9,6 +9,110 @@ import * as path from 'path';
 import { z } from 'zod';
 
 /**
+ * Documentation Updater Tool
+ * 
+ * A class for keeping documentation in sync with code changes
+ */
+export class DocsUpdater {
+  private sourcePath: string;
+  private docsPath: string;
+  private patterns: string[];
+  private updateStrategy: 'append' | 'replace' | 'merge';
+
+  /**
+   * Create a new documentation updater
+   * 
+   * @param options Updater options
+   */
+  constructor(options: {
+    sourcePath: string;
+    docsPath: string;
+    patterns?: string[];
+    updateStrategy?: 'append' | 'replace' | 'merge';
+  }) {
+    this.sourcePath = options.sourcePath;
+    this.docsPath = options.docsPath;
+    this.patterns = options.patterns || ['**/*.js', '**/*.ts', '**/*.jsx', '**/*.tsx'];
+    this.updateStrategy = options.updateStrategy || 'merge';
+  }
+
+  /**
+   * Update documentation
+   * 
+   * @returns Update result
+   */
+  async update(): Promise<{
+    success: boolean;
+    message: string;
+    updatedFiles: string[];
+    summary: string;
+  }> {
+    try {
+      // Update the documentation
+      const result = await updateDocs({
+        sourcePath: this.sourcePath,
+        docsPath: this.docsPath,
+        filePatterns: this.patterns,
+        updateStrategy: this.updateStrategy,
+        options: {
+          includeExamples: true,
+          includeChangelog: true,
+          updateToc: true,
+          updateVersions: true,
+          updateApiDocs: true,
+          updateReadmeFlag: true,
+        },
+      });
+
+      return {
+        success: result.success,
+        message: result.message,
+        updatedFiles: result.updatedFiles,
+        summary: `Updated ${result.updatedFiles.length} documentation files.${result.errors?.length ? ` Encountered ${result.errors.length} errors.` : ''}`,
+      };
+    } catch (error) {
+      throw new Error(`Failed to update documentation: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Synchronize documentation with code changes
+   * 
+   * @param changedFiles Changed files
+   * @returns Sync result
+   */
+  async sync(changedFiles: string[]): Promise<{
+    success: boolean;
+    message: string;
+    updatedFiles: string[];
+    summary: string;
+  }> {
+    try {
+      // Synchronize the documentation
+      const result = await syncDocs({
+        sourcePath: this.sourcePath,
+        docsPath: this.docsPath,
+        changedFiles,
+        options: {
+          updateToc: true,
+          updateVersions: true,
+          generateChangelog: true,
+        },
+      });
+
+      return {
+        success: result.success,
+        message: result.message,
+        updatedFiles: result.updatedFiles,
+        summary: `Synchronized ${result.updatedFiles.length} documentation files.${result.errors?.length ? ` Encountered ${result.errors.length} errors.` : ''}`,
+      };
+    } catch (error) {
+      throw new Error(`Failed to synchronize documentation: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+}
+
+/**
  * Schema for DocsUpdater tool
  */
 export const UpdateDocsSchema = z.object({

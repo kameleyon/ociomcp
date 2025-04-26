@@ -738,7 +738,7 @@ function generateMarkdownReport(results: any[], includeDetails: boolean): string
         report += `## Critical Issues\n\n`;
         criticalIssues.forEach((issue, index) => {
           report += `### ${index + 1}. ${issue.message}\n\n`;
-          report += `- **Code**: ${issue.code}\n`;
+          report += `- **Code**: ${"unknown"}\n`;
           report += `- **Guideline**: ${issue.guideline}\n`;
           report += `- **Help**: ${issue.helpUrl}\n`;
           report += `- **Context**: \`${issue.context}\`\n`;

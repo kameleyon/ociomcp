@@ -19,5 +19,14 @@ export * from './diff-applier.js';
 // Export code formatter functions
 export * from './code-formatter.js';
 
+// Export markdown tool functions
+export * from './markdown-tool.js';
+
+// Export dependency tool functions
+export * from './dependency-tool.js';
+
+// Export git tool functions
+export * from './git-tool.js';
+
 // Export handlers
 export * from './handlers.js';

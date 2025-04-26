@@ -9,6 +9,84 @@ import * as path from 'path';
 import { z } from 'zod';
 
 /**
+ * API Documentation Tool
+ * 
+ * A class for generating API documentation from source code
+ */
+export class APIDocsTool {
+  private sourcePath: string;
+  private outputPath: string;
+  private format: 'markdown' | 'html' | 'json';
+  private includePrivate: boolean;
+  private title: string;
+  private description: string;
+
+  /**
+   * Create a new API documentation tool
+   * 
+   * @param options Tool options
+   */
+  constructor(options: {
+    sourcePath: string;
+    outputPath: string;
+    format?: 'markdown' | 'html' | 'json';
+    includePrivate?: boolean;
+    title?: string;
+    description?: string;
+  }) {
+    this.sourcePath = options.sourcePath;
+    this.outputPath = options.outputPath;
+    this.format = options.format || 'markdown';
+    this.includePrivate = options.includePrivate || false;
+    this.title = options.title || 'API Documentation';
+    this.description = options.description || '';
+  }
+
+  /**
+   * Generate API documentation
+   * 
+   * @returns Generation result
+   */
+  async generate(): Promise<{
+    success: boolean;
+    message: string;
+    outputPath: string;
+    summary: string;
+  }> {
+    try {
+      // Parse API documentation from source code
+      const apiDocs = await parseAPIDocs({
+        sourcePath: this.sourcePath,
+        filePatterns: ['**/*.js', '**/*.ts', '**/*.jsx', '**/*.tsx'],
+        includeRoutes: true,
+        includeControllers: true,
+        includeModels: true,
+        framework: 'auto',
+        outputFormat: this.format,
+      });
+
+      // Write the documentation to the output file
+      await fs.mkdir(path.dirname(this.outputPath), { recursive: true });
+      await fs.writeFile(this.outputPath, apiDocs);
+
+      // Count the number of endpoints and models
+      const apiDocsObj = JSON.parse(apiDocs);
+      const endpointCount = Object.keys(apiDocsObj.paths || {}).length;
+      const modelCount = Object.keys(apiDocsObj.components?.schemas || {}).length;
+
+      return {
+        success: true,
+        message: `API documentation generated successfully at ${this.outputPath}`,
+        outputPath: this.outputPath,
+        summary: `Generated documentation for ${endpointCount} endpoints and ${modelCount} models.`,
+      };
+    } catch (error) {
+      throw new Error(`Failed to generate API documentation: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+}
+
+/**
  * Schema for APIDocsTool
  */
 export const GenerateAPIDocsSchema = z.object({

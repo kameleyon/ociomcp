@@ -28,7 +28,7 @@ function logError(message) {
 
 // Regular expression to match import statements without .js extension
 // This regex looks for import statements that don't end with .js, .jsx, .ts, .tsx, .json, .css, etc.
-const importRegex = /import\s+(?:(?:{[^}]*}|\*\s+as\s+[^,]+|[^,{}\s*]+)(?:\s*,\s*(?:{[^}]*}|\*\s+as\s+[^,]+))?)\s+from\s+['"]([^'"]+)['"];?/g;
+const importExportRegex = /\b(?:import|export)\s+[^'"]*from\s+['"]([^'"]+)['"]/g;
 
 // Function to check if a path should have .js extension added
 function shouldAddJsExtension(importPath) {
@@ -63,11 +63,11 @@ function processFile(filePath) {
     let modified = false;
     let fileFixCount = 0;
     
-    let newContent = content.replace(importRegex, (match, importPath) => {
+    let newContent = content.replace(importExportRegex, (match, importPath) => {
       if (shouldAddJsExtension(importPath)) {
         modified = true;
         fileFixCount++;
-        log(`  Found import without .js extension: '${importPath}' in ${filePath}`);
+        log(`  Found import/export without .js extension: '${importPath}' in ${filePath}`);
         return match.replace(`'${importPath}'`, `'${importPath}.js'`).replace(`"${importPath}"`, `"${importPath}.js"`);
       }
       return match;
@@ -112,19 +112,29 @@ function scanDirectory(directory) {
 
 // Main function
 function main() {
-  const distDir = path.join(__dirname, 'dist');
-  log(`Starting to scan directory: ${distDir}`);
+  // Allow directory to be specified as a CLI argument, default to 'dist'
+  const targetDir = process.argv[2]
+    ? path.resolve(process.cwd(), process.argv[2])
+    : path.join(__dirname, 'dist');
+  log(`Starting to scan directory: ${targetDir}`);
   
   try {
-    scanDirectory(distDir);
-    
+    scanDirectory(targetDir);
+
     // Log summary
-    log('\n----- Summary -----');
-    log(`Total files processed: ${totalFiles}`);
-    log(`Files modified: ${modifiedFiles}`);
-    log(`Total imports fixed: ${fixedImports}`);
-    log(`Files with errors: ${errorFiles}`);
-    log('Finished processing all files.');
+    const summary = [
+      '\n----- Summary -----',
+      `Total files processed: ${totalFiles}`,
+      `Files modified: ${modifiedFiles}`,
+      `Total imports fixed: ${fixedImports}`,
+      `Files with errors: ${errorFiles}`,
+      modifiedFiles === 0
+        ? 'No files were modified. No matching imports found or no .js files present.'
+        : 'Finished processing all files.'
+    ].join('\n');
+    log(summary);
+    // Also print summary to console for visibility
+    console.log(summary);
   } catch (error) {
     logError(`Fatal error: ${error.message}`);
   } finally {

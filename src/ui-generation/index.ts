@@ -6,17 +6,18 @@
 
 import { z } from 'zod';
 import { GenerateComponentSchema, ComponentStyle } from './component-gen.js';
-import { GeneratePageSchema, PageSection, PageOptions, PageType } from './page-gen';
-import { GenerateProjectSchema } from './project-gen';
-import { GenerateFlowSchema, FlowOptions } from './flow-designer';
-import { GenerateResponsiveUISchema } from './responsive-ui';
-import { GenerateIconManagerSchema, handleGenerateIconManager } from './icon-manager';
-import { GenerateTokenExtractorSchema } from './token-extractor';
-import { GeneratePWASchema } from './pwa-converter';
-import { GenerateBrowserCheckerSchema } from './browser-checker';
-import { GenerateEnhancementSchema } from './enhancement-tool';
-import { generatePage } from './page-templates';
-import { generateReactComponent } from './component-gen';
+import { GeneratePageSchema, PageSection, PageOptions, PageType } from './page-gen.js';
+import { GenerateProjectSchema } from './project-gen.js';
+import { GenerateFlowSchema, FlowOptions } from './flow-designer.js';
+import { GenerateResponsiveUISchema } from './responsive-ui.js';
+import { GenerateIconManagerSchema, handleGenerateIconManager } from './icon-manager.js';
+import { GenerateTokenExtractorSchema } from './token-extractor.js';
+import { handleGenerateTokenExtractor } from './token-extractor-handler.js';
+import { GeneratePWASchema } from './pwa-converter.js';
+import { GenerateBrowserCheckerSchema } from './browser-checker.js';
+import { GenerateEnhancementSchema } from './enhancement-tool.js';
+import { generatePage } from './page-templates.js';
+import { generateReactComponent } from './component-gen.js';
 import {
   ProjectType,
   ProjectFramework,
@@ -26,7 +27,7 @@ import {
   ProjectFile,
   ProjectOptions,
   generateProject
-} from './project-templates';
+} from './project-templates.js';
 
 /**
  * Export all UI generation schemas
@@ -43,6 +44,7 @@ export {
   GenerateBrowserCheckerSchema,
   GenerateEnhancementSchema,
   handleGenerateIconManager,
+  handleGenerateTokenExtractor,
   
   // Export types and functions from component-gen
   ComponentStyle,
@@ -118,7 +120,8 @@ export const uiGenerationTools = {
   tokenExtractor: {
     name: 'TokenExtractor',
     description: 'Extracts design tokens from design systems or mockups',
-    schema: GenerateTokenExtractorSchema
+    schema: GenerateTokenExtractorSchema,
+    handler: handleGenerateTokenExtractor
   },
   pwaConverter: {
     name: 'PWAConverter',

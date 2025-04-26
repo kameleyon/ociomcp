@@ -12,6 +12,9 @@ import * as ProjectOrganization from "./project-organization/index.js";
 import * as AdvancedFeatures from "./advanced-features/index.js";
 import * as Filesystem from "./filesystem/index.js";
 import * as Command from "./command/index.js";
+import * as Documentation from "./documentation/index.js";
+import * as AutomatedTools from "./automated-tools/index.js";
+import * as ApiDependent from "./api-dependent/index.js";
 import { PageType, PageSection } from './ui-generation/page-templates';
 import { ComponentStyle } from './ui-generation/component-templates';
 
@@ -425,6 +428,41 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         description: "Uses appropriate icon libraries instead of emojis",
         inputSchema: zodToJsonSchema(UIGeneration.GenerateIconManagerSchema),
       },
+      {
+        name: "TokenExtractor",
+        description: "Extracts design tokens from design systems or mockups",
+        inputSchema: zodToJsonSchema(UIGeneration.GenerateTokenExtractorSchema),
+      },
+      {
+        name: "DiffApplier",
+        description: "Applies code changes in patch/diff format to files",
+        inputSchema: zodToJsonSchema(Filesystem.ApplyDiffSchema),
+      },
+      {
+        name: "CodeFormatter",
+        description: "Formats code according to project style guidelines",
+        inputSchema: zodToJsonSchema(Filesystem.FormatCodeSchema),
+      },
+      {
+        name: "MarkdownTool",
+        description: "Converts content between formats (HTML, plain text) to Markdown and ensures consistent Markdown styling",
+        inputSchema: zodToJsonSchema(Filesystem.ConvertToMarkdownSchema),
+      },
+      {
+        name: "FormatMarkdown",
+        description: "Formats Markdown files according to specified style guidelines",
+        inputSchema: zodToJsonSchema(Filesystem.FormatMarkdownSchema),
+      },
+      {
+        name: "DependencyTool",
+        description: "Adds, removes, and updates project dependencies",
+        inputSchema: zodToJsonSchema(Filesystem.AddDependencySchema),
+      },
+      {
+        name: "GitTool",
+        description: "Manages version control operations",
+        inputSchema: zodToJsonSchema(Filesystem.GitInitSchema),
+      },
       // Project Organization tools
       {
         name: "generate_directory_structure",
@@ -441,7 +479,23 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         description: "Analyze file sizes and suggest optimizations",
         inputSchema: zodToJsonSchema(AnalyzeFileSizesSchema),
       },
-      // Advanced Features tools
+      // Documentation tools
+      {
+        name: "APIDocsTool",
+        description: "Automatically generates API documentation from code",
+        inputSchema: zodToJsonSchema(Documentation.GenerateAPIDocsSchema),
+      },
+      {
+        name: "DocsUpdater",
+        description: "Keeps documentation in sync with code changes",
+        inputSchema: zodToJsonSchema(Documentation.UpdateDocsSchema),
+      },
+      {
+        name: "CMSConnector",
+        description: "Integrates with headless CMS platforms",
+        inputSchema: zodToJsonSchema(Documentation.CMSConnectorSchema),
+      },
+      
       // Advanced Features tools
       {
         name: "track_version_changes",
@@ -801,148 +855,31 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [{ type: "text", text: "Error: Invalid arguments for update_task_status" }],
           isError: true,
         };
+      
+      // Documentation tools
+      case "APIDocsTool":
+        return await Documentation.handleGenerateAPIDocs(args);
+      
+      case "DocsUpdater":
+        return await Documentation.handleUpdateDocs(args);
+      
+      case "CMSConnector":
+        return await Documentation.handleConnectCMS(args);
+      
+      case "DiffApplier":
+        return await Filesystem.handleApplyDiff(args);
         
+      case "CodeFormatter":
+        return await Filesystem.handleFormatCode(args);
         
+      case "MarkdownTool":
+        return await Filesystem.handleConvertToMarkdown(args);
         
-      case "generate_component":
-        if (args && typeof args === 'object' && 'name' in args) {
-          const name = args.name as string;
-          const style = args.style as UIGeneration.ComponentStyle || UIGeneration.ComponentStyle.BASIC;
-          const props = args.props as string[] || [];
-          const description = args.description as string || `${name} component`;
-          
-          try {
-            // Generate the component
-            const componentCode = UIGeneration.generateReactComponent(
-              name,
-              props
-            );
-            
-            // Store the component
-            const componentId = `component-${Date.now()}`;
-            uiComponents.set(componentId, componentCode);
-            
-            return {
-              content: [{
-                type: "text",
-                text: `Component generated successfully with ID: ${componentId}\n\n\`\`\`tsx\n${componentCode}\n\`\`\``
-              }],
-            };
-          } catch (error) {
-            return {
-              content: [{ type: "text", text: `Error generating component: ${error}` }],
-              isError: true,
-            };
-          }
-        }
-        return {
-          content: [{ type: "text", text: "Error: Invalid arguments for generate_component" }],
-          isError: true,
-        };
+      case "DependencyTool":
+        return await Filesystem.handleAddDependency(args);
         
-      case "generate_page":
-        if (args && typeof args === 'object' && 'name' in args) {
-          const name = args.name as string;
-          const type = args.type as PageType || PageType.LANDING;
-          const sections = args.sections ? (args.sections as PageSection[]) : [{ name: 'header', type: ComponentStyle.HERO }, { name: 'hero', type: ComponentStyle.FEATURE }, { name: 'footer', type: ComponentStyle.FOOTER }];
-          const meta = args.meta as { title?: string; description?: string; keywords?: string[] } || {};
-          
-          try {
-            // Generate the page
-            const pageOptions: UIGeneration.PageOptions = {
-              name,
-              framework: 'react',
-              sections: sections.map(section => section.name),
-              styling: 'css',
-              typescript: true,
-              responsive: true,
-              layout: 'default',
-              seo: meta,
-              description: `${name} page`,
-            };
-            
-            const pageOptionsWithType = { ...pageOptions, type: PageType.LANDING, sections }; // Use a valid PageType value
-            const pageCode = UIGeneration.generatePage(pageOptionsWithType);
-            
-            // Store the page
-            const pageId = `page-${Date.now()}`;
-            uiPages.set(pageId, pageCode);
-            
-            return {
-              content: [{
-                type: "text",
-                text: `Page generated successfully with ID: ${pageId}\n\n\`\`\`tsx\n${pageCode.substring(0, 1000)}...\n\nFull page code is ${pageCode.length} characters long.\n\`\`\``
-              }],
-            };
-          } catch (error) {
-            return {
-              content: [{ type: "text", text: `Error generating page: ${error}` }],
-              isError: true,
-            };
-          }
-        }
-        return {
-          content: [{ type: "text", text: "Error: Invalid arguments for generate_page" }],
-          isError: true,
-        };
-        
-      case "generate_project":
-        if (args && typeof args === 'object' && 'name' in args) {
-          const name = args.name as string;
-          const type = args.type as UIGeneration.ProjectType || UIGeneration.ProjectType.LANDING_PAGE;
-          const framework = args.framework as UIGeneration.ProjectFramework || UIGeneration.ProjectFramework.REACT_VITE;
-          const styling = args.styling as UIGeneration.ProjectStyling || UIGeneration.ProjectStyling.TAILWIND;
-          const database = args.database as UIGeneration.ProjectDatabase || UIGeneration.ProjectDatabase.SUPABASE;
-          const pages = args.pages as { name: string; type: string; path: string }[] || [
-            { name: 'Home', type: 'landing', path: 'pages/Home.tsx' },
-          ];
-          
-          try {
-            // Generate the project
-            const projectOptions: UIGeneration.ProjectOptions = {
-              name,
-              type,
-              framework,
-              styling,
-              database,
-              authentication: UIGeneration.ProjectAuthentication.SUPABASE,
-              pages: pages.map(page => ({
-                name: page.name,
-                type: page.type as UIGeneration.PageType,
-                path: page.path,
-              })),
-              components: [],
-            };
-            
-            const projectFiles = UIGeneration.generateProject(projectOptions);
-            
-            // Store the project
-            const projectId = `project-${Date.now()}`;
-            uiProjects.set(projectId, projectFiles);
-            
-            // Generate a summary of the project files
-            const filesSummary = projectFiles.map((file: UIGeneration.ProjectFile) => `- ${file.path}`).join('\n');
-            
-            return {
-              content: [{
-                type: "text",
-                text: `Project generated successfully with ID: ${projectId}\n\nProject contains ${projectFiles.length} files:\n${filesSummary}\n\nExample file (${projectFiles[0].path}):\n\n\`\`\`\n${projectFiles[0].content.substring(0, 500)}...\n\`\`\``
-              }],
-            };
-          } catch (error) {
-            return {
-              content: [{ type: "text", text: `Error generating project: ${error}` }],
-              isError: true,
-            };
-          }
-        }
-        return {
-          content: [{ type: "text", text: "Error: Invalid arguments for generate_project" }],
-          isError: true,
-        };
-        
-      case "IconManager":
-        return await UIGeneration.handleGenerateIconManager(args);
+      case "GitTool":
+        return await Filesystem.handleGitInit(args);
         
       case "generate_directory_structure":
         if (args && typeof args === 'object' && 'name' in args && 'type' in args) {
@@ -983,325 +920,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           isError: true,
         };
         
-      case "generate_documentation":
-        if (args && typeof args === 'object' && 'projectName' in args && 'projectDescription' in args && 'type' in args) {
-          const projectName = args.projectName as string;
-          const projectDescription = args.projectDescription as string;
-          const type = args.type as ProjectOrganization.DocumentationType;
-          const format = args.format as ProjectOrganization.DocumentationFormat || ProjectOrganization.DocumentationFormat.MARKDOWN;
-          
-          try {
-            // Generate the documentation
-            const options: ProjectOrganization.DocumentationOptions = {
-              projectName,
-              projectDescription,
-              type,
-              format,
-            };
-            
-            const documentation = ProjectOrganization.generateDocumentation(options);
-            
-            return {
-              content: [{
-                type: "text",
-                text: `Documentation generated for ${projectName}:\n\n\`\`\`\n${documentation}\n\`\`\``
-              }],
-            };
-          } catch (error) {
-            return {
-              content: [{ type: "text", text: `Error generating documentation: ${error}` }],
-              isError: true,
-            };
-          }
-        }
-        return {
-          content: [{ type: "text", text: "Error: Invalid arguments for generate_documentation" }],
-          isError: true,
-        };
-        
-      case "analyze_file_sizes":
-        if (args && typeof args === 'object' && 'files' in args && Array.isArray(args.files)) {
-          const files = args.files as { path: string; size: number; lastModified?: string }[];
-          
-          try {
-            // Convert lastModified strings to Date objects
-            const filesWithDates = files.map((file: { path: string; size: number; lastModified?: string }) => ({
-              ...file,
-              lastModified: file.lastModified ? new Date(file.lastModified) : undefined,
-            }));
-            
-            // Analyze file sizes
-            const report = ProjectOrganization.analyzeFileSizes(filesWithDates);
-            
-            // Generate report
-            const reportMarkdown = ProjectOrganization.generateFileSizeReport(report);
-            
-            return {
-              content: [{
-                type: "text",
-                text: reportMarkdown
-              }],
-            };
-          } catch (error) {
-            return {
-              content: [{ type: "text", text: `Error analyzing file sizes: ${error}` }],
-              isError: true,
-            };
-          }
-        }
-        return {
-          content: [{ type: "text", text: "Error: Invalid arguments for analyze_file_sizes" }],
-          isError: true,
-        };
-
-      // Memory system handlers
-      case "get_user_preferences":
-        return {
-          content: [{ type: "text", text: "Memory system functionality is disabled" }],
-          isError: true,
-        };
-        
-      case "update_user_preferences":
-        return {
-          content: [{ type: "text", text: "Memory system functionality is disabled" }],
-          isError: true,
-        };
-        
-      case "track_version_changes":
-        if (args && typeof args === 'object' && 'path' in args && 'type' in args) {
-          const path = args.path as string;
-          const type = args.type as AdvancedFeatures.ChangeType;
-          const content = args.content as string | undefined;
-          const oldContent = args.oldContent as string | undefined;
-          const oldPath = args.oldPath as string | undefined;
-          const message = args.message as string | undefined;
-          
-          try {
-            // Record the change
-            const newState = AdvancedFeatures.recordChange(versionControlState, {
-              path,
-              type,
-              content,
-              oldContent,
-              oldPath,
-              message,
-            });
-            
-            // Update the state
-            Object.assign(versionControlState, newState);
-            
-            // Generate a diff if applicable
-            let diffText = '';
-            if (type === AdvancedFeatures.ChangeType.MODIFY && content && oldContent) {
-              diffText = `\n\nDiff:\n\`\`\`diff\n${AdvancedFeatures.generateDiff(oldContent, content)}\n\`\`\``;
-            }
-            
-            return {
-              content: [{
-                type: "text",
-                text: `Change recorded for ${path}. Total pending changes: ${versionControlState.changes.length}.${diffText}`
-              }],
-            };
-          } catch (error) {
-            return {
-              content: [{ type: "text", text: `Error tracking version changes: ${error}` }],
-              isError: true,
-            };
-          }
-        }
-        return {
-          content: [{ type: "text", text: "Error: Invalid arguments for track_version_changes" }],
-          isError: true,
-        };
-      
-      case "create_snapshot": {
-        if (args && typeof args === 'object' && 'name' in args) {
-          const name = args.name as string;
-          const description = args.description as string | undefined;
-          const author = args.author as string | undefined;
-          const tags = args.tags as string[] | undefined;
-          
-          try {
-            // Create a snapshot
-            const newState = AdvancedFeatures.createSnapshot(
-              versionControlState,
-              name,
-              description,
-              author,
-              tags
-            );
-            
-            // Update the state
-            Object.assign(versionControlState, newState);
-            
-            return {
-              content: [{
-                type: "text",
-                text: `Snapshot "${name}" created with ID: ${versionControlState.currentSnapshot}. ${versionControlState.changes.length} pending changes have been committed.`
-              }],
-            };
-          } catch (error) {
-            return {
-              content: [{ type: "text", text: `Error creating snapshot: ${error}` }],
-              isError: true,
-            };
-          }
-        }
-        return {
-          content: [{ type: "text", text: "Error: Invalid arguments for create_snapshot" }],
-          isError: true,
-        };
-      }
-      
-      case "revert_to_snapshot": {
-        if (args && typeof args === 'object' && 'snapshotId' in args) {
-          const snapshotId = args.snapshotId as string;
-          
-          try {
-            // Find the snapshot
-            const snapshot = versionControlState.snapshots.find(s => s.id === snapshotId);
-            
-            if (!snapshot) {
-              // If snapshot ID not found, list available snapshots
-              const availableSnapshots = versionControlState.snapshots.map(s =>
-                `${s.id} (${s.name})`
-              ).join('\n');
-              
-              return {
-                content: [{
-                  type: "text",
-                  text: `Snapshot with ID ${snapshotId} not found. Available snapshots:\n${availableSnapshots}`
-                }],
-                isError: true,
-              };
-            }
-            
-            // Revert to the snapshot
-            const newState = AdvancedFeatures.revertToSnapshot(
-              versionControlState,
-              snapshotId
-            );
-            
-            // Update the state
-            Object.assign(versionControlState, newState);
-            
-            return {
-              content: [{
-                type: "text",
-                text: `Reverted to snapshot "${snapshot.name}" (${snapshotId}). Any pending changes have been discarded.`
-              }],
-            };
-          } catch (error) {
-            return {
-              content: [{ type: "text", text: `Error reverting to snapshot: ${error}` }],
-              isError: true,
-            };
-          }
-        }
-        return {
-          content: [{ type: "text", text: "Error: Invalid arguments for revert_to_snapshot" }],
-          isError: true,
-        };
-      }
-      
-      case "generate_content": {
-        if (args && typeof args === 'object' && 'type' in args && 'subtype' in args) {
-          const type = args.type as AdvancedFeatures.ContentType;
-          const subtype = args.subtype as string;
-          const company = args.company as AdvancedFeatures.ContentOptions['company'] | undefined;
-          const website = args.website as AdvancedFeatures.ContentOptions['website'] | undefined;
-          const legal = args.legal as AdvancedFeatures.ContentOptions['legal'] | undefined;
-          
-          try {
-            // Generate the content
-            const options: AdvancedFeatures.ContentOptions = {
-              type,
-              subtype,
-              company,
-              website,
-              legal,
-            };
-            
-            let content = '';
-            if (type === AdvancedFeatures.ContentType.LEGAL) {
-              content = AdvancedFeatures.generateLegalContent(options);
-            } else if (type === AdvancedFeatures.ContentType.SEO) {
-              content = AdvancedFeatures.generateSeoContent(options);
-            } else {
-              throw new Error(`Content type ${type} not supported yet`);
-            }
-            
-            // Store the content
-            const contentId = `content-${Date.now()}`;
-            generatedContent.set(contentId, content);
-            
-            return {
-              content: [{
-                type: "text",
-                text: `Content generated successfully with ID: ${contentId}\n\n\`\`\`\n${content}\n\`\`\``
-              }],
-            };
-          } catch (error) {
-            return {
-              content: [{ type: "text", text: `Error generating content: ${error}` }],
-              isError: true,
-            };
-          }
-        }
-        return {
-          content: [{ type: "text", text: "Error: Invalid arguments for generate_content" }],
-          isError: true,
-        };
-      }
-      
-      case "generate_translations": {
-        if (args && typeof args === 'object' && 'keys' in args && 'locales' in args) {
-          const keys = args.keys as string[];
-          const locales = args.locales as string[];
-          const baseTranslations = args.baseTranslations as Record<string, string> | undefined;
-          
-          try {
-            // Generate the translations
-            const translations = AdvancedFeatures.generateTranslationFiles(
-              keys,
-              locales,
-              baseTranslations
-            );
-            
-            // Store the translations
-            const translationId = `translations-${Date.now()}`;
-            translationFiles.set(translationId, translations);
-            
-            // Generate a preview
-            const preview = Object.entries(translations).map(([locale, translations]) => {
-              return `${locale}:\n${Object.entries(translations).map(([key, value]) => `  "${key}": "${value}"`).join('\n')}`;
-            }).join('\n\n');
-            
-            return {
-              content: [{
-                type: "text",
-                text: `Translations generated successfully with ID: ${translationId}\n\nPreview:\n\`\`\`\n${preview}\n\`\`\``
-              }],
-            };
-          } catch (error) {
-            return {
-              content: [{ type: "text", text: `Error generating translations: ${error}` }],
-              isError: true,
-            };
-          }
-        }
-        return {
-          content: [{ type: "text", text: "Error: Invalid arguments for generate_translations" }],
-          isError: true,
-        };
-      }
-      
-      default: {
+      default:
         return {
           content: [{ type: "text", text: `Error: Unknown tool: ${name}` }],
           isError: true,
         };
-      }
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -1337,42 +960,3 @@ runServer().catch((error) => {
   console.error(`RUNTIME ERROR: ${error}`);
   process.exit(1);
 });
-
-// Memory system implementation
-const memorySystem = {
-  storeMemory: (key: string, value: any) => {
-    // Implementation would store a value in memory
-    console.log(`Storing memory: ${key}`);
-    return true;
-  },
-  retrieveMemory: (key: string) => {
-    // Implementation would retrieve a value from memory
-    console.log(`Retrieving memory: ${key}`);
-    return null;
-  },
-  listMemories: () => {
-    // Implementation would list all stored memories
-    return [];
-  },
-  clearMemory: (key: string) => {
-    // Implementation would clear a specific memory
-    console.log(`Clearing memory: ${key}`);
-    return true;
-  },
-  profileManager: {
-    getCurrentProfile: () => null,
-    updatePartialPreferences: async () => null
-  }
-};
-
-// Memory namespace
-namespace Memory {
-  export type MemoryType = 'session' | 'persistent' | 'temporary';
-  export type MemoryScope = 'global' | 'user' | 'project';
-  export type MemoryFormat = 'json' | 'text' | 'binary';
-  export type MemoryPriority = 'high' | 'medium' | 'low';
-  export interface CodingPreferences {}
-  export interface UIPreferences {}
-  export interface ToolPreferences {}
-  export interface LanguagePreferences {}
-}
