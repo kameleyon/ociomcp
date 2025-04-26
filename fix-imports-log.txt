@@ -277,6 +277,14 @@ Processing: C:\Users\Administrator\myAPP\ociomcp\dist\testing-quality\error-reso
   Found import/export without .js extension: './module' in C:\Users\Administrator\myAPP\ociomcp\dist\testing-quality\error-resolver.js
   Fixed 2 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\testing-quality\error-resolver.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\testing-quality\index.js
+  Found import/export without .js extension: './test-generator' in C:\Users\Administrator\myAPP\ociomcp\dist\testing-quality\index.js
+  Found import/export without .js extension: './debug-assist' in C:\Users\Administrator\myAPP\ociomcp\dist\testing-quality\index.js
+  Found import/export without .js extension: './performance-profiler' in C:\Users\Administrator\myAPP\ociomcp\dist\testing-quality\index.js
+  Found import/export without .js extension: './test-manager' in C:\Users\Administrator\myAPP\ociomcp\dist\testing-quality\index.js
+  Found import/export without .js extension: './access-checker' in C:\Users\Administrator\myAPP\ociomcp\dist\testing-quality\index.js
+  Found import/export without .js extension: './code-reviewer' in C:\Users\Administrator\myAPP\ociomcp\dist\testing-quality\index.js
+  Found import/export without .js extension: './complexity-tool' in C:\Users\Administrator\myAPP\ociomcp\dist\testing-quality\index.js
+  Fixed 7 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\testing-quality\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\testing-quality\mock-data-gen.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\testing-quality\performance-profiler.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\testing-quality\test-generator.js
@@ -415,6 +423,20 @@ Processing: C:\Users\Administrator\myAPP\ociomcp\dist\ui-generation\icon-manager
   Found import/export without .js extension: './custom-icons' in C:\Users\Administrator\myAPP\ociomcp\dist\ui-generation\icon-manager.js
   Fixed 12 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\ui-generation\icon-manager.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\ui-generation\index.js
+  Found import/export without .js extension: './page-gen' in C:\Users\Administrator\myAPP\ociomcp\dist\ui-generation\index.js
+  Found import/export without .js extension: './project-gen' in C:\Users\Administrator\myAPP\ociomcp\dist\ui-generation\index.js
+  Found import/export without .js extension: './flow-designer' in C:\Users\Administrator\myAPP\ociomcp\dist\ui-generation\index.js
+  Found import/export without .js extension: './responsive-ui' in C:\Users\Administrator\myAPP\ociomcp\dist\ui-generation\index.js
+  Found import/export without .js extension: './icon-manager' in C:\Users\Administrator\myAPP\ociomcp\dist\ui-generation\index.js
+  Found import/export without .js extension: './token-extractor' in C:\Users\Administrator\myAPP\ociomcp\dist\ui-generation\index.js
+  Found import/export without .js extension: './token-extractor-handler' in C:\Users\Administrator\myAPP\ociomcp\dist\ui-generation\index.js
+  Found import/export without .js extension: './pwa-converter' in C:\Users\Administrator\myAPP\ociomcp\dist\ui-generation\index.js
+  Found import/export without .js extension: './browser-checker' in C:\Users\Administrator\myAPP\ociomcp\dist\ui-generation\index.js
+  Found import/export without .js extension: './enhancement-tool' in C:\Users\Administrator\myAPP\ociomcp\dist\ui-generation\index.js
+  Found import/export without .js extension: './page-templates' in C:\Users\Administrator\myAPP\ociomcp\dist\ui-generation\index.js
+  Found import/export without .js extension: './component-gen' in C:\Users\Administrator\myAPP\ociomcp\dist\ui-generation\index.js
+  Found import/export without .js extension: './project-templates' in C:\Users\Administrator\myAPP\ociomcp\dist\ui-generation\index.js
+  Fixed 13 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\ui-generation\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\ui-generation\page-gen.js
   Found import/export without .js extension: '../components/Header' in C:\Users\Administrator\myAPP\ociomcp\dist\ui-generation\page-gen.js
   Found import/export without .js extension: '../components/Footer' in C:\Users\Administrator\myAPP\ociomcp\dist\ui-generation\page-gen.js
@@ -442,7 +464,7 @@ Processing: C:\Users\Administrator\myAPP\ociomcp\dist\utils\openrouter-utils.js
 
 ----- Summary -----
 Total files processed: 270
-Files modified: 34
-Total imports fixed: 136
+Files modified: 36
+Total imports fixed: 156
 Files with errors: 0
 Finished processing all files.

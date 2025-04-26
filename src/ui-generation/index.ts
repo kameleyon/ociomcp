@@ -6,18 +6,18 @@
 
 import { z } from 'zod';
 import { GenerateComponentSchema, ComponentStyle } from './component-gen.js';
-import { GeneratePageSchema, PageSection, PageOptions, PageType } from './page-gen.js';
-import { GenerateProjectSchema } from './project-gen.js';
-import { GenerateFlowSchema, FlowOptions } from './flow-designer.js';
-import { GenerateResponsiveUISchema } from './responsive-ui.js';
-import { GenerateIconManagerSchema, handleGenerateIconManager } from './icon-manager.js';
-import { GenerateTokenExtractorSchema } from './token-extractor.js';
-import { handleGenerateTokenExtractor } from './token-extractor-handler.js';
-import { GeneratePWASchema } from './pwa-converter.js';
-import { GenerateBrowserCheckerSchema } from './browser-checker.js';
-import { GenerateEnhancementSchema } from './enhancement-tool.js';
-import { generatePage } from './page-templates.js';
-import { generateReactComponent } from './component-gen.js';
+import { GeneratePageSchema, PageSection, PageOptions, PageType } from './page-gen';
+import { GenerateProjectSchema } from './project-gen';
+import { GenerateFlowSchema, FlowOptions } from './flow-designer';
+import { GenerateResponsiveUISchema } from './responsive-ui';
+import { GenerateIconManagerSchema, handleGenerateIconManager } from './icon-manager';
+import { GenerateTokenExtractorSchema } from './token-extractor';
+import { handleGenerateTokenExtractor } from './token-extractor-handler';
+import { GeneratePWASchema } from './pwa-converter';
+import { GenerateBrowserCheckerSchema } from './browser-checker';
+import { GenerateEnhancementSchema } from './enhancement-tool';
+import { generatePage } from './page-templates';
+import { generateReactComponent } from './component-gen';
 import {
   ProjectType,
   ProjectFramework,
@@ -27,7 +27,7 @@ import {
   ProjectFile,
   ProjectOptions,
   generateProject
-} from './project-templates.js';
+} from './project-templates';
 
 /**
  * Export all UI generation schemas
