@@ -28,5 +28,11 @@ export * from './dependency-tool.js';
 // Export git tool functions
 export * from './git-tool.js';
 
+// Export import fixer functions
+export * from './import-fixer.js';
+
+// Export TypeScript error fixer functions
+export * from './typescript-error-fixer.js';
+
 // Export handlers
 export * from './handlers.js';

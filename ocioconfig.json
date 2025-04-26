@@ -1,0 +1,584 @@
+{
+  "mcp": {
+    "autoConfiguration": true,
+    "autoStart": true,
+    "tools": {
+      "AccessChecker": {
+        "autoMode": false,
+        "preferences": {
+          "level": "AA",
+          "includeImages": true,
+          "includeForms": true
+        }
+      },
+      "AIConnector": {
+        "autoMode": false,
+        "preferences": {
+          "model": "default",
+          "temperature": 0.7,
+          "maxTokens": 1000
+        }
+      },
+      "analyze_file_sizes": {
+        "autoMode": false,
+        "preferences": {
+          "reportThreshold": "10KB",
+          "includeDependencies": false
+        }
+      },
+      "APIDocsTool": {
+        "autoMode": false,
+        "preferences": {
+          "format": "openapi",
+          "includeExamples": true,
+          "outputFormat": "yaml"
+        }
+      },
+      "AutoContinue": {
+        "autoMode": true,
+        "preferences": {
+          "maxMessages": 15,
+          "maxTokenUsagePercentage": 85,
+          "summaryPointCount": 5,
+          "nextStepCount": 3,
+          "autoTriggerEnter": true
+        }
+      },
+      "BrowserChecker": {
+        "autoMode": false,
+        "preferences": {
+          "browsers": ["chrome", "firefox", "safari", "edge"],
+          "includeVersions": true
+        }
+      },
+      "ChatInitiator": {
+        "autoMode": true,
+        "preferences": {
+          "preserveContext": true,
+          "includeSummary": true
+        }
+      },
+      "CMSConnector": {
+        "autoMode": false,
+        "preferences": {
+          "platform": "contentful",
+          "includeMedia": true
+        }
+      },
+      "CodeAnalyzer": {
+        "autoMode": false,
+        "preferences": {
+          "depth": "medium",
+          "includeDependencies": false
+        }
+      },
+      "CodeFixer": {
+        "autoMode": true,
+        "preferences": {
+          "autoFixSyntax": true,
+          "autoFixImports": true,
+          "suggestRefactors": false
+        }
+      },
+      "CodeFormatter": {
+        "autoMode": true,
+        "preferences": {
+          "style": "standard",
+          "indentation": "spaces",
+          "indentSize": 2
+        }
+      },
+      "CodeReviewer": {
+        "autoMode": false,
+        "preferences": {
+          "detailLevel": "high",
+          "includeSuggestions": true,
+          "includeReasonings": true
+        }
+      },
+      "CodeSplitter": {
+        "autoMode": true,
+        "preferences": {
+          "maxLines": 500,
+          "splitByFunction": true,
+          "createIndex": true
+        }
+      },
+      "CollabSystem": {
+        "autoMode": false,
+        "preferences": {
+          "autoShare": false,
+          "notifyChanges": true
+        }
+      },
+      "ComplexityTool": {
+        "autoMode": false,
+        "preferences": {
+          "metrics": ["cyclomatic", "cognitive"],
+          "threshold": "medium"
+        }
+      },
+      "create_directory": {
+        "autoMode": false
+      },
+      "create_snapshot": {
+        "autoMode": false,
+        "preferences": {
+          "includeNodeModules": false,
+          "compression": true
+        }
+      },
+      "DebugAssist": {
+        "autoMode": false,
+        "preferences": {
+          "logLevel": "info",
+          "breakOnError": false
+        }
+      },
+      "DependencyTool": {
+        "autoMode": false,
+        "preferences": {
+          "checkForUpdates": true,
+          "preferExact": false,
+          "packageManager": "npm"
+        }
+      },
+      "DeployTool": {
+        "autoMode": false,
+        "preferences": {
+          "platform": "vercel",
+          "autoDeployMain": false
+        }
+      },
+      "DiffApplier": {
+        "autoMode": false,
+        "preferences": {
+          "contextLines": 3,
+          "ignoreWhitespace": true
+        }
+      },
+      "DirStructure": {
+        "autoMode": false,
+        "preferences": {
+          "createReadmes": true,
+          "includeGitignore": true
+        }
+      },
+      "DocsGenerator": {
+        "autoMode": false,
+        "preferences": {
+          "format": "markdown",
+          "includeExamples": true,
+          "apiStyle": "jsdoc"
+        }
+      },
+      "DocsUpdater": {
+        "autoMode": false,
+        "preferences": {
+          "updateTableOfContents": true,
+          "updateVersionReferences": true,
+          "includeChangelog": true
+        }
+      },
+      "edit_block": {
+        "autoMode": false
+      },
+      "EnhancementTool": {
+        "autoMode": false,
+        "preferences": {
+          "accessibility": true,
+          "performance": true,
+          "responsiveness": true
+        }
+      },
+      "ErrorResolver": {
+        "autoMode": false,
+        "preferences": {
+          "autoFix": false,
+          "suggestSolutions": true
+        }
+      },
+      "execute_command": {
+        "autoMode": false,
+        "preferences": {
+          "timeout": 30000,
+          "shell": "default"
+        }
+      },
+      "FlowDesigner": {
+        "autoMode": false,
+        "preferences": {
+          "style": "modern",
+          "includeNavigation": true,
+          "responsive": true
+        }
+      },
+      "force_terminate": {
+        "autoMode": false
+      },
+      "FormatMarkdown": {
+        "autoMode": true,
+        "preferences": {
+          "tableOfContents": true,
+          "prettifyLinks": true,
+          "fixHeadingLevels": true
+        }
+      },
+      "generate_component": {
+        "autoMode": false,
+        "preferences": {
+          "framework": "react",
+          "typescript": true,
+          "includeTests": true
+        }
+      },
+      "generate_content": {
+        "autoMode": false,
+        "preferences": {
+          "style": "technical",
+          "format": "markdown"
+        }
+      },
+      "generate_directory_structure": {
+        "autoMode": false,
+        "preferences": {
+          "createFiles": false,
+          "depth": 3
+        }
+      },
+      "generate_documentation": {
+        "autoMode": false,
+        "preferences": {
+          "format": "markdown",
+          "includeApi": true,
+          "includeExamples": true
+        }
+      },
+      "generate_page": {
+        "autoMode": false,
+        "preferences": {
+          "framework": "react",
+          "typescript": true,
+          "responsive": true
+        }
+      },
+      "generate_project": {
+        "autoMode": false,
+        "preferences": {
+          "framework": "react",
+          "typescript": true,
+          "includeTests": true
+        }
+      },
+      "generate_project_plan": {
+        "autoMode": false,
+        "preferences": {
+          "format": "markdown",
+          "includeTimelines": true,
+          "includeMilestones": true
+        }
+      },
+      "generate_translations": {
+        "autoMode": false,
+        "preferences": {
+          "locales": ["en", "es", "fr", "de", "ja"],
+          "format": "json"
+        }
+      },
+      "get_file_info": {
+        "autoMode": false
+      },
+      "GitTool": {
+        "autoMode": false,
+        "preferences": {
+          "autoPush": false,
+          "commitMessageFormat": "conventional"
+        }
+      },
+      "GraphQLGen": {
+        "autoMode": false,
+        "preferences": {
+          "includeResolvers": true,
+          "includeQueries": true,
+          "includeMutations": true
+        }
+      },
+      "IconManager": {
+        "autoMode": true,
+        "preferences": {
+          "library": "lucide-react",
+          "autoReplace": true,
+          "preferComponent": true
+        }
+      },
+      "ImportFixer": {
+        "autoMode": true,
+        "preferences": {
+          "directory": "./dist",
+          "logFile": "fix-imports-log.txt",
+          "dryRun": false
+        }
+      },
+      "InfraGenerator": {
+        "autoMode": false,
+        "preferences": {
+          "platform": "aws",
+          "containerize": true,
+          "includeCI": true
+        }
+      },
+      "kill_process": {
+        "autoMode": false
+      },
+      "LegalCreator": {
+        "autoMode": false,
+        "preferences": {
+          "documentTypes": ["privacy", "terms", "cookies"],
+          "companyName": "Your Company",
+          "jurisdiction": "US"
+        }
+      },
+      "list_directory": {
+        "autoMode": false
+      },
+      "list_processes": {
+        "autoMode": false
+      },
+      "list_sessions": {
+        "autoMode": false
+      },
+      "MarkdownTool": {
+        "autoMode": true,
+        "preferences": {
+          "tableOfContents": true,
+          "formatLinks": true,
+          "formatCodeBlocks": true
+        }
+      },
+      "MockDataGen": {
+        "autoMode": false,
+        "preferences": {
+          "count": 10,
+          "includeImages": false,
+          "locale": "en"
+        }
+      },
+      "ModelSwitcher": {
+        "autoMode": false,
+        "preferences": {
+          "defaultModel": "gpt-4",
+          "taskBasedSelection": true
+        }
+      },
+      "move_file": {
+        "autoMode": false
+      },
+      "PathEnforcer": {
+        "autoMode": true,
+        "preferences": {
+          "allowedPaths": ["./src", "./public", "./assets"],
+          "blockUnauthorized": true
+        }
+      },
+      "PerfProfiler": {
+        "autoMode": false,
+        "preferences": {
+          "metrics": ["load", "render", "memory"],
+          "includeCharts": true
+        }
+      },
+      "PlanCreator": {
+        "autoMode": true,
+        "preferences": {
+          "includeTimelines": true,
+          "detailLevel": "high",
+          "includeMilestones": true
+        }
+      },
+      "PWAConverter": {
+        "autoMode": false,
+        "preferences": {
+          "generateManifest": true,
+          "generateServiceWorker": true,
+          "offlineSupport": true
+        }
+      },
+      "read_file": {
+        "autoMode": false
+      },
+      "read_multiple_files": {
+        "autoMode": false
+      },
+      "read_output": {
+        "autoMode": false
+      },
+      "ResponsiveUI": {
+        "autoMode": false,
+        "preferences": {
+          "breakpoints": ["mobile", "tablet", "desktop"],
+          "useFlexbox": true,
+          "useGrid": true
+        }
+      },
+      "revert_to_snapshot": {
+        "autoMode": false
+      },
+      "SchemaGen": {
+        "autoMode": false,
+        "preferences": {
+          "dbType": "sql",
+          "includeRelationships": true,
+          "includeIndexes": true
+        }
+      },
+      "search_code": {
+        "autoMode": false,
+        "preferences": {
+          "contextLines": 3,
+          "timeout": 30000
+        }
+      },
+      "search_files": {
+        "autoMode": false,
+        "preferences": {
+          "recursive": true,
+          "timeout": 30000
+        }
+      },
+      "SEOTool": {
+        "autoMode": false,
+        "preferences": {
+          "generateMetaTags": true,
+          "optimizeImages": true,
+          "generateSitemap": true
+        }
+      },
+      "ServiceBuilder": {
+        "autoMode": false,
+        "preferences": {
+          "architecture": "rest",
+          "authentication": true,
+          "documentation": true
+        }
+      },
+      "TaskReverter": {
+        "autoMode": false,
+        "preferences": {
+          "createBackups": true,
+          "maxHistory": 10
+        }
+      },
+      "TestGenerator": {
+        "autoMode": false,
+        "preferences": {
+          "framework": "jest",
+          "coverage": 80,
+          "includeSnapshots": true
+        }
+      },
+      "TestManager": {
+        "autoMode": false,
+        "preferences": {
+          "framework": "jest",
+          "runOnSave": false,
+          "watchMode": false
+        }
+      },
+      "TokenExtractor": {
+        "autoMode": false,
+        "preferences": {
+          "format": "css",
+          "includeColors": true,
+          "includeFonts": true,
+          "includeSpacing": true
+        }
+      },
+      "ToneAdjuster": {
+        "autoMode": true,
+        "preferences": {
+          "primaryTone": "casual technical",
+          "secondaryTone": "casual",
+          "useEmojis": false
+        }
+      },
+      "track_context_size": {
+        "autoMode": true,
+        "preferences": {
+          "warnThreshold": 80,
+          "autoTrigger": 90
+        }
+      },
+      "track_version_changes": {
+        "autoMode": false,
+        "preferences": {
+          "includeTimestamps": true,
+          "trackRenames": true
+        }
+      },
+      "trigger_continuation": {
+        "autoMode": true,
+        "preferences": {
+          "preserveContext": true,
+          "includeSummary": true
+        }
+      },
+      "TypeScriptErrorFixer": {
+        "autoMode": true,
+        "preferences": {
+          "fixAll": true,
+          "dryRun": false
+        }
+      },
+      "update_task_status": {
+        "autoMode": false
+      },
+      "UserPrefs": {
+        "autoMode": false,
+        "preferences": {
+          "storeLocation": "local",
+          "syncSettings": false
+        }
+      },
+      "visualize_project_plan": {
+        "autoMode": false,
+        "preferences": {
+          "format": "markdown",
+          "includeTimeline": true
+        }
+      },
+      "WasmTool": {
+        "autoMode": false,
+        "preferences": {
+          "optimize": true,
+          "generateBindings": true,
+          "language": "rust"
+        }
+      },
+      "write_file": {
+        "autoMode": false
+      }
+    },
+    "directories": {
+      "allowed": [
+        "./src",
+        "./dist",
+        "./docs",
+        "./tests"
+      ],
+      "restricted": [
+        "./node_modules",
+        "./.git"
+      ]
+    },
+    "logging": {
+      "level": "info",
+      "logToFile": true,
+      "logFilePath": "./mcp-logs.txt"
+    },
+    "security": {
+      "allowExternalNetworkRequests": false,
+      "allowFileSystemModifications": true,
+      "requireConfirmationForDangerous": true
+    }
+  }
+}

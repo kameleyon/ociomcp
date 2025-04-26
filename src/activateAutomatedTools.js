@@ -16,7 +16,7 @@ export async function activateAutomatedTools() {
   const automatedTools = {};
   
   try {
-    // Load all 7 automated tools
+    // Load all 9 automated tools
     
     // 1. AutoContinue - Monitors context limits and triggers new chat sessions automatically
     const { AutoContinue } = await import('./tools/automated/AutoContinue.js');
@@ -52,6 +52,24 @@ export async function activateAutomatedTools() {
     const { PlanCreator } = await import('./tools/automated/PlanCreator.js');
     automatedTools.planCreator = new PlanCreator();
     logger.info('✓ Activated PlanCreator');
+    
+    // 8. ImportFixer - Fixes JavaScript imports by adding .js extensions
+    try {
+      const { ImportFixer } = await import('./tools/automated/ImportFixer.js');
+      automatedTools.importFixer = new ImportFixer();
+      logger.info('✓ Activated ImportFixer');
+    } catch (err) {
+      logger.error(`Failed to activate ImportFixer: ${err.message}`);
+    }
+    
+    // 9. TypeScriptErrorFixer - Automatically fixes common TypeScript errors
+    try {
+      const { TypeScriptErrorFixer } = await import('./tools/automated/TypeScriptErrorFixer.js');
+      automatedTools.typeScriptErrorFixer = new TypeScriptErrorFixer();
+      logger.info('✓ Activated TypeScriptErrorFixer');
+    } catch (err) {
+      logger.error(`Failed to activate TypeScriptErrorFixer: ${err.message}`);
+    }
     
     logger.info('All automated tools successfully activated');
   } catch (error) {

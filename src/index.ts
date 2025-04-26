@@ -741,6 +741,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         description: "Manages version control operations",
         inputSchema: zodToJsonSchema(Filesystem.GitInitSchema),
       },
+      {
+        name: "ImportFixer",
+        description: "Fixes JavaScript imports by adding missing .js extensions",
+        inputSchema: zodToJsonSchema(Filesystem.ImportFixerSchema),
+      },
+      {
+        name: "TypeScriptErrorFixer",
+        description: "Automatically fixes common TypeScript errors in project files",
+        inputSchema: zodToJsonSchema(Filesystem.TypeScriptErrorFixerSchema),
+      },
       // Project Organization tools
       {
         name: "generate_directory_structure",
@@ -1358,6 +1368,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         
       case "GitTool":
         return await Filesystem.handleGitInit(args);
+        
+      case "ImportFixer":
+        const importFixerArgs = args as Record<string, unknown> | undefined;
+        return await Filesystem.handleImportFixer({
+          directory: importFixerArgs?.directory as string || './dist',
+          dryRun: !!importFixerArgs?.dryRun,
+          logFile: importFixerArgs?.logFile as string | undefined
+        });
+        
+      case "TypeScriptErrorFixer":
+        const tsFixerArgs = args as Record<string, unknown> | undefined;
+        return await Filesystem.handleTypeScriptErrorFixer({
+          fixAll: tsFixerArgs?.fixAll !== false, // Default to true if not explicitly false
+          dryRun: !!tsFixerArgs?.dryRun,
+          targetFiles: (tsFixerArgs?.targetFiles as string[] | undefined) || []
+        });
         
       case "generate_directory_structure":
         if (args && typeof args === 'object' && 'name' in args && 'type' in args) {

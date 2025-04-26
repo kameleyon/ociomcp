@@ -8,6 +8,8 @@ import { searchFiles, searchCode, applyDiff } from './search.js';
 import { handleApplyDiff } from './diff-applier.js';
 import { handleFormatCode } from './code-formatter.js';
 import { handleConvertToMarkdown, handleFormatMarkdown } from './markdown-tool.js';
+import { handleImportFixer } from './import-fixer.js';
+import { handleTypeScriptErrorFixer } from './typescript-error-fixer.js';
 import { 
   handleAddDependency, 
   handleRemoveDependency, 
@@ -421,5 +423,7 @@ export {
   handleGitCheckout,
   handleGitMerge,
   handleGitStatus,
-  handleGitLog
+  handleGitLog,
+  handleImportFixer,
+  handleTypeScriptErrorFixer
 };
