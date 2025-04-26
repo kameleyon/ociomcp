@@ -4,7 +4,7 @@ An enhanced MCP server for AI-powered development with Claude, based on the Desk
 
 ## Overview
 
-OptimusCode MCP is a Model Context Protocol (MCP) server that extends Claude's capabilities for software development. It provides advanced features for project planning, context management, persistence, and more.
+OptimusCode MCP is a Model Context Protocol (MCP) server that extends Claude's capabilities for software development. It provides advanced features for project planning, context management, persistence, and more
 
 ## Features
 
@@ -335,5 +335,4 @@ MIT
 
 ## Acknowledgements
 
-This project is based on the Desktop Commander MCP by Eduard Ruzga.#   o c i o m c p  
- 
+This project is based on the Desktop Commander MCP by Eduard Ruzga.

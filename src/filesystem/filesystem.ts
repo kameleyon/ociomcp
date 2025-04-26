@@ -7,7 +7,26 @@ import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import fetch from 'cross-fetch';
-import { FileType, FileInfo, DirectoryEntry, FileContent, SearchResult } from './types.js';
+import { DirectoryEntry, FileInfo, SearchResult } from './types';
+
+/**
+ * File type enum
+ */
+export enum FileType {
+  FILE = 'file',
+  DIRECTORY = 'directory',
+  SYMLINK = 'link',
+  OTHER = 'other'
+}
+
+/**
+ * File content interface
+ */
+export interface FileContent {
+  content: string;
+  isImage: boolean;
+  mimeType?: string;
+}
 
 /**
  * Get allowed directories from configuration
@@ -233,9 +252,11 @@ export async function listDirectory(dirPath: string, recursive = false): Promise
       entries.push({
         path: entryPath,
         name: entry.name,
-        type,
+        type: type as unknown as 'file' | 'directory' | 'link' | 'other',
         size,
       });
+
+      
       
       // If recursive and entry is a directory, list its contents
       if (recursive && type === FileType.DIRECTORY) {
@@ -326,7 +347,7 @@ export async function getFileInfo(filePath: string): Promise<FileInfo> {
     return {
       path: filePath,
       name: path.basename(filePath),
-      type,
+      type: type as unknown as 'file' | 'directory' | 'link' | 'other',
       size: stats.size,
       createdAt: stats.birthtime.toISOString(),
       modifiedAt: stats.mtime.toISOString(),
@@ -355,3 +376,4 @@ function getMimeType(ext: string): string {
   
   return mimeTypes[ext] || 'application/octet-stream';
 }
+

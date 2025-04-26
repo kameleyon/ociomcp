@@ -1,130 +1,95 @@
 /**
  * Filesystem Types
- * Defines the interfaces and types for filesystem operations
+ * Provides type definitions for filesystem operations
  */
 
 import { z } from 'zod';
 
 /**
- * Schema for read_file arguments
+ * Arguments for read_file command
  */
 export const ReadFileArgsSchema = z.object({
-  path: z.string().describe("Path to the file to read"),
-  isUrl: z.boolean().optional().describe("Whether the path is a URL"),
+  path: z.string(),
+  isUrl: z.boolean().optional(),
 });
 
 /**
- * Schema for read_multiple_files arguments
+ * Arguments for read_multiple_files command
  */
 export const ReadMultipleFilesArgsSchema = z.object({
-  paths: z.array(z.string()).describe("Paths to the files to read"),
-  isUrl: z.boolean().optional().describe("Whether the paths are URLs"),
+  paths: z.array(z.string()),
 });
 
 /**
- * Schema for write_file arguments
+ * Arguments for write_file command
  */
 export const WriteFileArgsSchema = z.object({
-  path: z.string().describe("Path to the file to write"),
-  content: z.string().describe("Content to write to the file"),
+  path: z.string(),
+  content: z.string(),
 });
 
 /**
- * Schema for create_directory arguments
+ * Arguments for create_directory command
  */
 export const CreateDirectoryArgsSchema = z.object({
-  path: z.string().describe("Path to the directory to create"),
+  path: z.string(),
+  recursive: z.boolean().optional(),
 });
 
 /**
- * Schema for list_directory arguments
+ * Arguments for list_directory command
  */
 export const ListDirectoryArgsSchema = z.object({
-  path: z.string().describe("Path to the directory to list"),
-  recursive: z.boolean().optional().describe("Whether to list recursively"),
+  path: z.string(),
+  recursive: z.boolean().optional(),
 });
 
 /**
- * Schema for move_file arguments
+ * Arguments for move_file command
  */
 export const MoveFileArgsSchema = z.object({
-  source: z.string().describe("Path to the source file or directory"),
-  destination: z.string().describe("Path to the destination file or directory"),
+  source: z.string(),
+  destination: z.string(),
 });
 
 /**
- * Schema for search_files arguments
- */
-export const SearchFilesArgsSchema = z.object({
-  path: z.string().describe("Path to search in"),
-  regex: z.string().describe("Regular expression to search for"),
-  filePattern: z.string().optional().describe("File pattern to match"),
-  timeoutMs: z.number().optional().describe("Timeout in milliseconds"),
-});
-
-/**
- * Schema for get_file_info arguments
+ * Arguments for get_file_info command
  */
 export const GetFileInfoArgsSchema = z.object({
-  path: z.string().describe("Path to the file or directory"),
+  path: z.string(),
 });
 
 /**
- * Schema for search_code arguments
+ * Arguments for search_files command
+ */
+export const SearchFilesArgsSchema = z.object({
+  path: z.string(),
+  regex: z.string(),
+  filePattern: z.string().optional(),
+  timeoutMs: z.number().optional(),
+});
+
+/**
+ * Arguments for search_code command
  */
 export const SearchCodeArgsSchema = z.object({
-  path: z.string().describe("Path to search in"),
-  regex: z.string().describe("Regular expression to search for"),
-  filePattern: z.string().optional().describe("File pattern to match"),
-  contextLines: z.number().optional().describe("Number of context lines to include"),
-  timeoutMs: z.number().optional().describe("Timeout in milliseconds"),
+  path: z.string(),
+  regex: z.string(),
+  filePattern: z.string().optional(),
+  contextLines: z.number().optional(),
+  timeoutMs: z.number().optional(),
 });
 
 /**
- * Schema for edit_block arguments
+ * Arguments for edit_block command
  */
 export const EditBlockArgsSchema = z.object({
-  path: z.string().describe("Path to the file to edit"),
-  diff: z.string().describe("Diff to apply"),
+  path: z.string(),
+  diff: z.string(),
 });
 
 /**
- * File type enum
- */
-export enum FileType {
-  FILE = 'file',
-  DIRECTORY = 'directory',
-  SYMLINK = 'symlink',
-  OTHER = 'other',
-}
-
-/**
- * File info interface
- */
-export interface FileInfo {
-  path: string;
-  name: string;
-  type: FileType;
-  size: number;
-  createdAt: string;
-  modifiedAt: string;
-  isReadable: boolean;
-  isWritable: boolean;
-  isExecutable: boolean;
-}
-
-/**
- * Directory entry interface
- */
-export interface DirectoryEntry {
-  path: string;
-  name: string;
-  type: FileType;
-  size?: number;
-}
-
-/**
- * Search result interface
+ * Search result object
  */
 export interface SearchResult {
   path: string;
@@ -134,10 +99,46 @@ export interface SearchResult {
 }
 
 /**
- * File content interface
+ * File information object
  */
-export interface FileContent {
+export interface FileInfo {
+  path: string;
+  name: string;
+  type: 'file' | 'directory' | 'link' | 'other';
+  size: number;
+  createdAt: string;
+  modifiedAt: string;
+  isReadable: boolean;
+  isWritable: boolean;
+  isExecutable: boolean;
+}
+
+/**
+ * Directory entry object
+ */
+export interface DirectoryEntry {
+  path: string;
+  name: string;  // <--- Add this line!
+  type: 'file' | 'directory' | 'link' | 'other';
+  size?: number;
+}
+
+
+/**
+ * File read result
+ */
+export interface FileReadResult {
   content: string;
   isImage: boolean;
   mimeType?: string;
 }
+
+/**
+ * Import the ApplyDiffSchema from diff-applier.ts to use as the schema for the apply_diff command
+ */
+export { ApplyDiffSchema } from './diff-applier.js';
+
+/**
+ * Import the FormatCodeSchema from code-formatter.ts to use as the schema for the format_code command
+ */
+export { FormatCodeSchema } from './code-formatter.js';
