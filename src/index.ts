@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { CallToolRequestSchema, ListToolsRequestSchema, ListResourcesRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { CallToolRequestSchema, ListToolsRequestSchema, ListResourcesRequestSchema, ListPromptsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { z } from "zod";
 import { ChatTransitionManager, SessionState } from "./context-management/chat-transition.js";
@@ -12,6 +12,8 @@ import * as ProjectOrganization from "./project-organization/index.js";
 import * as AdvancedFeatures from "./advanced-features/index.js";
 import * as Filesystem from "./filesystem/index.js";
 import * as Command from "./command/index.js";
+import { handleListPrompts } from "./prompts-handler.js";
+import { activateAllTools } from './activateAutomatedTools.js';
 import * as Documentation from "./documentation/index.js";
 import * as AutomatedTools from "./automated-tools/index.js";
 import * as ApiDependent from "./api-dependent/index.js";
@@ -19,6 +21,7 @@ import * as DatabaseAPI from "./database-api/index.js";
 import * as TestingQuality from "./testing-quality/index.js";
 import { PageType, PageSection } from './ui-generation/page-templates.js';
 import { ComponentStyle } from './ui-generation/component-templates.js';
+
 
 // Ensure handlers for specific files are imported
 import { handleFixCode, FixCodeSchema } from "./automated-tools/code-fixer.js";
@@ -568,6 +571,11 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
   return {
     resources: [],
   };
+});
+
+// Add handler for prompts/list method
+server.setRequestHandler(ListPromptsRequestSchema, async () => {
+  return await handleListPrompts();
 });
 
 // Add handler for tools/list method

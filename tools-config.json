@@ -1,0 +1,46 @@
+{
+  "tools": {
+    "ToneAdjuster": {
+      "enabled": true,
+      "settings": {
+        "tone": "professional",
+        "strength": 0.5
+      }
+    },
+    "AutoContinue": {
+      "enabled": true,
+      "settings": {
+        "threshold": 0.8
+      }
+    },
+    "CodeFormatter": {
+      "enabled": true,
+      "settings": {
+        "language": "typescript",
+        "tabSize": 2,
+        "singleQuote": true
+      }
+    },
+    "IconManager": {
+      "enabled": true,
+      "settings": {
+        "library": "lucide",
+        "framework": "react"
+      }
+    },
+    "ResponsiveUI": {
+      "enabled": true,
+      "settings": {
+        "framework": "react",
+        "styling": "tailwind"
+      }
+    },
+    "SnapshotCreator": {
+      "enabled": true,
+      "settings": {
+        "createAfterEachFile": true,
+        "includeTimestamp": true
+      }
+    }
+  }
+}

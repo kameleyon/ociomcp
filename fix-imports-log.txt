@@ -182,11 +182,13 @@ Processing: C:\Users\Administrator\myAPP\ociomcp\dist\filesystem\diff-applier.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\filesystem\filesystem.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\filesystem\git-tool.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\filesystem\handlers.js
+Processing: C:\Users\Administrator\myAPP\ociomcp\dist\filesystem\import-fixer.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\filesystem\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\filesystem\markdown-tool.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\filesystem\schema-checker.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\filesystem\search.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\filesystem\types.js
+Processing: C:\Users\Administrator\myAPP\ociomcp\dist\filesystem\typescript-error-fixer.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\filesystem\version-manager.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\hooks\useOpenRouter.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\icon-library\emoji-detector\emoji-mapping.js
@@ -463,7 +465,7 @@ Processing: C:\Users\Administrator\myAPP\ociomcp\dist\utils\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\utils\openrouter-utils.js
 
 ----- Summary -----
-Total files processed: 270
+Total files processed: 272
 Files modified: 36
 Total imports fixed: 156
 Files with errors: 0

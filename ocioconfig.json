@@ -4,7 +4,7 @@
     "autoStart": true,
     "tools": {
       "AccessChecker": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "level": "AA",
           "includeImages": true,
@@ -12,7 +12,7 @@
         }
       },
       "AIConnector": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "model": "default",
           "temperature": 0.7,
@@ -20,14 +20,14 @@
         }
       },
       "analyze_file_sizes": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "reportThreshold": "10KB",
           "includeDependencies": false
         }
       },
       "APIDocsTool": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "format": "openapi",
           "includeExamples": true,
@@ -45,9 +45,14 @@
         }
       },
       "BrowserChecker": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
-          "browsers": ["chrome", "firefox", "safari", "edge"],
+          "browsers": [
+            "chrome",
+            "firefox",
+            "safari",
+            "edge"
+          ],
           "includeVersions": true
         }
       },
@@ -59,7 +64,7 @@
         }
       },
       "CMSConnector": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "platform": "contentful",
           "includeMedia": true
@@ -89,7 +94,7 @@
         }
       },
       "CodeReviewer": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "detailLevel": "high",
           "includeSuggestions": true,
@@ -105,21 +110,24 @@
         }
       },
       "CollabSystem": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "autoShare": false,
           "notifyChanges": true
         }
       },
       "ComplexityTool": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
-          "metrics": ["cyclomatic", "cognitive"],
+          "metrics": [
+            "cyclomatic",
+            "cognitive"
+          ],
           "threshold": "medium"
         }
       },
       "create_directory": {
-        "autoMode": false
+        "autoMode": true
       },
       "create_snapshot": {
         "autoMode": true,
@@ -129,14 +137,14 @@
         }
       },
       "DebugAssist": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "logLevel": "info",
           "breakOnError": false
         }
       },
       "DependencyTool": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "checkForUpdates": true,
           "preferExact": false,
@@ -144,7 +152,7 @@
         }
       },
       "DeployTool": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "platform": "vercel",
           "autoDeployMain": false
@@ -158,14 +166,14 @@
         }
       },
       "DirStructure": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "createReadmes": true,
           "includeGitignore": true
         }
       },
       "DocsGenerator": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "format": "markdown",
           "includeExamples": true,
@@ -173,7 +181,7 @@
         }
       },
       "DocsUpdater": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "updateTableOfContents": true,
           "updateVersionReferences": true,
@@ -181,10 +189,10 @@
         }
       },
       "edit_block": {
-        "autoMode": false
+        "autoMode": true
       },
       "EnhancementTool": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "accessibility": true,
           "performance": true,
@@ -192,21 +200,21 @@
         }
       },
       "ErrorResolver": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "autoFix": false,
           "suggestSolutions": true
         }
       },
       "execute_command": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "timeout": 30000,
           "shell": "default"
         }
       },
       "FlowDesigner": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "style": "modern",
           "includeNavigation": true,
@@ -214,7 +222,7 @@
         }
       },
       "force_terminate": {
-        "autoMode": false
+        "autoMode": true
       },
       "FormatMarkdown": {
         "autoMode": true,
@@ -225,7 +233,7 @@
         }
       },
       "generate_component": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "framework": "react",
           "typescript": true,
@@ -233,21 +241,21 @@
         }
       },
       "generate_content": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "style": "technical",
           "format": "markdown"
         }
       },
       "generate_directory_structure": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "createFiles": false,
           "depth": 3
         }
       },
       "generate_documentation": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "format": "markdown",
           "includeApi": true,
@@ -255,7 +263,7 @@
         }
       },
       "generate_page": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "framework": "react",
           "typescript": true,
@@ -263,7 +271,7 @@
         }
       },
       "generate_project": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "framework": "react",
           "typescript": true,
@@ -271,7 +279,7 @@
         }
       },
       "generate_project_plan": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "format": "markdown",
           "includeTimelines": true,
@@ -279,24 +287,30 @@
         }
       },
       "generate_translations": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
-          "locales": ["en", "es", "fr", "de", "ja"],
+          "locales": [
+            "en",
+            "es",
+            "fr",
+            "de",
+            "ja"
+          ],
           "format": "json"
         }
       },
       "get_file_info": {
-        "autoMode": false
+        "autoMode": true
       },
       "GitTool": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "autoPush": false,
           "commitMessageFormat": "conventional"
         }
       },
       "GraphQLGen": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "includeResolvers": true,
           "includeQueries": true,
@@ -320,7 +334,7 @@
         }
       },
       "InfraGenerator": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "platform": "aws",
           "containerize": true,
@@ -328,24 +342,28 @@
         }
       },
       "kill_process": {
-        "autoMode": false
+        "autoMode": true
       },
       "LegalCreator": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
-          "documentTypes": ["privacy", "terms", "cookies"],
+          "documentTypes": [
+            "privacy",
+            "terms",
+            "cookies"
+          ],
           "companyName": "Your Company",
           "jurisdiction": "US"
         }
       },
       "list_directory": {
-        "autoMode": false
+        "autoMode": true
       },
       "list_processes": {
-        "autoMode": false
+        "autoMode": true
       },
       "list_sessions": {
-        "autoMode": false
+        "autoMode": true
       },
       "MarkdownTool": {
         "autoMode": true,
@@ -356,7 +374,7 @@
         }
       },
       "MockDataGen": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "count": 10,
           "includeImages": false,
@@ -364,26 +382,34 @@
         }
       },
       "ModelSwitcher": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "defaultModel": "gpt-4",
           "taskBasedSelection": true
         }
       },
       "move_file": {
-        "autoMode": false
+        "autoMode": true
       },
       "PathEnforcer": {
         "autoMode": true,
         "preferences": {
-          "allowedPaths": ["./src", "./public", "./assets"],
+          "allowedPaths": [
+            "./src",
+            "./public",
+            "./assets"
+          ],
           "blockUnauthorized": true
         }
       },
       "PerfProfiler": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
-          "metrics": ["load", "render", "memory"],
+          "metrics": [
+            "load",
+            "render",
+            "memory"
+          ],
           "includeCharts": true
         }
       },
@@ -396,7 +422,7 @@
         }
       },
       "PWAConverter": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "generateManifest": true,
           "generateServiceWorker": true,
@@ -404,27 +430,31 @@
         }
       },
       "read_file": {
-        "autoMode": false
+        "autoMode": true
       },
       "read_multiple_files": {
-        "autoMode": false
+        "autoMode": true
       },
       "read_output": {
-        "autoMode": false
+        "autoMode": true
       },
       "ResponsiveUI": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
-          "breakpoints": ["mobile", "tablet", "desktop"],
+          "breakpoints": [
+            "mobile",
+            "tablet",
+            "desktop"
+          ],
           "useFlexbox": true,
           "useGrid": true
         }
       },
       "revert_to_snapshot": {
-        "autoMode": false
+        "autoMode": true
       },
       "SchemaGen": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "dbType": "sql",
           "includeRelationships": true,
@@ -432,21 +462,21 @@
         }
       },
       "search_code": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "contextLines": 3,
           "timeout": 30000
         }
       },
       "search_files": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "recursive": true,
           "timeout": 30000
         }
       },
       "SEOTool": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "generateMetaTags": true,
           "optimizeImages": true,
@@ -454,7 +484,7 @@
         }
       },
       "ServiceBuilder": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "architecture": "rest",
           "authentication": true,
@@ -462,14 +492,14 @@
         }
       },
       "TaskReverter": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "createBackups": true,
           "maxHistory": 10
         }
       },
       "TestGenerator": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "framework": "jest",
           "coverage": 80,
@@ -477,7 +507,7 @@
         }
       },
       "TestManager": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "framework": "jest",
           "runOnSave": false,
@@ -485,7 +515,7 @@
         }
       },
       "TokenExtractor": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "format": "css",
           "includeColors": true,
@@ -509,7 +539,7 @@
         }
       },
       "track_version_changes": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "includeTimestamps": true,
           "trackRenames": true
@@ -530,24 +560,24 @@
         }
       },
       "update_task_status": {
-        "autoMode": false
+        "autoMode": true
       },
       "UserPrefs": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "storeLocation": "local",
           "syncSettings": false
         }
       },
       "visualize_project_plan": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "format": "markdown",
           "includeTimeline": true
         }
       },
       "WasmTool": {
-        "autoMode": false,
+        "autoMode": true,
         "preferences": {
           "optimize": true,
           "generateBindings": true,
@@ -555,7 +585,7 @@
         }
       },
       "write_file": {
-        "autoMode": false
+        "autoMode": true
       }
     },
     "directories": {

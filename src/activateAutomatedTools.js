@@ -1,124 +1,152 @@
 /**
- * Activates all the automated tools for OptimusCode MCP
- * Automated tools are always active and perform operations automatically
+ * Tool Activation Script for OptimusCode MCP
+ * 
+ * This script provides a simple interface to activate and deactivate tools 
+ * according to the configuration in tools-config.json.
  */
 
-// Import logging utility
-import { logger } from './utils/logger.js';
+import path from 'path';
+import fs from 'fs';
+import { toolActivator } from '../lib/tool-activator.js';
 
 /**
- * Activates all automated tools
- * @returns {Object} Object containing all activated tools
+ * Activate all configured tools
  */
-export async function activateAutomatedTools() {
-  logger.info('Activating automated tools...');
+export function activateAllTools() {
+  console.log('Activating all configured tools...');
+  const results = toolActivator.activateAllTools();
   
-  const automatedTools = {};
+  // Count successes and failures
+  let successCount = 0;
+  let failureCount = 0;
   
+  for (const [toolName, status] of results.entries()) {
+    if (status.active) {
+      successCount++;
+    } else {
+      failureCount++;
+      console.error(`Failed to activate ${toolName}: ${status.error || 'Unknown error'}`);
+    }
+  }
+  
+  console.log(`Tool activation complete: ${successCount} succeeded, ${failureCount} failed`);
+  return {
+    success: successCount,
+    failure: failureCount,
+    details: Object.fromEntries(results)
+  };
+}
+
+/**
+ * Deactivate all tools
+ */
+export function deactivateAllTools() {
+  console.log('Deactivating all tools...');
+  const results = toolActivator.deactivateAllTools();
+  
+  console.log(`Deactivated ${results.size} tools`);
+  return {
+    count: results.size,
+    details: Object.fromEntries(results)
+  };
+}
+
+/**
+ * Get activation status of all tools
+ */
+export function getToolsStatus() {
+  const status = toolActivator.getActivationStatus();
+  return {
+    activeCount: Array.from(status.values()).filter(s => s.active).length,
+    inactiveCount: Array.from(status.values()).filter(s => !s.active).length,
+    details: Object.fromEntries(status)
+  };
+}
+
+/**
+ * Check if MCP tools are properly initialized
+ */
+export function checkMcpToolsInitialization() {
   try {
-    // Load all 9 automated tools
-    
-    // 1. AutoContinue - Monitors context limits and triggers new chat sessions automatically
-    const { AutoContinue } = await import('./tools/automated/AutoContinue.js');
-    automatedTools.autoContinue = new AutoContinue();
-    logger.info('✓ Activated AutoContinue');
-    
-    // 2. ChatInitiator - Creates new chat sessions while maintaining project context
-    const { ChatInitiator } = await import('./tools/automated/ChatInitiator.js');
-    automatedTools.chatInitiator = new ChatInitiator();
-    logger.info('✓ Activated ChatInitiator');
-    
-    // 3. ToneAdjuster - Uses natural, casual language with urban touches
-    const { ToneAdjuster } = await import('./tools/automated/ToneAdjuster.js');
-    automatedTools.toneAdjuster = new ToneAdjuster();
-    logger.info('✓ Activated ToneAdjuster');
-    
-    // 4. PathEnforcer - Ensures all content is written within specified project directories
-    const { PathEnforcer } = await import('./tools/automated/PathEnforcer.js');
-    automatedTools.pathEnforcer = new PathEnforcer();
-    logger.info('✓ Activated PathEnforcer');
-    
-    // 5. CodeSplitter - Keeps files under 500 lines
-    const { CodeSplitter } = await import('./tools/automated/CodeSplitter.js');
-    automatedTools.codeSplitter = new CodeSplitter();
-    logger.info('✓ Activated CodeSplitter');
-    
-    // 6. CodeFixer - Automatically fixes common code issues across languages
-    const { CodeFixer } = await import('./tools/automated/CodeFixer.js');
-    automatedTools.codeFixer = new CodeFixer();
-    logger.info('✓ Activated CodeFixer');
-    
-    // 7. PlanCreator - Creates detailed project plans with phases, steps, and tasks
-    const { PlanCreator } = await import('./tools/automated/PlanCreator.js');
-    automatedTools.planCreator = new PlanCreator();
-    logger.info('✓ Activated PlanCreator');
-    
-    // 8. ImportFixer - Fixes JavaScript imports by adding .js extensions
-    try {
-      const { ImportFixer } = await import('./tools/automated/ImportFixer.js');
-      automatedTools.importFixer = new ImportFixer();
-      logger.info('✓ Activated ImportFixer');
-    } catch (err) {
-      logger.error(`Failed to activate ImportFixer: ${err.message}`);
+    // Initialize if not initialized yet
+    if (toolActivator.getActiveTools().length === 0) {
+      toolActivator.initialize();
     }
     
-    // 9. TypeScriptErrorFixer - Automatically fixes common TypeScript errors
-    try {
-      const { TypeScriptErrorFixer } = await import('./tools/automated/TypeScriptErrorFixer.js');
-      automatedTools.typeScriptErrorFixer = new TypeScriptErrorFixer();
-      logger.info('✓ Activated TypeScriptErrorFixer');
-    } catch (err) {
-      logger.error(`Failed to activate TypeScriptErrorFixer: ${err.message}`);
-    }
-    
-    logger.info('All automated tools successfully activated');
+    return {
+      initialized: true,
+      message: 'MCP tools are properly initialized'
+    };
   } catch (error) {
-    logger.error(`Error activating automated tools: ${error.message}`);
-    logger.error(error.stack);
+    return {
+      initialized: false,
+      message: `Failed to initialize MCP tools: ${error}`
+    };
   }
-  
-  return automatedTools;
 }
 
 /**
- * Deactivate specific automated tools
- * @param {Object} tools - The tools object returned by activateAutomatedTools
- * @param {Array<string>} toolNames - Array of tool names to deactivate
+ * Command handler for activating tools
  */
-export function deactivateTools(tools, toolNames) {
-  if (!tools || !toolNames || !Array.isArray(toolNames)) {
-    return;
+export function handleActivateToolsCommand(args) {
+  if (!args || args.length === 0 || args[0] === 'all') {
+    return activateAllTools();
   }
   
-  toolNames.forEach(name => {
-    const toolKey = name.charAt(0).toLowerCase() + name.slice(1);
-    if (tools[toolKey] && typeof tools[toolKey].disable === 'function') {
-      tools[toolKey].disable();
-      logger.info(`Deactivated ${name}`);
-    }
-  });
+  // Activate specific tools
+  const results = {};
+  for (const toolName of args) {
+    results[toolName] = toolActivator.activateTool(toolName);
+  }
+  
+  return {
+    count: args.length,
+    details: results
+  };
 }
 
-// Export a function to configure all tools at once
-export function configureAutomatedTools(tools, config) {
-  if (!tools || !config) {
-    return;
+/**
+ * Command handler for deactivating tools
+ */
+export function handleDeactivateToolsCommand(args) {
+  if (!args || args.length === 0 || args[0] === 'all') {
+    return deactivateAllTools();
   }
   
-  // Apply configuration to each tool
-  Object.entries(config).forEach(([toolName, toolConfig]) => {
-    const toolKey = toolName.charAt(0).toLowerCase() + toolName.slice(1);
-    
-    if (tools[toolKey]) {
-      // Apply each configuration option to the tool
-      Object.entries(toolConfig).forEach(([option, value]) => {
-        const methodName = `set${option.charAt(0).toUpperCase() + option.slice(1)}`;
-        
-        if (typeof tools[toolKey][methodName] === 'function') {
-          tools[toolKey][methodName](value);
-          logger.info(`Configured ${toolName}.${option} = ${value}`);
-        }
-      });
-    }
-  });
+  // Deactivate specific tools
+  const results = {};
+  for (const toolName of args) {
+    results[toolName] = toolActivator.deactivateTool(toolName);
+  }
+  
+  return {
+    count: args.length,
+    details: results
+  };
+}
+
+/**
+ * Main command handler
+ */
+export function handleToolsCommand(command, args) {
+  switch (command) {
+    case 'activate':
+      return handleActivateToolsCommand(args);
+    case 'deactivate':
+      return handleDeactivateToolsCommand(args);
+    case 'status':
+      return getToolsStatus();
+    case 'check':
+      return checkMcpToolsInitialization();
+    default:
+      return {
+        error: `Unknown command: ${command}`,
+        availableCommands: ['activate', 'deactivate', 'status', 'check']
+      };
+  }
+}
+
+// If this script is run directly, activate all tools
+if (import.meta.url === `file://${process.argv[1]}`) {
+  activateAllTools();
 }
