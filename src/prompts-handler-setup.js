@@ -1,3 +1,13 @@
+// Auto-generated safe fallback for content-generator
+
+export function activate() {
+    console.log("[TOOL] content-generator activated (passive mode)");
+}
+
+export function onFileWrite() { /* no-op */ }
+export function onSessionStart() { /* no-op */ }
+export function onCommand() { /* no-op */ }
+
 // Quick script to update the prompts/list handler
 import fs from 'fs';
 import path from 'path';

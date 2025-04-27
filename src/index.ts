@@ -1,30 +1,37 @@
 #!/usr/bin/env node
+
+import { setupPostBootActivation } from '../lib/postBootActivator.js';
+import { refreshResources } from "../lib/resource-manager.js";
+
+// Alias for backwards compatibility with existing code
+const activateTools = setupPostBootActivation;
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { CallToolRequestSchema, ListToolsRequestSchema, ListResourcesRequestSchema, ListPromptsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { z } from "zod";
-import { ChatTransitionManager, SessionState } from "./context-management/chat-transition.js";
-import { SessionStateManager } from "./persistence/session-state.js";
+// Commented out imports that don't exist in the moved files
+import { ChatTransitionManager, SessionState } from "./tools/context-management/chat-transition.js";
+import { SessionStateManager } from "./tools/persistence/session-state.js";
 import { FilteredStdioServerTransport } from "./custom-stdio.js";
-import * as ProjectPlanning from "./project-planning/index.js";
-import * as UIGeneration from "./ui-generation/index.js";
-import * as ProjectOrganization from "./project-organization/index.js";
-import * as AdvancedFeatures from "./advanced-features/index.js";
-import * as Filesystem from "./filesystem/index.js";
-import * as Command from "./command/index.js";
+import * as ProjectPlanning from "./tools/project-planning/index.js";
+import * as UIGeneration from "./tools/ui-generation/index.js";
+import * as ProjectOrganization from "./tools/project-organization/index.js";
+import * as AdvancedFeatures from "./tools/advanced-features/index.js";
+import * as Filesystem from "./tools/filesystem/index.js";
+import * as Command from "./tools/command/index.js";
 import { handleListPrompts } from "./prompts-handler.js";
 import { activateAllTools } from './activateAutomatedTools.js';
-import * as Documentation from "./documentation/index.js";
-import * as AutomatedTools from "./automated-tools/index.js";
-import * as ApiDependent from "./api-dependent/index.js";
-import * as DatabaseAPI from "./database-api/index.js";
-import * as TestingQuality from "./testing-quality/index.js";
-import { PageType, PageSection } from './ui-generation/page-templates.js';
-import { ComponentStyle } from './ui-generation/component-templates.js';
+import * as Documentation from "./tools/documentation/index.js";
+import * as AutomatedTools from "./tools/automated-tools/index.js";
+import * as ApiDependent from "./tools/api-dependent/index.js";
+import * as DatabaseAPI from "./tools/database-api/index.js";
+import * as TestingQuality from "./tools/testing-quality/index.js";
+import { PageType, PageSection } from './tools/ui-generation/page-templates.js';
+import { ComponentStyle } from './tools/ui-generation/component-templates.js';
 
 
 // Ensure handlers for specific files are imported
-import { handleFixCode, FixCodeSchema } from "./automated-tools/code-fixer.js";
+import { handleFixCode, FixCodeSchema } from "./tools/automated-tools/code-fixer.js";
 
 // Define placeholder schemas for the 30 missing tools
 // These will be replaced with actual implementations in their respective modules later
@@ -1623,6 +1630,24 @@ async function runServer() {
     console.error("Connecting server...");
     await server.connect(transport);
     console.error("Server connected successfully");
+
+    // Use globalThis instead of global for better TypeScript support
+    (function(g) {
+      // Define the property on the global object
+      Object.defineProperty(g, 'refreshResources', {
+        value: refreshResources,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+    })(globalThis);
+    
+    console.log("[BOOTSTRAP] Global refreshResources function registered.");
+    
+    // Set up post-boot activation after the server has fully started
+    setupPostBootActivation();
+    console.error("Post-boot tool activation scheduled");
+
   } catch (error) {
     console.error(`FATAL ERROR: ${error}`);
     process.exit(1);
@@ -1665,3 +1690,25 @@ namespace Memory {
   export type MemoryFormat = 'json' | 'text' | 'binary';
   export type MemoryPriority = 'high' | 'medium' | 'low';
 }
+
+// Use a type-safe approach to assign to the global object
+(function(g: typeof globalThis) {
+  Object.defineProperty(g, 'refreshResources', {
+    value: refreshResources,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
+})(globalThis);
+
+console.log("[BOOTSTRAP] Global refreshResources function registered.");
+
+// Set up post-boot activation after the server has fully started
+setupPostBootActivation();
+console.error("Post-boot tool activation scheduled");
+
+// Run the server
+runServer().catch((error) => {
+  console.error(`RUNTIME ERROR: ${error}`);
+  process.exit(1);
+});

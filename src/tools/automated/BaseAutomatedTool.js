@@ -1,5 +1,5 @@
 /**
- * Base class for all automated tools
+ * Base class for all automated tools in OptimusCode MCP
  * Automated tools are always active and perform operations automatically
  */
 export class BaseAutomatedTool {
@@ -11,6 +11,7 @@ export class BaseAutomatedTool {
 
   /**
    * Enable the tool
+   * @returns {BaseAutomatedTool} this instance for chaining
    */
   enable() {
     this.isActive = true;
@@ -19,6 +20,7 @@ export class BaseAutomatedTool {
 
   /**
    * Disable the tool
+   * @returns {BaseAutomatedTool} this instance for chaining
    */
   disable() {
     this.isActive = false;
@@ -26,8 +28,8 @@ export class BaseAutomatedTool {
   }
 
   /**
-   * Check if the tool is active
-   * @returns {boolean} - True if active, false otherwise
+   * Check if the tool is currently active
+   * @returns {boolean} true if active, false otherwise
    */
   isEnabled() {
     return this.isActive;
@@ -35,9 +37,10 @@ export class BaseAutomatedTool {
 
   /**
    * Process method to be implemented by subclasses
-   * @param {Object} context - The context object
+   * This is called automatically by the system
+   * @param {Object} context - The context object containing conversation and project state
    */
   process(context) {
-    throw new Error('Method not implemented');
+    throw new Error(`${this.name}: process() method not implemented`);
   }
 }

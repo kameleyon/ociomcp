@@ -1,3 +1,13 @@
+// Auto-generated safe fallback for content-generator
+
+export function activate() {
+    console.log("[TOOL] content-generator activated (passive mode)");
+}
+
+export function onFileWrite() { /* no-op */ }
+export function onSessionStart() { /* no-op */ }
+export function onCommand() { /* no-op */ }
+
 /**
  * Wrapper for OptimusCode MCP server that activates all tools on startup
  */

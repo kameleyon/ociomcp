@@ -1,11 +1,9 @@
 import { BaseAutomatedTool } from './BaseAutomatedTool.js';
-import { track_context_size } from '../functions/track_context_size.js';
-import { trigger_continuation } from '../functions/trigger_continuation.js';
 
 /**
- * AutoContinue
- * Monitors context limits and triggers new chat sessions automatically
- * Provides summaries and next steps when continuing
+ * AutoContinue - Monitors context limits and triggers new chat sessions automatically
+ * - Provides summaries and next steps when continuing
+ * - Implements context window monitoring with token counting
  */
 export class AutoContinue extends BaseAutomatedTool {
   constructor() {
@@ -14,15 +12,16 @@ export class AutoContinue extends BaseAutomatedTool {
       'Monitors context limits and triggers new chat sessions automatically'
     );
     
-    this.contextThreshold = 0.85; // Threshold at which to trigger continuation (85% of max)
+    this.contextThreshold = 0.85; // Trigger at 85% of max context
+    this.checkInterval = 5000; // Check every 5 seconds
     this.lastCheckTime = Date.now();
-    this.checkInterval = 5000; // Check context size every 5 seconds
+    this.isProcessing = false;
   }
 
   /**
    * Set the context threshold (0.0 - 1.0)
-   * @param {number} threshold - Value between 0 and 1 representing percentage of max context
-   * @returns {AutoContinue} - This instance for chaining
+   * @param {number} threshold - Value between 0 and 1
+   * @returns {AutoContinue} this instance for chaining
    */
   setContextThreshold(threshold) {
     if (threshold < 0 || threshold > 1) {
@@ -33,12 +32,12 @@ export class AutoContinue extends BaseAutomatedTool {
   }
 
   /**
-   * Process context monitoring
+   * Process the current context to check if continuation is needed
    * @param {Object} context - The context object
    * @returns {Promise<void>}
    */
   async process(context) {
-    if (!this.isActive) return;
+    if (!this.isActive || this.isProcessing) return;
     
     const now = Date.now();
     if (now - this.lastCheckTime < this.checkInterval) {
@@ -46,61 +45,69 @@ export class AutoContinue extends BaseAutomatedTool {
     }
     
     this.lastCheckTime = now;
+    this.isProcessing = true;
     
     try {
-      // Check context size
-      const result = await track_context_size({ 
-        message: context.currentMessage || '' 
-      });
+      // Use the track_context_size function (which is already implemented)
+      const { track_context_size } = await import('../functions/track_context_size.js');
+      
+      const message = context.currentMessage || '';
+      const result = await track_context_size({ message });
       
       if (result && result.sizeRatio > this.contextThreshold) {
         // Context is getting full, trigger continuation
         const summary = this._generateSummary(context);
+        const state = this._captureState(context);
         
-        await trigger_continuation({
-          summary: summary,
-          state: context.state || {}
-        });
+        // Use the trigger_continuation function (which is already implemented)
+        const { trigger_continuation } = await import('../functions/trigger_continuation.js');
+        await trigger_continuation({ summary, state });
       }
     } catch (error) {
-      console.error('Error in AutoContinue:', error);
+      console.error('Error in AutoContinue processing:', error);
+    } finally {
+      this.isProcessing = false;
     }
   }
 
   /**
    * Generate a summary of the current context
-   * @param {Object} context - The context object 
-   * @returns {string} - Summary text
+   * @param {Object} context - The context object
+   * @returns {string} - The summary text
    * @private
    */
   _generateSummary(context) {
-    // Extract key points from conversation
-    const conversation = context.conversation || [];
-    const lastMessages = conversation.slice(-5); // Last 5 messages
+    const project = context.project || {};
+    const messages = (context.conversation || []).slice(-5); // Last 5 messages
     
-    let summary = 'Project Progress Summary:\n\n';
+    let summary = '## Project Continuation\n\n';
     
-    // Add information about the current project
-    if (context.project) {
-      summary += `Project: ${context.project.name}\n`;
-      summary += `Current goal: ${context.project.currentGoal || 'Not specified'}\n\n`;
+    // Project information
+    if (project.name) {
+      summary += `**Project:** ${project.name}\n`;
+      summary += `**Current Task:** ${project.currentTask || 'Ongoing implementation'}\n\n`;
     }
     
-    // Add brief description of recent conversation
-    summary += 'Recent discussion focused on: ';
+    // Recent progress
+    summary += '### Recent Progress\n\n';
     
-    // Analyze last messages to determine focus
-    const topics = this._extractTopics(lastMessages);
-    summary += topics.join(', ') + '.\n\n';
+    // Extract key topics from recent messages
+    const topics = this._extractTopics(messages);
+    if (topics.length > 0) {
+      summary += `Recent discussion focused on: ${topics.join(', ')}.\n\n`;
+    }
     
-    // Add next steps if available
+    // Next steps
+    summary += '### Next Steps\n\n';
+    
     if (context.nextSteps && context.nextSteps.length > 0) {
-      summary += 'Next steps:\n';
       context.nextSteps.forEach((step, index) => {
         summary += `${index + 1}. ${step}\n`;
       });
     } else {
-      summary += 'Continuing project implementation.\n';
+      summary += '- Continue current implementation\n';
+      summary += '- Review recent changes\n';
+      summary += '- Proceed with testing\n';
     }
     
     return summary;
@@ -108,43 +115,64 @@ export class AutoContinue extends BaseAutomatedTool {
 
   /**
    * Extract topics from recent messages
-   * @param {Array} messages - Recent messages 
+   * @param {Array} messages - Recent messages
    * @returns {Array} - List of topics
    * @private
    */
   _extractTopics(messages) {
-    // This is a simple implementation
-    // A more advanced implementation could use NLP techniques
     const topics = new Set();
     
-    const codeRelated = messages.some(m => 
-      m.content && (
-        m.content.includes('```') || 
-        m.content.includes('function') ||
-        m.content.includes('class') ||
-        m.content.includes('const ')
-      )
-    );
-    
-    if (codeRelated) topics.add('code implementation');
-    
-    // Look for specific keywords
     for (const message of messages) {
-      if (!message.content) continue;
+      const content = message.content || '';
       
-      if (message.content.includes('plan') || message.content.includes('roadmap'))
+      // Check for code-related content
+      if (content.includes('```') || 
+          content.includes('function') || 
+          content.includes('class') ||
+          content.includes('import ')) {
+        topics.add('code implementation');
+      }
+      
+      // Check for planning-related content
+      if (content.includes('plan') || 
+          content.includes('roadmap') || 
+          content.includes('milestone')) {
         topics.add('project planning');
+      }
       
-      if (message.content.includes('test') || message.content.includes('debug'))
+      // Check for testing-related content
+      if (content.includes('test') || 
+          content.includes('debug') || 
+          content.includes('error')) {
         topics.add('testing and debugging');
+      }
       
-      if (message.content.includes('design') || message.content.includes('UI') || message.content.includes('UX'))
+      // Check for design-related content
+      if (content.includes('design') || 
+          content.includes('UI') || 
+          content.includes('UX') ||
+          content.includes('layout')) {
         topics.add('design and user experience');
-      
-      if (message.content.includes('database') || message.content.includes('data model'))
-        topics.add('data architecture');
+      }
     }
     
     return topics.size > 0 ? Array.from(topics) : ['general project discussion'];
+  }
+
+  /**
+   * Capture the current state for continuation
+   * @param {Object} context - The context object
+   * @returns {Object} - The state object
+   * @private
+   */
+  _captureState(context) {
+    // Create a clean state object for continuation
+    return {
+      project: context.project || {},
+      files: context.files || [],
+      lastCommands: (context.commands || []).slice(-5), // Last 5 commands
+      currentTask: context.currentTask,
+      nextSteps: context.nextSteps || []
+    };
   }
 }

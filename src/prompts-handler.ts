@@ -1,3 +1,14 @@
+// Auto-generated safe fallback for content-generator
+
+export function activate() {
+    console.log("[TOOL] content-generator activated (passive mode)");
+}
+
+export function onFileWrite() { /* no-op */ }
+export function onSessionStart() { /* no-op */ }
+export function onCommand() { /* no-op */ }
+
+
 // Simple prompts handler to prevent Claude from disconnecting
 // This implements a basic prompts/list method that returns an empty array
 
