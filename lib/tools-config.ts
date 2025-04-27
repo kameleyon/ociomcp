@@ -71,3 +71,17 @@ export function applyToolConfig<T>(toolName: string, toolInstance: T): T {
   }
   return toolInstance;
 }
+
+/**
+ * Gets all enabled tools with their settings
+ */
+export function getEnabledTools(): { name: string; settings: Record<string, any> }[] {
+  const config = loadToolsConfig();
+  const enabledTools = Object.entries(config.tools)
+    .filter(([_, toolConfig]) => toolConfig.enabled)
+    .map(([toolName, toolConfig]) => ({
+      name: toolName,
+      settings: toolConfig.settings || {}
+    }));
+  return enabledTools;
+}

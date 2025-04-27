@@ -250,6 +250,7 @@ Processing: C:\Users\Administrator\myAPP\ociomcp\dist\project-planning\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\project-planning\plan-generator.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\project-planning\plan-visualizer.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\project-planning\project-plan.js
+Processing: C:\Users\Administrator\myAPP\ociomcp\dist\prompts-handler.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\refactoring\automated-refactorer.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\refactoring\code-smell-detector.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\refactoring\index.js
@@ -259,6 +260,7 @@ Processing: C:\Users\Administrator\myAPP\ociomcp\dist\refactoring\tools\detect-c
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\refactoring\tools\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\refactoring\tools\suggest-refactorings.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\refactoring\types.js
+Processing: C:\Users\Administrator\myAPP\ociomcp\dist\run-with-tools.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\setup-claude-server.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\testing\error-analyzer.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\testing\index.js
@@ -465,7 +467,7 @@ Processing: C:\Users\Administrator\myAPP\ociomcp\dist\utils\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\utils\openrouter-utils.js
 
 ----- Summary -----
-Total files processed: 272
+Total files processed: 274
 Files modified: 36
 Total imports fixed: 156
 Files with errors: 0
