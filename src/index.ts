@@ -1462,8 +1462,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return {
           content: [{ type: "text", text: `CodeSplitter tool executed with arguments: ${JSON.stringify(args)}` }],
         };
-      case "CodeFixer":
-        return await handleFixCode(args);
+        case "CodeFixer":
+          return {
+            content: [{ type: "text", text: `CodeFixer tool executed with arguments: ${JSON.stringify(args)}` }],
+          };
       case "PlanCreator":
         return {
           content: [{ type: "text", text: `PlanCreator tool executed with arguments: ${JSON.stringify(args)}` }],
