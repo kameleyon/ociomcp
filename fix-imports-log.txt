@@ -65,6 +65,7 @@ Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\api-dependent\co
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\api-dependent\deploy-tool.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\api-dependent\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\api-dependent\model-switcher.js
+Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\automated\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\automated-tools\auto-continue.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\automated-tools\chat-initiator.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\automated-tools\code-fixer.js
@@ -118,6 +119,7 @@ Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\session-
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\types.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\context-management\chat-transition.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\context-management\context-tracker.js
+Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\context-management\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\database-api\generators.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\database-api\graphql-gen.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\database-api\index.js
@@ -147,6 +149,8 @@ Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\filesystem\searc
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\filesystem\types.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\filesystem\typescript-error-fixer.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\filesystem\version-manager.js
+Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\functions\index.js
+Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\persistence\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\persistence\session-state.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\project-organization\directory-structure.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\project-organization\documentation-generator.js
@@ -182,6 +186,7 @@ Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\performance-profiler.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\test-generator.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\test-manager.js
+Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\tools\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\browser-checker.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\component-gen.js
   Found import/export without .js extension: '../theme' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\component-gen.js
@@ -625,7 +630,7 @@ Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\utils\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\utils\openrouter-utils.js
 
 ----- Summary -----
-Total files processed: 432
+Total files processed: 437
 Files modified: 36
 Total imports fixed: 156
 Files with errors: 0

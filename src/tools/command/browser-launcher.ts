@@ -4,9 +4,70 @@ export function activate() {
     console.log("[TOOL] browser-launcher activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Called when a file is written
+ * - Can automatically open HTML files in the browser
+ * - Can detect changes to web applications and refresh the browser
+ * - Can monitor for specific file types that should be previewed
+ */
+export function onFileWrite(event: { path: string; content: string }) {
+  // Check if the file is an HTML file that should be automatically opened
+  if (event.path.endsWith('.html') || event.path.endsWith('.htm')) {
+    console.log(`[Browser Launcher] Detected HTML file change: ${event.path}`);
+    
+    // Could automatically open the file in the browser
+    // openFileInBrowser(event.path).catch(err =>
+    //   console.error(`[Browser Launcher] Failed to open file: ${err}`)
+    // );
+  }
+}
+
+/**
+ * Called when a new session starts
+ * - Can initialize browser settings
+ * - Can check for running local servers
+ * - Can prepare browser environment
+ */
+export function onSessionStart(session: { id: string; startTime: number }) {
+  console.log(`[Browser Launcher] New session started: ${session.id}`);
+  
+  // Could check for running local servers
+  // checkRunningServers().then(servers => {
+  //   console.log(`[Browser Launcher] Found ${servers.length} running local servers`);
+  // });
+}
+
+/**
+ * Called when a command is executed
+ * - Can handle browser-specific commands
+ * - Can provide browser status information
+ * - Can perform browser operations
+ */
+export function onCommand(command: { name: string; args: any[] }) {
+  if (command.name === 'browser:open') {
+    console.log('[Browser Launcher] Opening URL in browser...');
+    // Open URL in browser
+    if (command.args && command.args.length > 0) {
+      return openInBrowser(command.args[0]);
+    }
+  }
+  
+  if (command.name === 'browser:open-file') {
+    console.log('[Browser Launcher] Opening file in browser...');
+    // Open file in browser
+    if (command.args && command.args.length > 0) {
+      return openFileInBrowser(command.args[0]);
+    }
+  }
+  
+  if (command.name === 'browser:open-server') {
+    console.log('[Browser Launcher] Opening local server in browser...');
+    // Open local server in browser
+    if (command.args && command.args.length > 0) {
+      return openLocalServer(command.args[0]);
+    }
+  }
+}
 /**
  * Browser Launcher
  * 

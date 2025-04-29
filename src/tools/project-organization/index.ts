@@ -4,9 +4,498 @@ export function activate() {
     console.log("[TOOL] index activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+// Define global state types
+declare global {
+  var projectStructure: {
+    files: Array<{
+      path: string;
+      size: number;
+      lastModified: string;
+      type: string;
+    }>;
+    directories: Array<{
+      path: string;
+      fileCount: number;
+      totalSize: number;
+    }>;
+    lastUpdated: string;
+  };
+  var projectDocumentation: Record<string, {
+    path: string;
+    type: string;
+    lastUpdated: string;
+  }>;
+  var fileMonitoringStats: {
+    largeFiles: Array<{
+      path: string;
+      size: number;
+      severity: string;
+    }>;
+    lastScan: string;
+    totalSize: number;
+    fileCount: number;
+  };
+}
+
+export function onFileWrite(event: any) {
+  console.log(`[Project Organization] File write event detected: ${event.path}`);
+  
+  try {
+    // Initialize global state if needed
+    if (!globalThis.projectStructure) {
+      globalThis.projectStructure = {
+        files: [],
+        directories: [],
+        lastUpdated: new Date().toISOString()
+      };
+    }
+    
+    if (!globalThis.projectDocumentation) {
+      globalThis.projectDocumentation = {};
+    }
+    
+    if (!globalThis.fileMonitoringStats) {
+      globalThis.fileMonitoringStats = {
+        largeFiles: [],
+        lastScan: new Date().toISOString(),
+        totalSize: 0,
+        fileCount: 0
+      };
+    }
+    
+    // Update project structure
+    const fs = require('fs');
+    const path = require('path');
+    
+    try {
+      // Get file stats
+      const stats = fs.statSync(event.path);
+      const fileSize = stats.size;
+      const lastModified = stats.mtime.toISOString();
+      const extension = path.extname(event.path).toLowerCase().substring(1);
+      
+      // Update or add file in project structure
+      const existingFileIndex = globalThis.projectStructure.files.findIndex(
+        (file: any) => file.path === event.path
+      );
+      
+      if (existingFileIndex >= 0) {
+        // Update existing file
+        globalThis.projectStructure.files[existingFileIndex] = {
+          path: event.path,
+          size: fileSize,
+          lastModified,
+          type: extension
+        };
+      } else {
+        // Add new file
+        globalThis.projectStructure.files.push({
+          path: event.path,
+          size: fileSize,
+          lastModified,
+          type: extension
+        });
+      }
+      
+      // Update directory information
+      const dirPath = path.dirname(event.path);
+      const existingDirIndex = globalThis.projectStructure.directories.findIndex(
+        (dir: any) => dir.path === dirPath
+      );
+      
+      if (existingDirIndex >= 0) {
+        // Update existing directory
+        const dirFiles = globalThis.projectStructure.files.filter(
+          (file: any) => path.dirname(file.path) === dirPath
+        );
+        
+        globalThis.projectStructure.directories[existingDirIndex] = {
+          path: dirPath,
+          fileCount: dirFiles.length,
+          totalSize: dirFiles.reduce((sum: number, file: any) => sum + file.size, 0)
+        };
+      } else {
+        // Add new directory
+        globalThis.projectStructure.directories.push({
+          path: dirPath,
+          fileCount: 1,
+          totalSize: fileSize
+        });
+      }
+      
+      // Update last updated timestamp
+      globalThis.projectStructure.lastUpdated = new Date().toISOString();
+      
+      // Check if it's a documentation file
+      if (extension === 'md' ||
+          extension === 'mdx' ||
+          extension === 'txt' ||
+          event.path.includes('docs') ||
+          event.path.includes('documentation') ||
+          event.path.includes('README') ||
+          event.path.includes('LICENSE')) {
+        
+        // Update documentation tracking
+        globalThis.projectDocumentation[event.path] = {
+          path: event.path,
+          type: extension,
+          lastUpdated: new Date().toISOString()
+        };
+        
+        console.log(`[Project Organization] Documentation file updated: ${event.path}`);
+      }
+      
+      // Check file size for monitoring
+      const { FileSizeSeverity } = require('./file-monitor.js');
+      
+      // Define size thresholds (in bytes)
+      const SIZE_WARNING = 1024 * 1024; // 1MB
+      const SIZE_CRITICAL = 5 * 1024 * 1024; // 5MB
+      
+      if (fileSize > SIZE_WARNING) {
+        // Determine severity
+        const severity = fileSize > SIZE_CRITICAL ?
+          FileSizeSeverity.CRITICAL :
+          FileSizeSeverity.WARNING;
+        
+        // Add or update large file tracking
+        const existingLargeFileIndex = globalThis.fileMonitoringStats.largeFiles.findIndex(
+          (file: any) => file.path === event.path
+        );
+        
+        if (existingLargeFileIndex >= 0) {
+          globalThis.fileMonitoringStats.largeFiles[existingLargeFileIndex] = {
+            path: event.path,
+            size: fileSize,
+            severity
+          };
+        } else {
+          globalThis.fileMonitoringStats.largeFiles.push({
+            path: event.path,
+            size: fileSize,
+            severity
+          });
+        }
+        
+        console.log(`[Project Organization] Large file detected: ${event.path} (${fileSize} bytes, ${severity})`);
+        
+        // If it's a critical size, suggest code splitting
+        if (severity === FileSizeSeverity.CRITICAL) {
+          const { suggestCodeSplitting, formatFileSize } = require('./file-monitor.js');
+          const suggestions = suggestCodeSplitting({
+            path: event.path,
+            size: fileSize,
+            content: event.content || ''
+          });
+          
+          console.log(`[Project Organization] File size critical: ${event.path} (${formatFileSize(fileSize)})`);
+          console.log(`[Project Organization] Suggestions: ${suggestions.join(', ')}`);
+        }
+      }
+      
+      // Update monitoring stats
+      globalThis.fileMonitoringStats.lastScan = new Date().toISOString();
+      globalThis.fileMonitoringStats.totalSize = globalThis.projectStructure.files.reduce(
+        (sum: number, file: any) => sum + file.size, 0
+      );
+      globalThis.fileMonitoringStats.fileCount = globalThis.projectStructure.files.length;
+    } catch (fsError: unknown) {
+      const errorMessage = fsError instanceof Error ? fsError.message : String(fsError);
+      console.error(`[Project Organization] Error accessing file: ${errorMessage}`);
+    }
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[Project Organization] Error handling file write: ${errorMessage}`);
+  }
+}
+
+export function onSessionStart(session: any) {
+  console.log(`[Project Organization] New session started: ${session.id}`);
+  
+  try {
+    // Initialize project organization state for the session
+    session.projectOrganizationState = {
+      initialized: true,
+      timestamp: new Date().toISOString(),
+      projectStructure: {
+        files: [],
+        directories: [],
+        lastUpdated: new Date().toISOString()
+      },
+      documentation: {},
+      fileMonitoring: {
+        largeFiles: [],
+        lastScan: null,
+        totalSize: 0,
+        fileCount: 0
+      }
+    };
+    
+    // Initialize global state if needed
+    if (!globalThis.projectStructure) {
+      globalThis.projectStructure = {
+        files: [],
+        directories: [],
+        lastUpdated: new Date().toISOString()
+      };
+    }
+    
+    if (!globalThis.projectDocumentation) {
+      globalThis.projectDocumentation = {};
+    }
+    
+    if (!globalThis.fileMonitoringStats) {
+      globalThis.fileMonitoringStats = {
+        largeFiles: [],
+        lastScan: new Date().toISOString(),
+        totalSize: 0,
+        fileCount: 0
+      };
+    }
+    
+    // Scan project structure
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const projectRoot = process.cwd();
+      
+      // Function to scan directory recursively
+      const scanDirectory = (dir: string, results: any[] = []) => {
+        const files = fs.readdirSync(dir);
+        
+        for (const file of files) {
+          const filePath = path.join(dir, file);
+          const stats = fs.statSync(filePath);
+          
+          if (stats.isDirectory()) {
+            // Skip node_modules and other common excluded directories
+            if (file === 'node_modules' || file === '.git' || file === 'dist' || file === 'build') {
+              continue;
+            }
+            // Recursively scan subdirectories
+            scanDirectory(filePath, results);
+          } else {
+            // Add file to results
+            results.push({
+              path: filePath,
+              size: stats.size,
+              lastModified: stats.mtime.toISOString(),
+              type: path.extname(file).toLowerCase().substring(1)
+            });
+          }
+        }
+        
+        return results;
+      };
+      
+      // Scan project files
+      const files = scanDirectory(projectRoot);
+      console.log(`[Project Organization] Scanned ${files.length} files in project`);
+      
+      // Update project structure
+      globalThis.projectStructure.files = files;
+      
+      // Build directory structure
+      const directories = new Map();
+      
+      for (const file of files) {
+        const dirPath = path.dirname(file.path);
+        
+        if (!directories.has(dirPath)) {
+          directories.set(dirPath, {
+            path: dirPath,
+            fileCount: 0,
+            totalSize: 0
+          });
+        }
+        
+        const dirInfo = directories.get(dirPath);
+        dirInfo.fileCount++;
+        dirInfo.totalSize += file.size;
+      }
+      
+      globalThis.projectStructure.directories = Array.from(directories.values());
+      globalThis.projectStructure.lastUpdated = new Date().toISOString();
+      
+      // Update session state
+      session.projectOrganizationState.projectStructure = globalThis.projectStructure;
+      
+      // Identify documentation files
+      const docFiles = files.filter(file =>
+        file.type === 'md' ||
+        file.type === 'mdx' ||
+        file.type === 'txt' ||
+        file.path.includes('docs') ||
+        file.path.includes('documentation') ||
+        file.path.includes('README') ||
+        file.path.includes('LICENSE')
+      );
+      
+      // Update documentation tracking
+      for (const file of docFiles) {
+        globalThis.projectDocumentation[file.path] = {
+          path: file.path,
+          type: file.type,
+          lastUpdated: file.lastModified
+        };
+      }
+      
+      session.projectOrganizationState.documentation = globalThis.projectDocumentation;
+      
+      // Identify large files
+      const { FileSizeSeverity } = require('./file-monitor.js');
+      
+      // Define size thresholds (in bytes)
+      const SIZE_WARNING = 1024 * 1024; // 1MB
+      const SIZE_CRITICAL = 5 * 1024 * 1024; // 5MB
+      
+      const largeFiles = files
+        .filter(file => file.size > SIZE_WARNING)
+        .map(file => ({
+          path: file.path,
+          size: file.size,
+          severity: file.size > SIZE_CRITICAL ?
+            FileSizeSeverity.CRITICAL :
+            FileSizeSeverity.WARNING
+        }));
+      
+      globalThis.fileMonitoringStats.largeFiles = largeFiles;
+      globalThis.fileMonitoringStats.lastScan = new Date().toISOString();
+      globalThis.fileMonitoringStats.totalSize = files.reduce((sum, file) => sum + file.size, 0);
+      globalThis.fileMonitoringStats.fileCount = files.length;
+      
+      session.projectOrganizationState.fileMonitoring = globalThis.fileMonitoringStats;
+      
+      console.log(`[Project Organization] Identified ${largeFiles.length} large files`);
+      console.log(`[Project Organization] Identified ${Object.keys(globalThis.projectDocumentation).length} documentation files`);
+    } catch (scanError: unknown) {
+      const errorMessage = scanError instanceof Error ? scanError.message : String(scanError);
+      console.error(`[Project Organization] Error scanning project: ${errorMessage}`);
+    }
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[Project Organization] Error initializing session: ${errorMessage}`);
+  }
+}
+
+export function onCommand(command: any) {
+  console.log(`[Project Organization] Command executed: ${command.name}`);
+  
+  try {
+    // Handle project organization commands
+    switch (command.name) {
+      case 'generate_project':
+        // Generate project structure
+        return generateProject({
+          name: command.name || 'my-project',
+          description: command.description || 'A new project',
+          type: command.type || ProjectType.API, // Using ProjectType.API as default since WEB doesn't exist
+          framework: command.framework,
+          features: command.features || [],
+          includeDocumentation: command.includeDocumentation !== false,
+          includeReadme: command.includeReadme !== false,
+          includeLicense: command.includeLicense !== false,
+          licenseType: command.licenseType || 'MIT',
+          author: command.author || '',
+          repositoryUrl: command.repositoryUrl || ''
+        });
+        
+      case 'analyze_project':
+        // Analyze project structure
+        if (globalThis.projectStructure && globalThis.projectStructure.files) {
+          // Convert string dates to Date objects to match the expected type
+          const filesWithDateObjects = globalThis.projectStructure.files.map((file: any) => ({
+            path: file.path,
+            size: file.size,
+            lastModified: new Date(file.lastModified) // Convert string to Date object
+          }));
+          
+          return analyzeProject(filesWithDateObjects);
+        } else {
+          return {
+            error: 'Project structure not available. Start a session first.'
+          };
+        }
+        
+      case 'generate_documentation':
+        // Generate documentation
+        const { generateDocumentation } = require('./documentation-generator.js');
+        return {
+          documentation: generateDocumentation({
+            projectName: command.projectName || 'Project',
+            projectDescription: command.projectDescription || 'A project',
+            type: command.type || DocumentationType.USER_GUIDE,
+            format: command.format || DocumentationFormat.MARKDOWN,
+            includeInstallation: command.includeInstallation !== false,
+            includeUsage: command.includeUsage !== false,
+            includeAPI: command.includeAPI !== false,
+            includeContributing: command.includeContributing !== false,
+            includeLicense: command.includeLicense !== false,
+            licenseType: command.licenseType || 'MIT',
+            author: command.author || '',
+            repositoryUrl: command.repositoryUrl || ''
+          })
+        };
+        
+      case 'analyze_file_sizes':
+        // Analyze file sizes
+        const { analyzeFileSizes, generateFileSizeReport } = require('./file-monitor.js');
+        
+        if (globalThis.projectStructure && globalThis.projectStructure.files) {
+          const sizeReport = analyzeFileSizes(globalThis.projectStructure.files);
+          return {
+            report: generateFileSizeReport(sizeReport),
+            suggestions: sizeReport.suggestions,
+            largeFiles: globalThis.fileMonitoringStats.largeFiles
+          };
+        } else {
+          return {
+            error: 'Project structure not available. Start a session first.'
+          };
+        }
+        
+      case 'get_project_structure':
+        // Get project structure
+        if (globalThis.projectStructure) {
+          const structure = buildDirectoryTree(
+            globalThis.projectStructure.files.map((file: any) => file.path)
+          );
+          
+          return {
+            structure,
+            fileCount: globalThis.projectStructure.files.length,
+            directoryCount: globalThis.projectStructure.directories.length,
+            totalSize: globalThis.fileMonitoringStats.totalSize,
+            lastUpdated: globalThis.projectStructure.lastUpdated
+          };
+        } else {
+          return {
+            error: 'Project structure not available. Start a session first.'
+          };
+        }
+        
+      case 'get_documentation_files':
+        // Get documentation files
+        if (globalThis.projectDocumentation) {
+          return {
+            documentationFiles: globalThis.projectDocumentation,
+            count: Object.keys(globalThis.projectDocumentation).length
+          };
+        } else {
+          return {
+            error: 'Documentation tracking not available. Start a session first.'
+          };
+        }
+        
+      default:
+        console.log(`[Project Organization] Unknown command: ${command.name}`);
+    }
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[Project Organization] Error executing command: ${errorMessage}`);
+    return { error: errorMessage };
+  }
+}
 /**
  * Project Organization Module
  * 

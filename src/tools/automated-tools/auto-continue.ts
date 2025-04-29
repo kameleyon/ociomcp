@@ -4,9 +4,27 @@ export function activate() {
     console.log("[TOOL] auto-continue activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(event: { path: string; content: string }) {
+  console.log("[TOOL] auto-continue detected file write.");
+  handleTrackContextSize({ message: "File written." })
+    .then((result) => console.log("[TOOL] Context size updated after file write:", result))
+    .catch((err) => console.error("[TOOL] Failed to track context size after file write:", err));
+}
+
+export function onSessionStart(session: { id: string; startTime: number }) {
+  console.log("[TOOL] auto-continue detected session start.");
+  handleTrackContextSize({ message: "Session started." })
+    .then((result) => console.log("[TOOL] Context size updated after session start:", result))
+    .catch((err) => console.error("[TOOL] Failed to track context size after session start:", err));
+}
+
+export function onCommand (command: { name: string; args: any[] }) {
+  console.log(`[TOOL] auto-continue detected command: ${command || "unknown"}`);
+  handleTrackContextSize({ message: `Command issued: ${command || "unknown"}` })
+    .then((result) => console.log("[TOOL] Context size updated after command:", result))
+    .catch((err) => console.error("[TOOL] Failed to track context size after command:", err));
+}
+
 import { z } from 'zod';
 import { ChatTransitionManager, SessionState } from '../context-management/chat-transition.js';
 import { SessionStateManager } from '../persistence/session-state.js';

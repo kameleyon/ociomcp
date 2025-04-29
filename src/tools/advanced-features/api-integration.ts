@@ -4,9 +4,69 @@ export function activate() {
     console.log("[TOOL] api-integration activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Called when a file is written
+ * - Can be used to automatically update API documentation when API-related files change
+ * - Can trigger API schema validation for modified files
+ * - Can update API client code when API definitions change
+ */
+export function onFileWrite(event: { path: string; content: string }) {
+  // Check if the file is API-related
+  if (event.path.includes('api') || event.path.includes('endpoints') || event.path.endsWith('.api.ts')) {
+    console.log(`[API Integration] Detected changes in API-related file: ${event.path}`);
+    
+    // Could automatically update API documentation
+    // generateApiDocumentation(event.path, event.content);
+    
+    // Could validate API schema
+    // validateApiSchema(event.path, event.content);
+  }
+}
+
+/**
+ * Called when a new session starts
+ * - Can initialize API clients with proper authentication
+ * - Can check API availability and status
+ * - Can refresh API tokens or credentials
+ */
+export function onSessionStart(session: { id: string; startTime: number }) {
+  console.log(`[API Integration] New session started: ${session.id}`);
+  
+  // Could initialize API clients
+  // initializeApiClients();
+  
+  // Could check API availability
+  // checkApiAvailability();
+  
+  // Could refresh API tokens
+  // refreshApiTokens();
+}
+
+/**
+ * Called when a command is executed
+ * - Can handle API-specific commands
+ * - Can log API-related operations
+ * - Can provide API status information
+ */
+export function onCommand(command: { name: string; args: any[] }) {
+  if (command.name === 'api:status') {
+    console.log('[API Integration] Checking API status...');
+    // Return API status information
+    // return getApiStatus();
+  }
+  
+  if (command.name === 'api:test') {
+    console.log('[API Integration] Running API tests...');
+    // Run API tests
+    // return runApiTests(command.args);
+  }
+  
+  if (command.name === 'api:generate-client') {
+    console.log('[API Integration] Generating API client...');
+    // Generate API client code
+    // return generateApiClient(command.args);
+  }
+}
 /**
  * API Integration
  * Provides functionality for integrating with external APIs

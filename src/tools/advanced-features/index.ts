@@ -4,9 +4,159 @@ export function activate() {
     console.log("[TOOL] index activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+// Define a type for the global state to fix TypeScript errors
+declare global {
+  var versionControlState: any;
+}
+
+export function onFileWrite(event: any) {
+  console.log(`[Advanced Features] File write event detected: ${event.path}`);
+  
+  // Handle version control for file changes
+  try {
+    // Import version control functionality
+    const {
+      ChangeType,
+      recordChange,
+      createVersionControlState
+    } = require('./version-control.js');
+    
+    // Check if we have a global version control state
+    if (!globalThis.versionControlState) {
+      globalThis.versionControlState = createVersionControlState();
+    }
+    
+    // Record the file change in version control
+    if (event.content) {
+      globalThis.versionControlState = recordChange(globalThis.versionControlState, {
+        path: event.path,
+        type: event.oldContent ? ChangeType.MODIFY : ChangeType.ADD,
+        content: event.content,
+        oldContent: event.oldContent || null
+      });
+      
+      console.log(`[Advanced Features] Recorded change to ${event.path} in version control`);
+    }
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[Advanced Features] Error handling file write for version control: ${errorMessage}`);
+  }
+}
+
+export function onSessionStart(session: any) {
+  console.log(`[Advanced Features] New session started: ${session.id}`);
+  
+  // Initialize advanced features for the session
+  try {
+    // Create session state for advanced features
+    session.advancedFeatures = {
+      initialized: true,
+      timestamp: new Date().toISOString(),
+      versionControl: {
+        enabled: true,
+        autoSnapshot: true,
+        snapshotInterval: 10 // Create snapshot every 10 changes
+      },
+      i18n: {
+        currentLocale: 'en-US',
+        availableLocales: ['en-US', 'es-ES', 'fr-FR']
+      },
+      api: {
+        endpoints: []
+      }
+    };
+    
+    // Initialize version control if not already initialized
+    if (!globalThis.versionControlState) {
+      const { createVersionControlState } = require('./version-control.js');
+      globalThis.versionControlState = createVersionControlState();
+      
+      // Create initial snapshot
+      const { createSnapshot } = require('./version-control.js');
+      globalThis.versionControlState = createSnapshot(
+        globalThis.versionControlState,
+        'Initial Session Snapshot',
+        `Session ${session.id} started`,
+        'System',
+        ['auto', 'session-start']
+      );
+      
+      console.log(`[Advanced Features] Initialized version control with initial snapshot`);
+    }
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[Advanced Features] Error initializing session: ${errorMessage}`);
+  }
+}
+
+export function onCommand(command: any) {
+  console.log(`[Advanced Features] Command executed: ${command.name}`);
+  
+  // Handle advanced feature commands
+  try {
+    switch (command.name) {
+      case 'create-snapshot':
+        // Create a version control snapshot
+        const { createSnapshot } = require('./version-control.js');
+        if (globalThis.versionControlState) {
+          globalThis.versionControlState = createSnapshot(
+            globalThis.versionControlState,
+            command.snapshotName || `Snapshot ${new Date().toLocaleString()}`,
+            command.description || 'Manual snapshot',
+            command.author || 'User',
+            command.tags || ['manual']
+          );
+          console.log(`[Advanced Features] Created snapshot: ${command.snapshotName}`);
+        }
+        break;
+        
+      case 'generate-content':
+        // Generate content using content generator
+        const { ContentType, generateLegalContent, generateSeoContent } = require('./content-generator.js');
+        let content = '';
+        
+        if (command.contentType === 'legal') {
+          content = generateLegalContent({
+            type: ContentType.LEGAL,
+            subtype: command.subtype,
+            ...command.options
+          });
+        } else if (command.contentType === 'seo') {
+          content = generateSeoContent({
+            type: ContentType.SEO,
+            subtype: command.subtype,
+            ...command.options
+          });
+        }
+        
+        console.log(`[Advanced Features] Generated ${command.contentType} content`);
+        return { content };
+        
+      case 'translate':
+        // Translate text using internationalization
+        const { createI18nService } = require('./internationalization.js');
+        const i18nService = createI18nService({
+          defaultLocale: command.locale || 'en-US',
+          fallbackLocale: 'en-US'
+        });
+        
+        const translation = i18nService.translate(command.key, {
+          locale: command.locale,
+          namespace: command.namespace,
+          defaultValue: command.defaultValue
+        });
+        
+        console.log(`[Advanced Features] Translated text to ${command.locale}`);
+        return { translation };
+        
+      default:
+        console.log(`[Advanced Features] Unknown command: ${command.name}`);
+    }
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[Advanced Features] Error executing command: ${errorMessage}`);
+  }
+}
 /**
  * Advanced Features Module
  * 

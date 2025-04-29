@@ -1,170 +1,73 @@
 # OptimusCode MCP
 
-A powerful Model Context Protocol (MCP) server for Claude Desktop that transforms it into a fully automated app generator.
+A powerful app generator that transforms Claude Desktop into a fully automated independent application builder.
 
 ## Overview
 
-OptimusCode MCP enhances Claude Desktop with advanced capabilities for autonomous application development. It allows users to generate complete, production-ready applications from start to finish using natural language prompts, without requiring deep technical expertise.
-
-## Core Functionality
-
-OptimusCode MCP enables Claude Desktop to:
-
-- Generate entire applications based on user requirements
-- Handle the complete development lifecycle from planning to deployment
-- Create modular, maintainable code with proper architecture
-- Implement best practices and design patterns automatically
-- Ensure type safety with TypeScript integration
-- Build responsive and accessible UIs using component-based architecture
+OptimusCode MCP (Model Context Protocol) extends Claude Desktop capabilities to automatically generate complete applications from start to finish based solely on user requests. This system leverages Claude's AI capabilities and integrates them with a comprehensive set of development tools for code generation, project organization, and build automation.
 
 ## Key Features
 
-### App Generation
-- **End-to-End Development**: Generate complete applications from a single prompt
-- **Multiple Framework Support**: Create apps using React, Next.js, Vue, Angular, and more
-- **Database Integration**: Connect to various databases including MongoDB, PostgreSQL, MySQL
-- **API Development**: Build RESTful or GraphQL APIs with proper authentication and validation
+- **Complete App Generation**: Build entire applications from natural language requests
+- **Automated Code Management**: Automatic code splitting, fixing, and optimization
+- **Project Planning and Organization**: Structured approach to application development
+- **Comprehensive Tool Integration**: 60+ specialized tools for development
+- **Claude Desktop Integration**: Seamless interaction with Claude's AI capabilities
 
-### Code Quality
-- **TypeScript Enforcement**: Generate properly typed code with full TypeScript support
-- **Component Architecture**: Create modular, reusable components with clean separation of concerns
-- **File Size Management**: Maintain files under 500 lines for better maintainability
-- **Error Prevention**: Proactively identify and fix potential issues during generation
+## System Architecture
 
-### Project Management
-- **Context Management**: Track context size and create new chats when needed
-- **Persistence**: Save and restore session state across chats
-- **Project Planning**: Generate detailed project plans with phases and tasks
-- **Version Control**: Track changes to files for comprehensive history
+The system is organized into several key modules:
 
-### Development Tools
-- **Code Analysis**: Identify and resolve errors, complexity issues, and performance bottlenecks
-- **Documentation Generation**: Create comprehensive documentation for projects
-- **Testing Framework**: Generate tests for ensuring application reliability
-- **Dependency Management**: Add, remove, and update project dependencies
+- **Core Engine** (`src/index.ts`): Central processing and coordination
+- **Tool Management** (`src/tools/`): Specialized tools for various development tasks
+- **Automated Utilities** (`src/tools/automated/`): Code analysis and optimization
+- **UI Generation** (`src/tools/ui-generation/`): Component and interface creation
+- **Project Planning** (`src/tools/project-planning/`): Application structure and organization
+- **Context Management** (`src/tools/context-management/`): State and context tracking
 
-## Usage Instructions
+## Tool Categories
 
-### Activating the MCP
+OptimusCode MCP includes tools for:
 
-To activate OptimusCode MCP, use the following command in your Claude Desktop chat:
+- Code analysis, formatting, and fixing
+- Project planning and organization
+- UI component generation
+- Documentation creation
+- Database schema generation
+- API integration and service building
+- Testing and quality assurance
+- Deployment and infrastructure
 
-```
-Claude, unleash optimuscode mcp power
-```
+## Getting Started
 
-This activates all MCP tools with their default settings.
+1. Ensure Claude Desktop is installed
+2. Configure API keys in the `.env` file
+3. Run the activation script: `node unleash-power.js`
+4. Start the MCP server: `npm run start`
 
-### Tool Categories
+## Configuration
 
-OptimusCode MCP provides several categories of tools:
+Configuration is managed through:
 
-1. **Core Development Tools**: Generate components, pages, and full projects
-2. **Project Management Tools**: Plan, track, and visualize project progress
-3. **Code Quality Tools**: Analyze and improve code quality
-4. **Automated Tools**: Functionality that runs in the background
+- `.env`: API keys and server settings
+- `ocioconfig.json`: Tool configuration and preferences
+- `tools-config.json`: Tool activation settings
 
-The automated tools remain active once enabled, while other tools must be explicitly called.
+## Development Guidelines
 
-### Configuration
+- Files should not exceed 500 lines
+- Components should be small and manageable
+- Use Lucide React icons instead of emojis
+- Always use environment variables for API keys
+- TypeScript is preferred for type safety
 
-You can configure certain tools with custom settings:
+## Command-Line Tools
 
-- **ToneAdjuster**: Set the tone of responses (formal, casual, technical, friendly, professional)
-- **AutoContinue**: Enable automatic continuation of sessions based on context
-
-### Example Workflow
-
-1. **Project Specification**:
-   ```
-   Create a React e-commerce app with product listings, shopping cart, and checkout.
-   ```
-
-2. **Project Planning**:
-   OptimusCode MCP will generate a detailed plan with project structure and components.
-
-3. **App Generation**:
-   The MCP will create the complete application based on the plan, including:
-   - Project structure
-   - Component hierarchy
-   - API integration
-   - State management
-   - Styling
-
-4. **Review and Refinement**:
-   OptimusCode MCP can make targeted adjustments based on feedback.
-
-## Development Principles
-
-OptimusCode MCP follows these core principles:
-
-- **Modularity**: Build apps with small, manageable components
-- **Maintainability**: Generate clean, well-structured code
-- **Efficiency**: Create only what's needed, without unnecessary files or code
-- **Type Safety**: Ensure proper TypeScript usage throughout
-- **Best Practices**: Follow industry standards and design patterns
-
-## Technical Requirements
-
-- Node.js 18 or higher
-- Claude Desktop application
-- Windows, macOS, or Linux operating system
-
-## Installation
-
-1. Clone the repository:
-   ```
-   git clone https://github.com/yourusername/optimuscode-mcp.git
-   cd optimuscode-mcp
-   ```
-
-2. Install dependencies:
-   ```
-   npm install
-   ```
-
-3. Build the project:
-   ```
-   npm run build
-   ```
-
-4. Configure Claude Desktop:
-   - Edit the Claude configuration file at:
-     - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-     - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-     - Linux: `~/.config/Claude/claude_desktop_config.json`
-   - Add the following entry:
-     ```json
-     "optimuscode": {
-       "command": "C:/path/to/your/optimuscode-mcp/run-optimuscode-v2.bat",
-       "args": []
-     }
-     ```
-   - Restart Claude Desktop
-
-## Project Structure
-
-```
-optimuscode-mcp/
-├── src/                       # Source code
-│   ├── context-management/    # Context tracking and chat transition
-│   ├── persistence/           # Session state management
-│   ├── project-planning/      # Project planning functionality
-│   ├── code-generation/       # Code generation tools
-│   ├── ui-generation/         # UI component generation
-│   ├── version-control/       # Change tracking
-│   ├── custom-stdio.ts        # Custom transport implementation
-│   └── index.ts               # Main entry point
-├── dist/                      # Compiled JavaScript files
-├── run-optimuscode-v2.bat     # Batch file to run the server
-├── package.json               # Project configuration
-└── tsconfig.json              # TypeScript configuration
-```
+- `npm run build`: Build the project
+- `npm run start`: Start the MCP server
+- `npm run setup`: Install dependencies and setup
+- `node unleash-power.js`: Activate all tools
 
 ## License
 
-MIT
-
-## Acknowledgements
-
-This project builds upon the Desktop Commander MCP by Eduard Ruzga, enhancing it with autonomous app generation capabilities.
+MIT License - See LICENSE file for details.

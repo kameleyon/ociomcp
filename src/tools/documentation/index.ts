@@ -4,9 +4,269 @@ export function activate() {
     console.log("[TOOL] index activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+// Define global state types
+declare global {
+  var documentationFiles: Record<string, {
+    path: string;
+    lastUpdated: string;
+    type: string;
+  }>;
+  var pendingDocUpdates: Array<{
+    path: string;
+    reason: string;
+    timestamp: string;
+  }>;
+}
+
+export function onFileWrite(event: any) {
+  console.log(`[Documentation] File write event detected: ${event.path}`);
+  
+  try {
+    // Track documentation files
+    if (!globalThis.documentationFiles) {
+      globalThis.documentationFiles = {};
+    }
+    
+    // Track pending documentation updates
+    if (!globalThis.pendingDocUpdates) {
+      globalThis.pendingDocUpdates = [];
+    }
+    
+    // Check if the file is a documentation file
+    const extension = event.path.split('.').pop()?.toLowerCase();
+    if (extension === 'md' ||
+        extension === 'mdx' ||
+        extension === 'html' ||
+        extension === 'txt' ||
+        event.path.includes('docs') ||
+        event.path.includes('documentation')) {
+      
+      // Update documentation file tracking
+      globalThis.documentationFiles[event.path] = {
+        path: event.path,
+        lastUpdated: new Date().toISOString(),
+        type: extension || 'unknown'
+      };
+      
+      console.log(`[Documentation] Documentation file updated: ${event.path}`);
+    }
+    
+    // Check if the file is a source code file that might need documentation updates
+    if (extension === 'js' ||
+        extension === 'ts' ||
+        extension === 'jsx' ||
+        extension === 'tsx' ||
+        extension === 'py' ||
+        extension === 'java' ||
+        extension === 'c' ||
+        extension === 'cpp') {
+      
+      // Add to pending documentation updates
+      globalThis.pendingDocUpdates.push({
+        path: event.path,
+        reason: 'Source code change',
+        timestamp: new Date().toISOString()
+      });
+      
+      console.log(`[Documentation] Source code change detected, documentation update may be needed: ${event.path}`);
+      
+      // If we have accumulated several pending updates, suggest updating documentation
+      if (globalThis.pendingDocUpdates.length >= 5) {
+        console.log(`[Documentation] Multiple source code changes detected. Consider updating documentation.`);
+      }
+    }
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[Documentation] Error handling file write: ${errorMessage}`);
+  }
+}
+
+export function onSessionStart(session: any) {
+  console.log(`[Documentation] New session started: ${session.id}`);
+  
+  try {
+    // Initialize documentation state for the session
+    session.documentationState = {
+      initialized: true,
+      timestamp: new Date().toISOString(),
+      documentationFiles: {},
+      pendingUpdates: [],
+      apiDocs: {
+        lastGenerated: null,
+        sourcePaths: []
+      },
+      cmsConnections: {}
+    };
+    
+    // Initialize global state if not already initialized
+    if (!globalThis.documentationFiles) globalThis.documentationFiles = {};
+    if (!globalThis.pendingDocUpdates) globalThis.pendingDocUpdates = [];
+    
+    // Scan project for documentation files
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const projectRoot = process.cwd();
+      
+      // Function to scan directory recursively
+      const scanDirectory = (dir: string, fileTypes: string[]) => {
+        const results: string[] = [];
+        const files = fs.readdirSync(dir);
+        
+        for (const file of files) {
+          const filePath = path.join(dir, file);
+          const stat = fs.statSync(filePath);
+          
+          if (stat.isDirectory()) {
+            // Skip node_modules and other common excluded directories
+            if (file === 'node_modules' || file === '.git' || file === 'dist' || file === 'build') {
+              continue;
+            }
+            // Recursively scan subdirectories
+            results.push(...scanDirectory(filePath, fileTypes));
+          } else {
+            // Check if file matches any of the target extensions
+            const ext = path.extname(file).toLowerCase().substring(1);
+            if (fileTypes.includes(ext)) {
+              results.push(filePath);
+            }
+          }
+        }
+        
+        return results;
+      };
+      
+      // Scan for documentation files
+      const docFiles = scanDirectory(projectRoot, ['md', 'mdx', 'html', 'txt']);
+      console.log(`[Documentation] Found ${docFiles.length} documentation files`);
+      
+      // Store documentation files in session state and global tracking
+      docFiles.forEach(file => {
+        const extension = path.extname(file).toLowerCase().substring(1);
+        
+        session.documentationState.documentationFiles[file] = {
+          path: file,
+          lastUpdated: new Date(fs.statSync(file).mtime).toISOString(),
+          type: extension
+        };
+        
+        globalThis.documentationFiles[file] = {
+          path: file,
+          lastUpdated: new Date(fs.statSync(file).mtime).toISOString(),
+          type: extension
+        };
+      });
+      
+      // Check for API documentation needs
+      const sourceFiles = scanDirectory(projectRoot, ['js', 'ts', 'jsx', 'tsx']);
+      const apiSourceDirs = new Set<string>();
+      
+      sourceFiles.forEach(file => {
+        // Check if file contains API-related code
+        const content = fs.readFileSync(file, 'utf8');
+        if (content.includes('export') &&
+            (content.includes('function') || content.includes('class')) &&
+            (content.includes('@param') || content.includes('@returns') || content.includes('/**'))) {
+          
+          // Add directory to potential API source directories
+          apiSourceDirs.add(path.dirname(file));
+        }
+      });
+      
+      // Store API source directories in session state
+      session.documentationState.apiDocs.sourcePaths = Array.from(apiSourceDirs);
+      
+      console.log(`[Documentation] Identified ${apiSourceDirs.size} potential API source directories`);
+    } catch (scanError: unknown) {
+      const errorMessage = scanError instanceof Error ? scanError.message : String(scanError);
+      console.error(`[Documentation] Error scanning project files: ${errorMessage}`);
+    }
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[Documentation] Error initializing session: ${errorMessage}`);
+  }
+}
+
+export function onCommand(command: any) {
+  console.log(`[Documentation] Command executed: ${command.name}`);
+  
+  try {
+    // Handle documentation-related commands
+    switch (command.name) {
+      case 'generate_api_docs':
+        // Generate API documentation
+        return handleGenerateAPIDocs({
+          sourcePath: command.sourcePath,
+          outputPath: command.outputPath,
+          format: command.format || 'markdown',
+          includePrivate: command.includePrivate || false,
+          title: command.title,
+          description: command.description
+        });
+        
+      case 'update_docs':
+        // Update documentation
+        return handleUpdateDocs({
+          docsPath: command.docsPath,
+          sourcePath: command.sourcePath,
+          patterns: command.patterns,
+          updateStrategy: command.updateStrategy || 'merge'
+        });
+        
+      case 'connect_cms':
+        // Connect to CMS
+        return handleConnectCMS({
+          platform: command.platform,
+          apiKey: command.apiKey,
+          apiUrl: command.apiUrl,
+          contentType: command.contentType,
+          operation: command.operation,
+          data: command.data,
+          query: command.query,
+          id: command.id
+        });
+        
+      case 'get_pending_doc_updates':
+        // Get pending documentation updates
+        if (globalThis.pendingDocUpdates) {
+          return {
+            content: [{
+              type: "text",
+              text: `Pending documentation updates:\n\n${JSON.stringify(globalThis.pendingDocUpdates, null, 2)}`
+            }]
+          };
+        } else {
+          return {
+            content: [{ type: "text", text: "No pending documentation updates" }]
+          };
+        }
+        
+      case 'clear_pending_doc_updates':
+        // Clear pending documentation updates
+        if (globalThis.pendingDocUpdates) {
+          const count = globalThis.pendingDocUpdates.length;
+          globalThis.pendingDocUpdates = [];
+          return {
+            content: [{ type: "text", text: `Cleared ${count} pending documentation updates` }]
+          };
+        } else {
+          return {
+            content: [{ type: "text", text: "No pending documentation updates to clear" }]
+          };
+        }
+        
+      default:
+        console.log(`[Documentation] Unknown command: ${command.name}`);
+    }
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[Documentation] Error executing command: ${errorMessage}`);
+    return {
+      content: [{ type: "text", text: `Error executing documentation command: ${errorMessage}` }],
+      isError: true
+    };
+  }
+}
 import { z } from "zod";
 import * as fs from "fs/promises";
 import * as path from "path";

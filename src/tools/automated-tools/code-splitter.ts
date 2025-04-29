@@ -4,12 +4,93 @@ export function activate() {
     console.log("[TOOL] code-splitter activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Called when a file is written
+ * - Can automatically analyze large files for potential splitting
+ * - Can track file size growth over time
+ * - Can suggest splitting strategies for files that exceed size thresholds
+ */
+export function onFileWrite(event: { path: string; content: string }) {
+  // Check if the file is a supported code file
+  const extension = path.extname(event.path).toLowerCase();
+  if (DEFAULT_EXTENSIONS.includes(extension)) {
+    // Count the number of lines
+    const lines = event.content.split('\n');
+    const lineCount = lines.length;
+    
+    // Check if the file exceeds the maximum number of lines
+    if (lineCount > DEFAULT_MAX_LINES) {
+      console.log(`[Code Splitter] Detected large file: ${event.path} (${lineCount} lines)`);
+      
+      // Could automatically analyze the file for splitting points
+      // const splittingPoints = analyzeSplittingPoints(event.content, event.path);
+      // console.log(`[Code Splitter] Found ${splittingPoints.length} potential splitting points`);
+    }
+  }
+}
+
+/**
+ * Called when a new session starts
+ * - Can initialize code splitting settings
+ * - Can prepare the environment for code splitting operations
+ * - Can scan the project for large files
+ */
+export function onSessionStart(session: { id: string; startTime: number }) {
+  console.log(`[Code Splitter] New session started: ${session.id}`);
+  
+  // Could scan the project for large files
+  // scanProjectForLargeFiles().then(largeFiles => {
+  //   console.log(`[Code Splitter] Found ${largeFiles.length} large files in the project`);
+  // });
+}
+
+/**
+ * Called when a command is executed
+ * - Can handle code-splitter specific commands
+ * - Can provide file analysis information
+ * - Can perform code splitting operations
+ */
+export function onCommand(command: { name: string; args: any[] }) {
+  if (command.name === 'code-splitter:analyze') {
+    console.log('[Code Splitter] Analyzing file...');
+    // Analyze file for splitting points
+    if (command.args && command.args.length > 0) {
+      return handleAnalyzeFile({ path: command.args[0] });
+    }
+  }
+  
+  if (command.name === 'code-splitter:split') {
+    console.log('[Code Splitter] Splitting file...');
+    // Split file based on strategy
+    if (command.args && command.args.length > 0) {
+      return handleSplitFile({
+        path: command.args[0],
+        strategy: command.args[1] || 'auto'
+      });
+    }
+  }
+  
+  if (command.name === 'code-splitter:analyze-project') {
+    console.log('[Code Splitter] Analyzing project...');
+    // Analyze project for large files
+    if (command.args && command.args.length > 0) {
+      return handleAnalyzeProject({ directory: command.args[0] });
+    }
+  }
+}
 import { z } from 'zod';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { createReadStream } from 'fs';
+import { createInterface } from 'readline';
+
+// Configuration for resource management
+const CONFIG = {
+  CHUNK_SIZE: 1024 * 1024, // 1MB chunks for file processing
+  MAX_CONCURRENT_FILES: 5, // Maximum number of files to process concurrently
+  OPERATION_TIMEOUT: 60000, // 60 seconds timeout for operations
+  MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB maximum file size
+};
 
 // Define schemas for CodeSplitter tool
 export const AnalyzeFileSchema = z.object({
@@ -34,7 +115,34 @@ export const AnalyzeProjectSchema = z.object({
 const DEFAULT_MAX_LINES = 500;
 
 // File extensions to analyze by default
-const DEFAULT_EXTENSIONS = ['.js', '.jsx', '.ts', '.tsx', '.vue', '.svelte', '.css', '.scss', '.less', '.html'];
+const DEFAULT_EXTENSIONS = [
+  // JavaScript/TypeScript
+  '.js', '.jsx', '.ts', '.tsx',
+  // Web frameworks
+  '.vue', '.svelte',
+  // Styling
+  '.css', '.scss', '.less',
+  // Markup/Data
+  '.html', '.json',
+  // Python
+  '.py', '.pyx', '.pyi',
+  // C/C++
+  '.c', '.cpp', '.cc', '.h', '.hpp',
+  // C#
+  '.cs',
+  // Java
+  '.java',
+  // Go
+  '.go',
+  // Ruby
+  '.rb',
+  // PHP
+  '.php',
+  // Swift
+  '.swift',
+  // Rust
+  '.rs'
+];
 
 /**
  * Analyzes a file to determine if it exceeds the maximum number of lines
@@ -180,37 +288,79 @@ export async function handleAnalyzeProject(args: any) {
     const extensions = args.extensions || DEFAULT_EXTENSIONS;
     
     try {
-      // Get all files in the directory
+      // Get all files in the directory with limits
       const files = await getFilesInDirectory(directory, recursive, extensions);
       
-      // Analyze each file
-      const results = await Promise.all(
-        files.map(async (filePath) => {
-          try {
-            // Read the file
-            const content = await fs.readFile(filePath, 'utf8');
-            
-            // Count the number of lines
-            const lines = content.split('\n');
-            const lineCount = lines.length;
-            
-            // Check if the file exceeds the maximum number of lines
-            const exceedsMaxLines = lineCount > maxLines;
-            
-            return {
-              path: filePath,
-              lineCount,
-              exceedsMaxLines,
-            };
-          } catch (error) {
-            return {
-              path: filePath,
-              error: String(error),
-              message: `Failed to analyze file: ${filePath}`
-            };
-          }
-        })
-      );
+      // Process files in batches to limit concurrency
+      const results = [];
+      const batchSize = CONFIG.MAX_CONCURRENT_FILES;
+      
+      for (let i = 0; i < files.length; i += batchSize) {
+        const batch = files.slice(i, i + batchSize);
+        
+        // Add a small delay between batches to prevent resource exhaustion
+        if (i > 0) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        // Set a timeout for the batch operation
+        const batchPromise = Promise.all(
+          batch.map(async (filePath) => {
+            try {
+              // Check file size before processing
+              const stats = await fs.stat(filePath);
+              if (stats.size > CONFIG.MAX_FILE_SIZE) {
+                return {
+                  path: filePath,
+                  error: 'File too large',
+                  message: `Skipped file: ${filePath} (${Math.round(stats.size / 1024 / 1024)}MB exceeds limit)`
+                };
+              }
+              
+              // Read the file with a timeout
+              const content = await readFileWithTimeout(filePath, CONFIG.OPERATION_TIMEOUT);
+              
+              // Count the number of lines
+              const lines = content.split('\n');
+              const lineCount = lines.length;
+              
+              // Check if the file exceeds the maximum number of lines
+              const exceedsMaxLines = lineCount > maxLines;
+              
+              return {
+                path: filePath,
+                lineCount,
+                exceedsMaxLines,
+              };
+            } catch (error) {
+              return {
+                path: filePath,
+                error: String(error),
+                message: `Failed to analyze file: ${filePath}`
+              };
+            }
+          })
+        );
+        
+        // Race the batch operation against a timeout
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Batch operation timed out')), CONFIG.OPERATION_TIMEOUT);
+        });
+        
+        try {
+          const batchResults = await Promise.race([batchPromise, timeoutPromise]) as Array<{
+            path: string;
+            lineCount?: number;
+            exceedsMaxLines?: boolean;
+            error?: string;
+            message?: string;
+          }>;
+          results.push(...batchResults);
+        } catch (error) {
+          console.error(`Error processing batch: ${error}`);
+          // Continue with the next batch
+        }
+      }
       
       // Filter results to only include files that exceed the maximum number of lines
       const exceedingFiles = results.filter((result) => result.exceedsMaxLines);
@@ -458,6 +608,190 @@ function analyzeSplittingPoints(content: string, filePath: string): any[] {
         });
       }
     });
+  } else if (['.py', '.pyx', '.pyi'].includes(extension)) {
+    // Python file
+    
+    // Look for class definitions
+    const classMatches = content.match(/class\s+([A-Za-z][A-Za-z0-9_]*)\s*(?:\([^)]*\))?:/g) || [];
+    
+    classMatches.forEach((match) => {
+      const lineNumber = getLineNumber(content, match);
+      splittingPoints.push({
+        type: 'class',
+        name: match.match(/class\s+([A-Za-z][A-Za-z0-9_]*)/)?.[1] || 'Unknown',
+        lineNumber,
+        suggestion: `Consider moving this Python class to a separate file.`
+      });
+    });
+    
+    // Look for function definitions
+    const functionMatches = content.match(/def\s+([a-zA-Z][A-Za-z0-9_]*)\s*\(/g) || [];
+    
+    functionMatches.forEach((match) => {
+      const lineNumber = getLineNumber(content, match);
+      splittingPoints.push({
+        type: 'function',
+        name: match.match(/def\s+([a-zA-Z][A-Za-z0-9_]*)/)?.[1] || 'Unknown',
+        lineNumber,
+        suggestion: `Consider moving this Python function to a utility file.`
+      });
+    });
+  } else if (['.rb'].includes(extension)) {
+    // Ruby file
+    
+    // Look for class definitions
+    const classMatches = content.match(/class\s+([A-Za-z][A-Za-z0-9_]*)/g) || [];
+    
+    classMatches.forEach((match) => {
+      const lineNumber = getLineNumber(content, match);
+      splittingPoints.push({
+        type: 'class',
+        name: match.match(/class\s+([A-Za-z][A-Za-z0-9_]*)/)?.[1] || 'Unknown',
+        lineNumber,
+        suggestion: `Consider moving this Ruby class to a separate file.`
+      });
+    });
+    
+    // Look for method definitions
+    const methodMatches = content.match(/def\s+([a-zA-Z][A-Za-z0-9_?!]*)/g) || [];
+    
+    methodMatches.forEach((match) => {
+      const lineNumber = getLineNumber(content, match);
+      splittingPoints.push({
+        type: 'method',
+        name: match.match(/def\s+([a-zA-Z][A-Za-z0-9_?!]*)/)?.[1] || 'Unknown',
+        lineNumber,
+        suggestion: `Consider moving this Ruby method to a utility file.`
+      });
+    });
+  } else if (['.php'].includes(extension)) {
+    // PHP file
+    
+    // Look for class definitions
+    const classMatches = content.match(/class\s+([A-Za-z][A-Za-z0-9_]*)/g) || [];
+    
+    classMatches.forEach((match) => {
+      const lineNumber = getLineNumber(content, match);
+      splittingPoints.push({
+        type: 'class',
+        name: match.match(/class\s+([A-Za-z][A-Za-z0-9_]*)/)?.[1] || 'Unknown',
+        lineNumber,
+        suggestion: `Consider moving this PHP class to a separate file.`
+      });
+    });
+    
+    // Look for function definitions
+    const functionMatches = content.match(/function\s+([a-zA-Z][A-Za-z0-9_]*)\s*\(/g) || [];
+    
+    functionMatches.forEach((match) => {
+      const lineNumber = getLineNumber(content, match);
+      splittingPoints.push({
+        type: 'function',
+        name: match.match(/function\s+([a-zA-Z][A-Za-z0-9_]*)/)?.[1] || 'Unknown',
+        lineNumber,
+        suggestion: `Consider moving this PHP function to a utility file.`
+      });
+    });
+  } else if (['.java', '.cs', '.cpp', '.cc', '.swift'].includes(extension)) {
+    // Java/C#/C++/Swift file
+    
+    // Look for class definitions
+    const classMatches = content.match(/(?:public|private|protected)?\s*class\s+([A-Za-z][A-Za-z0-9_]*)/g) || [];
+    
+    classMatches.forEach((match) => {
+      const lineNumber = getLineNumber(content, match);
+      splittingPoints.push({
+        type: 'class',
+        name: match.match(/class\s+([A-Za-z][A-Za-z0-9_]*)/)?.[1] || 'Unknown',
+        lineNumber,
+        suggestion: `Consider moving this class to a separate file.`
+      });
+    });
+    
+    // Look for method definitions
+    const methodMatches = content.match(/(?:public|private|protected|static|final)?\s*(?:[A-Za-z][A-Za-z0-9_<>]*)\s+([a-zA-Z][A-Za-z0-9_]*)\s*\([^)]*\)\s*(?:throws\s+[A-Za-z][A-Za-z0-9_,\s]*)?/g) || [];
+    
+    methodMatches.forEach((match) => {
+      const lineNumber = getLineNumber(content, match);
+      const methodName = match.match(/\s+([a-zA-Z][A-Za-z0-9_]*)\s*\(/)?.[1];
+      if (methodName && !['if', 'for', 'while', 'switch', 'catch'].includes(methodName)) {
+        splittingPoints.push({
+          type: 'method',
+          name: methodName,
+          lineNumber,
+          suggestion: `Consider moving this method to a utility class.`
+        });
+      }
+    });
+  } else if (['.go'].includes(extension)) {
+    // Go file
+    
+    // Look for function definitions
+    const functionMatches = content.match(/func\s+([A-Z][A-Za-z0-9_]*)\s*\(/g) || [];
+    
+    functionMatches.forEach((match) => {
+      const lineNumber = getLineNumber(content, match);
+      splittingPoints.push({
+        type: 'function',
+        name: match.match(/func\s+([A-Za-z0-9_]*)/)?.[1] || 'Unknown',
+        lineNumber,
+        suggestion: `Consider moving this Go function to a utility file.`
+      });
+    });
+    
+    // Look for struct definitions
+    const structMatches = content.match(/type\s+([A-Z][A-Za-z0-9_]*)\s+struct/g) || [];
+    
+    structMatches.forEach((match) => {
+      const lineNumber = getLineNumber(content, match);
+      splittingPoints.push({
+        type: 'struct',
+        name: match.match(/type\s+([A-Za-z0-9_]*)/)?.[1] || 'Unknown',
+        lineNumber,
+        suggestion: `Consider moving this Go struct to a separate file.`
+      });
+    });
+  } else if (['.rs'].includes(extension)) {
+    // Rust file
+    
+    // Look for function definitions
+    const functionMatches = content.match(/fn\s+([a-zA-Z][A-Za-z0-9_]*)\s*(?:<[^>]*>)?\s*\(/g) || [];
+    
+    functionMatches.forEach((match) => {
+      const lineNumber = getLineNumber(content, match);
+      splittingPoints.push({
+        type: 'function',
+        name: match.match(/fn\s+([a-zA-Z][A-Za-z0-9_]*)/)?.[1] || 'Unknown',
+        lineNumber,
+        suggestion: `Consider moving this Rust function to a utility file.`
+      });
+    });
+    
+    // Look for struct definitions
+    const structMatches = content.match(/struct\s+([A-Za-z][A-Za-z0-9_]*)/g) || [];
+    
+    structMatches.forEach((match) => {
+      const lineNumber = getLineNumber(content, match);
+      splittingPoints.push({
+        type: 'struct',
+        name: match.match(/struct\s+([A-Za-z][A-Za-z0-9_]*)/)?.[1] || 'Unknown',
+        lineNumber,
+        suggestion: `Consider moving this Rust struct to a separate file.`
+      });
+    });
+    
+    // Look for impl blocks
+    const implMatches = content.match(/impl(?:<[^>]*>)?\s+([A-Za-z][A-Za-z0-9_]*)/g) || [];
+    
+    implMatches.forEach((match) => {
+      const lineNumber = getLineNumber(content, match);
+      splittingPoints.push({
+        type: 'impl',
+        name: match.match(/impl(?:<[^>]*>)?\s+([A-Za-z][A-Za-z0-9_]*)/)?.[1] || 'Unknown',
+        lineNumber,
+        suggestion: `Consider moving this Rust implementation to a separate file.`
+      });
+    });
   }
   
   return splittingPoints;
@@ -469,13 +803,20 @@ function analyzeSplittingPoints(content: string, filePath: string): any[] {
 function determineSplittingStrategy(filePath: string): string {
   const extension = path.extname(filePath).toLowerCase();
   
-  if (['.jsx', '.tsx'].includes(extension)) {
+  // Component-based languages
+  if (['.jsx', '.tsx', '.vue', '.svelte'].includes(extension)) {
     return 'components';
-  } else if (['.js', '.ts'].includes(extension)) {
+  }
+  // Function-based languages
+  else if (['.js', '.ts', '.py', '.rb', '.php', '.go', '.rs'].includes(extension)) {
     return 'functions';
-  } else if (['.vue', '.svelte'].includes(extension)) {
-    return 'components';
-  } else {
+  }
+  // Class-based languages
+  else if (['.java', '.cs', '.cpp', '.cc', '.swift'].includes(extension)) {
+    return 'classes';
+  }
+  // Default to functions for other languages
+  else {
     return 'functions';
   }
 }
@@ -704,16 +1045,28 @@ function getLineNumber(content: string, substring: string): number {
  */
 async function getFilesInDirectory(directory: string, recursive: boolean, extensions: string[]): Promise<string[]> {
   const files: string[] = [];
+  const maxFilesToProcess = 1000; // Safety limit
   
   try {
     const entries = await fs.readdir(directory, { withFileTypes: true });
     
     for (const entry of entries) {
+      // Check if we've reached the file limit
+      if (files.length >= maxFilesToProcess) {
+        console.warn(`Reached maximum file limit (${maxFilesToProcess}). Some files will not be processed.`);
+        break;
+      }
+      
       const entryPath = path.join(directory, entry.name);
       
       if (entry.isDirectory() && recursive) {
         const subFiles = await getFilesInDirectory(entryPath, recursive, extensions);
-        files.push(...subFiles);
+        
+        // Only add files up to the limit
+        const remainingSlots = maxFilesToProcess - files.length;
+        if (remainingSlots > 0) {
+          files.push(...subFiles.slice(0, remainingSlots));
+        }
       } else if (entry.isFile() && extensions.includes(path.extname(entry.name).toLowerCase())) {
         files.push(entryPath);
       }
@@ -723,5 +1076,51 @@ async function getFilesInDirectory(directory: string, recursive: boolean, extens
   }
   
   return files;
+}
+
+/**
+ * Read a file with a timeout to prevent hanging
+ */
+async function readFileWithTimeout(filePath: string, timeout: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`Reading file ${filePath} timed out after ${timeout}ms`));
+    }, timeout);
+    
+    fs.readFile(filePath, 'utf8')
+      .then(content => {
+        clearTimeout(timer);
+        resolve(content);
+      })
+      .catch(error => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
+}
+
+/**
+ * Process a file in chunks to reduce memory usage
+ */
+async function processFileInChunks(filePath: string): Promise<string[]> {
+  return new Promise((resolve, reject) => {
+    const lines: string[] = [];
+    const readInterface = createInterface({
+      input: createReadStream(filePath, { encoding: 'utf8' }),
+      crlfDelay: Infinity
+    });
+    
+    readInterface.on('line', (line) => {
+      lines.push(line);
+    });
+    
+    readInterface.on('close', () => {
+      resolve(lines);
+    });
+    
+    readInterface.on('error', (error) => {
+      reject(error);
+    });
+  });
 }
 
