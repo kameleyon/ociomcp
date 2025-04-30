@@ -4,9 +4,115 @@ export function activate() {
     console.log("[TOOL] handlers activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[Command Handlers] File written: ${filePath}`);
+  
+  // Check if the file is a command configuration file
+  if (filePath.endsWith('commands.json') ||
+      filePath.endsWith('command-config.json')) {
+    console.log(`[Command Handlers] Detected command configuration file: ${filePath}`);
+    return {
+      detected: true,
+      filePath,
+      type: 'command-config'
+    };
+  }
+  
+  return { detected: false };
+}
+
+export function onSessionStart(context: any) {
+  console.log('[Command Handlers] Session started');
+  
+  try {
+    // Log available commands
+    const commandCount = Object.keys(commandHandlers).length;
+    console.log(`[Command Handlers] ${commandCount} command handlers available`);
+    
+    // Group commands by category
+    const commandsByCategory = {
+      'CmdExecutor': ['execute_command', 'kill_command', 'list_active_processes'],
+      'OutputReader': ['start_monitoring', 'stop_monitoring', 'get_output', 'clear_output', 'list_monitored_processes'],
+      'SessionKiller': ['kill_session', 'kill_all_sessions', 'kill_sessions_by_command'],
+      'SessionLister': ['list_sessions'],
+      'ProcessLister': ['list_processes', 'process_tree'],
+      'ProcessKiller': ['kill_process', 'kill_processes_by_name', 'find_processes_by_name'],
+      'BrowserLauncher': ['open_in_browser', 'open_file_in_browser', 'open_local_server', 'find_available_port'],
+      'EnvManager': ['create_env_file', 'load_env_file', 'get_env_variable', 'set_env_variable', 'generate_secret', 'encrypt_value', 'decrypt_value']
+    };
+    
+    // Log command categories
+    for (const [category, commands] of Object.entries(commandsByCategory)) {
+      console.log(`[Command Handlers] ${category}: ${commands.length} commands`);
+    }
+    
+    return {
+      initialized: true,
+      commandCount,
+      categories: Object.keys(commandsByCategory).length
+    };
+  } catch (error) {
+    console.error(`[Command Handlers] Error during initialization: ${error}`);
+    return {
+      initialized: false,
+      error: String(error)
+    };
+  }
+}
+
+export function onCommand(command: string, args: any[]) {
+  console.log(`[Command Handlers] Command received: ${command}`);
+  
+  try {
+    // Check if the command exists
+    if (Object.prototype.hasOwnProperty.call(commandHandlers, command)) {
+      console.log(`[Command Handlers] Handling command: ${command}`);
+      
+      // Validate arguments against schema if available
+      if (Object.prototype.hasOwnProperty.call(commandSchemas, command)) {
+        try {
+          const schema = commandSchemas[command as keyof typeof commandSchemas];
+          const validatedArgs = args && args.length > 0 ? schema.parse(args[0]) : schema.parse({});
+          
+          console.log(`[Command Handlers] Arguments validated for command: ${command}`);
+          
+          // Return information about the command
+          return {
+            action: 'handle',
+            command,
+            valid: true,
+            handler: 'available'
+          };
+        } catch (validationError) {
+          console.error(`[Command Handlers] Validation error for command ${command}: ${validationError}`);
+          return {
+            action: 'handle',
+            command,
+            valid: false,
+            error: String(validationError)
+          };
+        }
+      }
+      
+      // If no schema, just return information about the command
+      return {
+        action: 'handle',
+        command,
+        handler: 'available'
+      };
+    }
+    
+    // Command not found
+    return {
+      action: 'handle',
+      command,
+      handler: 'not_found'
+    };
+  } catch (error) {
+    console.error(`[Command Handlers] Error processing command: ${error}`);
+    return { action: 'error', error: String(error) };
+  }
+}
 /**
  * Command Handlers
  * 

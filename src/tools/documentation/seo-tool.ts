@@ -4,9 +4,101 @@ export function activate() {
     console.log("[TOOL] seo-tool activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Handles file write events for SEO config or template files.
+ * If a relevant file changes, triggers regeneration of SEO metadata or robots/sitemap files.
+ */
+export async function onFileWrite(event?: { path: string; content?: string }) {
+  if (!event || !event.path) {
+    console.warn("[seo-tool] onFileWrite called without event data.");
+    return;
+  }
+  try {
+    if (event.path.endsWith('.seo-config.json')) {
+      console.log(`[seo-tool] Detected SEO config file change: ${event.path}`);
+      const config = JSON.parse(event.content || await (await import('fs/promises')).readFile(event.path, 'utf-8'));
+      generateSEOMetadata(config, config.outputFormat || 'html');
+      console.log(`[seo-tool] SEO metadata regenerated for ${event.path}`);
+    } else if (event.path.endsWith('robots.txt')) {
+      console.log(`[seo-tool] Detected robots.txt file change: ${event.path}`);
+      // Optionally re-validate or re-generate robots.txt
+    } else if (event.path.endsWith('sitemap.xml')) {
+      console.log(`[seo-tool] Detected sitemap.xml file change: ${event.path}`);
+      // Optionally re-validate or re-generate sitemap.xml
+    }
+  } catch (err) {
+    console.error(`[seo-tool] Error during file-triggered SEO operation:`, err);
+  }
+}
+
+/**
+ * Initializes or resets SEO tool state at the start of a session.
+ */
+export function onSessionStart(session?: { id?: string }) {
+  console.log(`[seo-tool] Session started${session && session.id ? `: ${session.id}` : ""}. Preparing SEO tool environment.`);
+  // Example: clear temp files, reset state, etc.
+  // ... actual reset logic
+}
+
+/**
+ * Handles SEO tool commands.
+ * Supports dynamic invocation of SEO metadata generation, analysis, or validation.
+ */
+export async function onCommand(command?: { name: string; args?: any }) {
+  if (!command || !command.name) {
+    console.warn("[seo-tool] onCommand called without command data.");
+    return;
+  }
+  switch (command.name) {
+    case "generate-seo-metadata":
+      console.log("[seo-tool] Generating SEO metadata...");
+      try {
+        await handleGenerateSEOMetadata(command.args);
+        console.log("[seo-tool] SEO metadata generation complete.");
+      } catch (err) {
+        console.error("[seo-tool] SEO metadata generation failed:", err);
+      }
+      break;
+    case "analyze-seo":
+      console.log("[seo-tool] Analyzing SEO...");
+      try {
+        await handleAnalyzeSEO(command.args);
+        console.log("[seo-tool] SEO analysis complete.");
+      } catch (err) {
+        console.error("[seo-tool] SEO analysis failed:", err);
+      }
+      break;
+    case "generate-robots-txt":
+      console.log("[seo-tool] Generating robots.txt...");
+      try {
+        await handleGenerateRobotsTxt(command.args);
+        console.log("[seo-tool] robots.txt generation complete.");
+      } catch (err) {
+        console.error("[seo-tool] robots.txt generation failed:", err);
+      }
+      break;
+    case "generate-sitemap":
+      console.log("[seo-tool] Generating sitemap.xml...");
+      try {
+        await handleGenerateSitemap(command.args);
+        console.log("[seo-tool] sitemap.xml generation complete.");
+      } catch (err) {
+        console.error("[seo-tool] sitemap.xml generation failed:", err);
+      }
+      break;
+    case "validate-seo-schema":
+      console.log("[seo-tool] Validating SEO metadata schema...");
+      try {
+        GenerateSEOMetadataSchema.parse(command.args);
+        console.log("[seo-tool] SEO metadata schema validation successful.");
+      } catch (err) {
+        console.error("[seo-tool] SEO metadata schema validation failed:", err);
+      }
+      break;
+    default:
+      console.warn(`[seo-tool] Unknown command: ${command.name}`);
+  }
+}
 /**
  * SEO Tool
  * 
@@ -695,4 +787,3 @@ export async function handleGenerateSitemap(args: any) {
     };
   }
 }
-

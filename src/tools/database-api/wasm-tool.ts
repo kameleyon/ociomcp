@@ -4,9 +4,89 @@ export function activate() {
     console.log("[TOOL] wasm-tool activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Handles file write events for WASM or related source files.
+ * If a relevant file changes, triggers re-analysis or optimization.
+ */
+export async function onFileWrite(event?: { path: string; content?: string }) {
+  if (!event || !event.path) {
+    console.warn("[wasm-tool] onFileWrite called without event data.");
+    return;
+  }
+  try {
+    if (event.path.endsWith('.wasm')) {
+      console.log(`[wasm-tool] Detected WASM file change: ${event.path}`);
+      await handleAnalyzeWasm({ wasmPath: event.path, detailed: true });
+      console.log(`[wasm-tool] WASM file analyzed: ${event.path}`);
+    } else if (/\.(c|cpp|rs|go|ts|js|wat|wasm)$/.test(event.path)) {
+      console.log(`[wasm-tool] Detected WASM-related source file change: ${event.path}`);
+      // Optionally trigger re-compilation or optimization
+      // ... actual logic could go here
+    }
+  } catch (err) {
+    console.error(`[wasm-tool] Error during file-triggered WASM operation:`, err);
+  }
+}
+
+/**
+ * Initializes or resets WASM tool state at the start of a session.
+ */
+export function onSessionStart(session?: { id?: string }) {
+  console.log(`[wasm-tool] Session started${session && session.id ? `: ${session.id}` : ""}. Preparing WASM tool environment.`);
+  // Example: clear temp files, reset state, etc.
+  // ... actual reset logic
+}
+
+/**
+ * Handles WASM tool commands.
+ * Supports dynamic invocation of WASM compilation, optimization, or analysis.
+ */
+export async function onCommand(command?: { name: string; args?: any }) {
+  if (!command || !command.name) {
+    console.warn("[wasm-tool] onCommand called without command data.");
+    return;
+  }
+  switch (command.name) {
+    case "compile-wasm":
+      console.log("[wasm-tool] Compiling source to WebAssembly...");
+      try {
+        await handleCompileWasm(command.args);
+        console.log("[wasm-tool] WASM compilation complete.");
+      } catch (err) {
+        console.error("[wasm-tool] WASM compilation failed:", err);
+      }
+      break;
+    case "optimize-wasm":
+      console.log("[wasm-tool] Optimizing WebAssembly module...");
+      try {
+        await handleOptimizeWasm(command.args);
+        console.log("[wasm-tool] WASM optimization complete.");
+      } catch (err) {
+        console.error("[wasm-tool] WASM optimization failed:", err);
+      }
+      break;
+    case "analyze-wasm":
+      console.log("[wasm-tool] Analyzing WebAssembly module...");
+      try {
+        await handleAnalyzeWasm(command.args);
+        console.log("[wasm-tool] WASM analysis complete.");
+      } catch (err) {
+        console.error("[wasm-tool] WASM analysis failed:", err);
+      }
+      break;
+    case "generate-bindings":
+      console.log("[wasm-tool] Generating WASM bindings...");
+      try {
+        await handleGenerateBindings(command.args);
+        console.log("[wasm-tool] WASM bindings generation complete.");
+      } catch (err) {
+        console.error("[wasm-tool] WASM bindings generation failed:", err);
+      }
+      break;
+    default:
+      console.warn(`[wasm-tool] Unknown command: ${command.name}`);
+  }
+}
 /**
  * WasmTool
  * 
@@ -82,7 +162,6 @@ export const CompileWasmSchema = z.object({
   target: z.enum(['wasm32', 'wasm64']).default('wasm32'),
   debug: z.boolean().default(false),
 });
-
 export const GenerateBindingsSchema = z.object({
   wasmPath: z.string(),
   language: z.enum(['typescript', 'javascript']),
@@ -91,7 +170,6 @@ export const GenerateBindingsSchema = z.object({
   mode: z.enum(['esm', 'commonjs']).default('esm'),
   generateTypes: z.boolean().default(true),
 });
-
 export const OptimizeWasmSchema = z.object({
   wasmPath: z.string(),
   outputPath: z.string().optional(),
@@ -99,11 +177,12 @@ export const OptimizeWasmSchema = z.object({
   features: z.array(z.string()).optional(),
   stripDebugInfo: z.boolean().default(true),
 });
-
 export const AnalyzeWasmSchema = z.object({
   wasmPath: z.string(),
   detailed: z.boolean().default(false),
 });
+
+// (Exports are handled at the point of definition above.)
 
 // Types for WASM operations
 interface CompileOptions {
@@ -798,4 +877,3 @@ function generateFrameworkIntegration(options: BindingsOptions, bindingsFileName
     }
     return content;
   }
-  

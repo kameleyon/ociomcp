@@ -4,9 +4,98 @@ export function activate() {
     console.log("[TOOL] version-manager activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Handles file write events for version-manager config or version files.
+ * Logs changes and optionally triggers version operations.
+ */
+export function onFileWrite(event?: { path: string; content?: string }) {
+  if (!event || !event.path) {
+    console.warn("[version-manager] onFileWrite called without event data.");
+    return;
+  }
+  if (event.path.endsWith('package.json') || event.path.endsWith('version.txt')) {
+    console.log(`[version-manager] Detected version file change: ${event.path}`);
+    // Example: automatically read or validate version
+    // handleGetVersion({ filePath: event.path });
+  }
+}
+
+/**
+ * Initializes or resets version-manager state at the start of a session.
+ */
+export function onSessionStart(session?: { id?: string }) {
+  console.log(`[version-manager] Session started${session && session.id ? `: ${session.id}` : ""}. Preparing version manager environment.`);
+  // Example: preload version metadata or clear caches
+}
+
+/**
+ * Handles version-manager commands.
+ * Supported commands:
+ * - get-version
+ * - update-version
+ * - compare-versions
+ * - validate-version
+ * - generate-changelog
+ * - generate-release-notes
+ */
+export async function onCommand(command?: { name: string; args?: any }) {
+  if (!command || !command.name) {
+    console.warn("[version-manager] onCommand called without command data.");
+    return;
+  }
+  switch (command.name) {
+    case "get-version":
+      console.log("[version-manager] Getting version...");
+      try {
+        await handleGetVersion(command.args);
+      } catch (err) {
+        console.error("[version-manager] Error getting version:", err);
+      }
+      break;
+    case "update-version":
+      console.log("[version-manager] Updating version...");
+      try {
+        await handleUpdateVersion(command.args);
+      } catch (err) {
+        console.error("[version-manager] Error updating version:", err);
+      }
+      break;
+    case "compare-versions":
+      console.log("[version-manager] Comparing versions...");
+      try {
+        await handleCompareVersions(command.args);
+      } catch (err) {
+        console.error("[version-manager] Error comparing versions:", err);
+      }
+      break;
+    case "validate-version":
+      console.log("[version-manager] Validating version string...");
+      try {
+        await handleValidateVersion(command.args);
+      } catch (err) {
+        console.error("[version-manager] Error validating version:", err);
+      }
+      break;
+    case "generate-changelog":
+      console.log("[version-manager] Generating changelog...");
+      try {
+        await handleGenerateChangelog(command.args);
+      } catch (err) {
+        console.error("[version-manager] Error generating changelog:", err);
+      }
+      break;
+    case "generate-release-notes":
+      console.log("[version-manager] Generating release notes...");
+      try {
+        await handleGenerateReleaseNotes(command.args);
+      } catch (err) {
+        console.error("[version-manager] Error generating release notes:", err);
+      }
+      break;
+    default:
+      console.warn(`[version-manager] Unknown command: ${command.name}`);
+  }
+}
 /**
  * Version Manager
  * 
@@ -896,4 +985,3 @@ export async function handleGenerateReleaseNotes(args: any) {
     };
   }
 }
-

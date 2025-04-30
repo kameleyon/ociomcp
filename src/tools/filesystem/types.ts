@@ -4,9 +4,68 @@ export function activate() {
     console.log("[TOOL] types activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Handles file write events for filesystem types definition changes.
+ * Logs changes and could trigger type regeneration if needed.
+ */
+export function onFileWrite(event?: { path: string }) {
+  console.log(`[types] File write detected: ${event?.path}`);
+  // In a real implementation, regenerate or validate Zod schemas here.
+}
+
+/**
+ * Initializes type definitions at the start of a session.
+ */
+export function onSessionStart(session?: { id?: string }) {
+  console.log(`[types] Session started${session?.id ? `: ${session.id}` : ""}. Preparing type schema environment.`);
+  // Clear type caches or preload schemas as needed.
+}
+
+/**
+ * Handles commands for inspecting or validating schemas.
+ * Supported commands:
+ * - listSchemas: returns available schema names
+ * - validateSchema: validates data against a named schema
+ */
+export async function onCommand(command?: { name: string; args?: any }) {
+  if (!command || !command.name) {
+    console.warn("[types] onCommand called without command data.");
+    return;
+  }
+  const schemas: Record<string, any> = {
+    ReadFileArgsSchema,
+    ReadMultipleFilesArgsSchema,
+    WriteFileArgsSchema,
+    CreateDirectoryArgsSchema,
+    ListDirectoryArgsSchema,
+    MoveFileArgsSchema,
+    GetFileInfoArgsSchema,
+    SearchFilesArgsSchema,
+    SearchCodeArgsSchema,
+    EditBlockArgsSchema
+  };
+  switch (command.name) {
+    case "listSchemas":
+      console.log("[types] Listing schemas.");
+      return Object.keys(schemas);
+    case "validateSchema":
+      const { schemaName, data } = command.args || {};
+      if (!schemaName || !schemas[schemaName]) {
+        console.warn(`[types] Unknown schema: ${schemaName}`);
+        return;
+      }
+      try {
+        schemas[schemaName].parse(data);
+        console.log(`[types] Validation successful for schema ${schemaName}.`);
+        return { valid: true };
+      } catch (err) {
+        console.error(`[types] Validation failed for schema ${schemaName}:`, err);
+        return { valid: false, error: err };
+      }
+    default:
+      console.warn(`[types] Unknown command: ${command.name}`);
+  }
+}
 /**
  * Filesystem Types
  * Provides type definitions for filesystem operations
@@ -151,4 +210,3 @@ export { ApplyDiffSchema } from './diff-applier.js';
  * Import the FormatCodeSchema from code-formatter.ts to use as the schema for the format_code command
  */
 export { FormatCodeSchema } from './code-formatter.js';
-

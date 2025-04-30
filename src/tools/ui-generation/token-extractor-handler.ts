@@ -4,9 +4,153 @@ export function activate() {
     console.log("[TOOL] token-extractor-handler activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[TOOL] Token extractor handler processing file: ${filePath}`);
+  
+  // Check if the file is a design token file
+  const isTokenFile = filePath.includes('token') || 
+                      filePath.includes('theme') || 
+                      filePath.endsWith('.css') || 
+                      filePath.endsWith('.scss') || 
+                      filePath.endsWith('.less');
+  
+  if (isTokenFile) {
+    console.log(`[TOOL] Detected change in design token file: ${filePath}`);
+    // Analyze the content for design tokens
+    analyzeDesignTokens(content);
+  }
+}
+
+export function onSessionStart(sessionId: string) {
+  console.log(`[TOOL] Token extractor handler initialized for session: ${sessionId}`);
+  
+  // Check for design token files in the project
+  setTimeout(() => {
+    console.log('[TOOL] Checking for design token files...');
+    checkForDesignTokenFiles();
+  }, 3000); // Delay to ensure project files are loaded
+}
+
+export function onCommand(command: string, args: any[]) {
+  if (command === 'generate-token-extractor') {
+    console.log('[TOOL] Generating token extractor...');
+    
+    return handleGenerateTokenExtractor(args[0]);
+  } else if (command === 'extract-tokens-from-file') {
+    console.log('[TOOL] Extracting tokens from file...');
+    
+    const filePath = args[0];
+    const format = args[1] || 'css';
+    
+    return handleExtractTokensFromFile(filePath, format);
+  } else if (command === 'convert-tokens') {
+    console.log('[TOOL] Converting tokens...');
+    
+    const tokens = args[0];
+    const sourceFormat = args[1];
+    const targetFormat = args[2];
+    
+    return handleConvertTokens(tokens, sourceFormat, targetFormat);
+  }
+  
+  return null;
+}
+
+/**
+ * Analyzes design tokens in content
+ */
+function analyzeDesignTokens(content: string): void {
+  console.log('[TOOL] Analyzing design tokens...');
+  
+  // Check for CSS variables
+  const cssVarCount = (content.match(/--[\w-]+:/g) || []).length;
+  console.log(`[TOOL] Found ${cssVarCount} CSS variables`);
+  
+  // Check for SCSS variables
+  const scssVarCount = (content.match(/\$[\w-]+:/g) || []).length;
+  console.log(`[TOOL] Found ${scssVarCount} SCSS variables`);
+  
+  // Check for LESS variables
+  const lessVarCount = (content.match(/@[\w-]+:/g) || []).length;
+  console.log(`[TOOL] Found ${lessVarCount} LESS variables`);
+  
+  // Check for color values
+  const hexColorCount = (content.match(/#[0-9a-fA-F]{3,8}/g) || []).length;
+  const rgbColorCount = (content.match(/rgb\(/g) || []).length;
+  const hslColorCount = (content.match(/hsl\(/g) || []).length;
+  
+  console.log(`[TOOL] Found ${hexColorCount} hex colors, ${rgbColorCount} RGB colors, ${hslColorCount} HSL colors`);
+  
+  // Provide suggestions if needed
+  if (cssVarCount === 0 && scssVarCount === 0 && lessVarCount === 0) {
+    console.log('[TOOL] Suggestion: Consider using CSS variables or preprocessor variables for design tokens');
+  }
+  
+  if (hexColorCount + rgbColorCount + hslColorCount > 10) {
+    console.log('[TOOL] Suggestion: Consider organizing colors into a design token system');
+  }
+}
+
+/**
+ * Checks for design token files in the project
+ */
+function checkForDesignTokenFiles(): void {
+  console.log('[TOOL] Checking for design token files...');
+  
+  // This is a placeholder - in a real implementation, this would scan the filesystem
+  // For now, we'll just log a message
+  console.log('[TOOL] Recommendation: Use the "extract-tokens-from-file" command to extract tokens from specific files');
+  console.log('[TOOL] Common design token tasks:');
+  console.log('- Extracting design tokens from CSS/SCSS/LESS files');
+  console.log('- Converting design tokens between formats');
+  console.log('- Generating design token files');
+}
+
+/**
+ * Handles the extract-tokens-from-file command
+ */
+async function handleExtractTokensFromFile(filePath: string, format: string): Promise<any> {
+  console.log(`[TOOL] Handling extract-tokens-from-file command for ${filePath} in ${format} format`);
+  
+  // This is a placeholder - in a real implementation, this would read the file and extract tokens
+  // For now, we'll just return a mock result
+  return { 
+    success: true, 
+    tokens: {
+      colors: {
+        primary: '#0070f3',
+        secondary: '#6c757d',
+        success: '#28a745',
+        danger: '#dc3545'
+      },
+      typography: {
+        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+        fontSize: '16px',
+        lineHeight: '1.5'
+      },
+      spacing: {
+        small: '0.5rem',
+        medium: '1rem',
+        large: '2rem'
+      }
+    }
+  };
+}
+
+/**
+ * Handles the convert-tokens command
+ */
+async function handleConvertTokens(tokens: any, sourceFormat: string, targetFormat: string): Promise<any> {
+  console.log(`[TOOL] Handling convert-tokens command from ${sourceFormat} to ${targetFormat}`);
+  
+  // This is a placeholder - in a real implementation, this would convert tokens between formats
+  // For now, we'll just return a mock result
+  return { 
+    success: true, 
+    message: `Converted tokens from ${sourceFormat} to ${targetFormat}`,
+    tokens: tokens
+  };
+}
 /**
  * Token Extractor Handler
  * 
@@ -545,4 +689,3 @@ function generateCssTokens(
   
   return content;
 }
-

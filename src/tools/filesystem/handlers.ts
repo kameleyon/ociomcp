@@ -4,9 +4,63 @@ export function activate() {
     console.log("[TOOL] handlers activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Handles file write events for the filesystem handlers.
+ * Logs the event and dispatches to relevant sub-handlers if needed.
+ */
+export async function onFileWrite(event?: { path: string; content?: string }) {
+  if (!event || !event.path) {
+    console.warn("[handlers] onFileWrite called without event data.");
+    return;
+  }
+  try {
+    // Log the file write event
+    console.log(`[handlers] File write detected: ${event.path}`);
+    // Optionally dispatch to sub-handlers based on file type
+    // ... actual logic could go here
+  } catch (err) {
+    console.error(`[handlers] Error during file-triggered handler operation:`, err);
+  }
+}
+
+/**
+ * Initializes or resets handler state at the start of a session.
+ */
+export function onSessionStart(session?: { id?: string }) {
+  console.log(`[handlers] Session started${session && session.id ? `: ${session.id}` : ""}. Preparing handlers environment.`);
+  // Example: clear caches, reset state, etc.
+  // ... actual reset logic
+}
+
+/**
+ * Handles handler commands.
+ * Dispatches commands to the appropriate sub-handler based on the command name.
+ */
+export async function onCommand(command?: { name: string; args?: any }) {
+  if (!command || !command.name) {
+    console.warn("[handlers] onCommand called without command data.");
+    return;
+  }
+  try {
+    // Example: dispatch to sub-handlers
+    switch (command.name) {
+      case "read-file":
+        await handleReadFile(command.args);
+        break;
+      case "write-file":
+        await handleWriteFile(command.args);
+        break;
+      case "list-directory":
+        await handleListDirectory(command.args);
+        break;
+      // Add more dispatches as needed...
+      default:
+        console.warn(`[handlers] Unknown command: ${command.name}`);
+    }
+  } catch (err) {
+    console.error(`[handlers] Error during handler command:`, err);
+  }
+}
 /**
  * Filesystem Handlers
  * Implements handlers for filesystem operations
@@ -436,4 +490,3 @@ export {
   handleImportFixer,
   handleTypeScriptErrorFixer
 };
-

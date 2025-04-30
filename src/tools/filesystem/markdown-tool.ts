@@ -4,9 +4,69 @@ export function activate() {
     console.log("[TOOL] markdown-tool activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Handles file write events for Markdown files.
+ * If a relevant file changes, triggers formatting.
+ */
+export async function onFileWrite(event?: { path: string; content?: string }) {
+  if (!event || !event.path) {
+    console.warn("[markdown-tool] onFileWrite called without event data.");
+    return;
+  }
+  if (event.path.endsWith('.md') || event.path.endsWith('.markdown')) {
+    console.log(`[markdown-tool] Detected Markdown file change: ${event.path}`);
+    try {
+      // Format the Markdown file in-place
+      await formatMarkdown(event.path, {});
+      console.log(`[markdown-tool] Formatted Markdown file: ${event.path}`);
+    } catch (err) {
+      console.error("[markdown-tool] Error formatting file:", err);
+    }
+  }
+}
+
+/**
+ * Initializes or resets Markdown tool state at the start of a session.
+ */
+export function onSessionStart(session?: { id?: string }) {
+  console.log(`[markdown-tool] Session started${session && session.id ? `: ${session.id}` : ""}. Preparing Markdown environment.`);
+  // Example: clear caches or temp files if needed
+}
+
+/**
+ * Handles Markdown tool commands.
+ * Supports conversion and formatting commands.
+ */
+export async function onCommand(command?: { name: string; args?: any }) {
+  if (!command || !command.name) {
+    console.warn("[markdown-tool] onCommand called without command data.");
+    return;
+  }
+  switch (command.name) {
+    case "convert-to-markdown":
+      console.log("[markdown-tool] Converting content to Markdown...");
+      try {
+        const result = await handleConvertToMarkdown(command.args);
+        console.log("[markdown-tool] Conversion complete.");
+        return result;
+      } catch (err) {
+        console.error("[markdown-tool] Conversion failed:", err);
+        throw err;
+      }
+    case "format-markdown":
+      console.log("[markdown-tool] Formatting Markdown file...");
+      try {
+        const result = await handleFormatMarkdown(command.args);
+        console.log("[markdown-tool] Formatting complete.");
+        return result;
+      } catch (err) {
+        console.error("[markdown-tool] Formatting failed:", err);
+        throw err;
+      }
+    default:
+      console.warn(`[markdown-tool] Unknown command: ${command.name}`);
+  }
+}
 /**
  * Markdown Tool
  * 
@@ -522,4 +582,3 @@ export async function handleFormatMarkdown(args: any): Promise<{
     };
   }
 }
-

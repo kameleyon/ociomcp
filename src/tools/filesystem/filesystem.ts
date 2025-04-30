@@ -4,9 +4,60 @@ export function activate() {
     console.log("[TOOL] filesystem activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Persist filesystem tool state or clear caches when session starts
+ */
+export async function onSessionStart() {
+  const fs = require('fs/promises');
+  const path = require('path');
+  const cacheFile = path.join(process.cwd(), 'fs-tool-cache.json');
+  try {
+    // Reset cache
+    await fs.writeFile(cacheFile, JSON.stringify({}), 'utf-8');
+    console.log('[filesystem] Session started: cache reset');
+  } catch (err) {
+    console.error('[filesystem] Failed to reset cache:', err);
+  }
+}
+
+/**
+ * Log every file write through the filesystem tool
+ */
+export async function onFileWrite(filePath?: string) {
+  const fs = require('fs/promises');
+  const path = require('path');
+  const logFile = path.join(process.cwd(), 'fs-tool-write-log.txt');
+  try {
+    const entry = `${new Date().toISOString()} WRITE: ${filePath}\n`;
+    await fs.appendFile(logFile, entry, 'utf-8');
+    console.log('[filesystem] File write logged:', filePath);
+  } catch (err) {
+    console.error('[filesystem] Failed to log file write:', err);
+  }
+}
+
+/**
+ * Handle filesystem-specific commands
+ */
+export async function onCommand(command?: { name: string; args?: any[] }) {
+  const name = command?.name;
+  const args = command?.args || [];
+  switch (name) {
+    case 'filesystem:list': {
+      const { readdir } = require('fs/promises');
+      const target = args[0] || process.cwd();
+      try {
+        const files = await readdir(target);
+        console.log('[filesystem] Directory contents of', target, ':', files);
+      } catch (err) {
+        console.error('[filesystem] Failed to list directory:', err);
+      }
+      break;
+    }
+    default:
+      console.log('[filesystem] Unknown command:', name);
+  }
+}
 /**
  * Filesystem Operations
  * Implements file system operations for the optimuscode-mcp server

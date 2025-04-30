@@ -4,9 +4,169 @@ export function activate() {
     console.log("[TOOL] session-lister activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[Session Lister] File written: ${filePath}`);
+  
+  // Check if the file is a session-related configuration file
+  if (filePath.endsWith('sessions.json') ||
+      filePath.endsWith('session-config.json') ||
+      filePath.endsWith('terminal-config.json')) {
+    console.log(`[Session Lister] Detected session configuration file: ${filePath}`);
+    return {
+      detected: true,
+      filePath,
+      type: 'session-config'
+    };
+  }
+  
+  return { detected: false };
+}
+
+export function onSessionStart(context: any) {
+  console.log('[Session Lister] Session started');
+  
+  try {
+    // Log platform information
+    const platform = process.platform;
+    console.log(`[Session Lister] Platform: ${platform}`);
+    
+    // Get a quick count of active sessions
+    listSessions().then(sessions => {
+      console.log(`[Session Lister] Found ${sessions.length} active sessions`);
+      
+      // Log monitored sessions
+      const monitoredSessions = sessions.filter(session => session.monitored);
+      if (monitoredSessions.length > 0) {
+        console.log(`[Session Lister] ${monitoredSessions.length} sessions are being monitored`);
+      }
+      
+      // Log long-running sessions
+      const longRunningSessions = sessions.filter(session => session.runningTime > 3600000); // > 1 hour
+      if (longRunningSessions.length > 0) {
+        console.log(`[Session Lister] ${longRunningSessions.length} sessions have been running for more than 1 hour`);
+        longRunningSessions.forEach(session => {
+          console.log(`  - PID ${session.pid}: ${session.command} (${formatRunningTime(session.runningTime)})`);
+        });
+      }
+    }).catch(error => {
+      console.error(`[Session Lister] Error listing sessions: ${error}`);
+    });
+    
+    return {
+      initialized: true,
+      platform
+    };
+  } catch (error) {
+    console.error(`[Session Lister] Error during initialization: ${error}`);
+    try {
+      console.error(`Error using API for token counting: ${error}`);
+      // Fall back to simple estimation if API call fails
+      return {
+        initialized: false,
+        error: String(error)
+      };
+    } catch (nestedError) {
+      return {
+        initialized: false,
+        error: 'Multiple errors occurred'
+      };
+    }
+  }
+}
+
+export function onCommand(command: string, args: any[]) {
+  console.log(`[Session Lister] Command received: ${command}`);
+  
+  try {
+    if (command === 'session.list') {
+      console.log('[Session Lister] Listing sessions');
+      
+      const options = args && args.length > 0 ? args[0] : {};
+      const filter = options.filter;
+      const limit = options.limit || 100;
+      const sortBy = options.sortBy || 'startTime';
+      const sortOrder = options.sortOrder || 'desc';
+      
+      try {
+        // This is async, so we can't return the result directly
+        listSessions(filter, limit, sortBy, sortOrder).then(sessions => {
+          console.log(`[Session Lister] Found ${sessions.length} sessions matching criteria`);
+        }).catch(error => {
+          console.error(`[Session Lister] Error listing sessions: ${error}`);
+        });
+        
+        return {
+          action: 'list',
+          filter,
+          limit,
+          sortBy,
+          sortOrder,
+          started: true
+        };
+      } catch (error) {
+        console.error(`[Session Lister] Error listing sessions: ${error}`);
+        return { action: 'list', error: String(error) };
+      }
+    } else if (command === 'session.find') {
+      console.log('[Session Lister] Finding sessions by pattern');
+      
+      const pattern = args && args.length > 0 ?
+        (typeof args[0] === 'string' ? args[0] : args[0].pattern) : '';
+      
+      if (!pattern) {
+        return { action: 'find', error: 'No pattern specified' };
+      }
+      
+      try {
+        // This is async, so we can't return the result directly
+        listSessions(pattern).then(sessions => {
+          console.log(`[Session Lister] Found ${sessions.length} sessions matching pattern: ${pattern}`);
+        }).catch(error => {
+          console.error(`[Session Lister] Error finding sessions: ${error}`);
+        });
+        
+        return {
+          action: 'find',
+          pattern,
+          started: true
+        };
+      } catch (error) {
+        console.error(`[Session Lister] Error finding sessions: ${error}`);
+        return { action: 'find', error: String(error) };
+      }
+    } else if (command === 'session.getSystemProcesses') {
+      console.log('[Session Lister] Getting system processes');
+      
+      try {
+        // This is async, so we can't return the result directly
+        getSystemProcesses().then(processes => {
+          console.log(`[Session Lister] Found ${processes.length} system processes`);
+        }).catch(error => {
+          console.error(`[Session Lister] Error getting system processes: ${error}`);
+        });
+        
+        return {
+          action: 'getSystemProcesses',
+          started: true
+        };
+      } catch (error) {
+        console.error(`[Session Lister] Error getting system processes: ${error}`);
+        return { action: 'getSystemProcesses', error: String(error) };
+      }
+    }
+  } catch (error) {
+    console.error(`[Session Lister] Error processing command: ${error}`);
+    try {
+      console.error(`Error using API for token counting: ${error}`);
+      // Fall back to simple estimation if API call fails
+      return { action: 'error', error: String(error) };
+    } catch (nestedError) {
+      return { action: 'error', error: 'Multiple errors occurred' };
+    }
+  }
+  
+  return { action: 'unknown' };
+}
 /**
  * Session Lister
  * 

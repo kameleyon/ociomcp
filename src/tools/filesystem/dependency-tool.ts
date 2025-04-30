@@ -4,9 +4,107 @@ export function activate() {
     console.log("[TOOL] dependency-tool activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Handles file write events for dependency files (package.json, lock files).
+ * If a relevant file changes, triggers dependency checks or updates.
+ */
+export async function onFileWrite(event?: { path: string; content?: string }) {
+  if (!event || !event.path) {
+    console.warn("[dependency-tool] onFileWrite called without event data.");
+    return;
+  }
+  try {
+    if (event.path.endsWith('package.json') || event.path.endsWith('yarn.lock') || event.path.endsWith('pnpm-lock.yaml') || event.path.endsWith('package-lock.json')) {
+      console.log(`[dependency-tool] Detected dependency file change: ${event.path}`);
+      // Optionally check for updates or validate dependencies
+      // ... actual logic could go here
+    }
+  } catch (err) {
+    console.error(`[dependency-tool] Error during file-triggered dependency operation:`, err);
+  }
+}
+
+/**
+ * Initializes or resets dependency tool state at the start of a session.
+ */
+export function onSessionStart(session?: { id?: string }) {
+  console.log(`[dependency-tool] Session started${session && session.id ? `: ${session.id}` : ""}. Preparing dependency tool environment.`);
+  // Example: clear temp files, reset state, etc.
+  // ... actual reset logic
+}
+
+/**
+ * Handles dependency tool commands.
+ * Supports dynamic invocation of dependency operations (add, remove, update, list, check for updates, validate).
+ */
+export async function onCommand(command?: { name: string; args?: any }) {
+  if (!command || !command.name) {
+    console.warn("[dependency-tool] onCommand called without command data.");
+    return;
+  }
+  switch (command.name) {
+    case "add-dependency":
+      console.log("[dependency-tool] Adding dependency...");
+      try {
+        await handleAddDependency(command.args);
+        console.log("[dependency-tool] Dependency addition complete.");
+      } catch (err) {
+        console.error("[dependency-tool] Dependency addition failed:", err);
+      }
+      break;
+    case "remove-dependency":
+      console.log("[dependency-tool] Removing dependency...");
+      try {
+        await handleRemoveDependency(command.args);
+        console.log("[dependency-tool] Dependency removal complete.");
+      } catch (err) {
+        console.error("[dependency-tool] Dependency removal failed:", err);
+      }
+      break;
+    case "update-dependency":
+      console.log("[dependency-tool] Updating dependency...");
+      try {
+        await handleUpdateDependency(command.args);
+        console.log("[dependency-tool] Dependency update complete.");
+      } catch (err) {
+        console.error("[dependency-tool] Dependency update failed:", err);
+      }
+      break;
+    case "list-dependencies":
+      console.log("[dependency-tool] Listing dependencies...");
+      try {
+        await handleListDependencies(command.args);
+        console.log("[dependency-tool] Dependency listing complete.");
+      } catch (err) {
+        console.error("[dependency-tool] Dependency listing failed:", err);
+      }
+      break;
+    case "check-for-updates":
+      console.log("[dependency-tool] Checking for dependency updates...");
+      try {
+        await handleCheckForUpdates(command.args);
+        console.log("[dependency-tool] Dependency update check complete.");
+      } catch (err) {
+        console.error("[dependency-tool] Dependency update check failed:", err);
+      }
+      break;
+    case "validate-dependency-schema":
+      console.log("[dependency-tool] Validating dependency schema...");
+      try {
+        AddDependencySchema.parse(command.args);
+        RemoveDependencySchema.parse(command.args);
+        UpdateDependencySchema.parse(command.args);
+        ListDependenciesSchema.parse(command.args);
+        CheckForUpdatesSchema.parse(command.args);
+        console.log("[dependency-tool] Dependency schema validation successful.");
+      } catch (err) {
+        console.error("[dependency-tool] Dependency schema validation failed:", err);
+      }
+      break;
+    default:
+      console.warn(`[dependency-tool] Unknown command: ${command.name}`);
+  }
+}
 /**
  * Dependency Tool
  * 
@@ -661,4 +759,3 @@ export async function handleCheckForUpdates(args: any) {
     };
   }
 }
-

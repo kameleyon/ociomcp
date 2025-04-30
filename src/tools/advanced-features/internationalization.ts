@@ -4,9 +4,35 @@ export function activate() {
     console.log("[TOOL] internationalization activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[Internationalization] File written: ${filePath}`);
+  // Check if file contains translation keys
+  if (filePath.includes('i18n') || filePath.includes('locale') || filePath.endsWith('.json')) {
+    console.log('[Internationalization] Detected potential translation file change');
+    return { detected: true, filePath };
+  }
+  return { detected: false };
+}
+
+export function onSessionStart(context: any) {
+  console.log('[Internationalization] Session started');
+  // Initialize internationalization settings from context
+  const locale = context?.locale || 'en-US';
+  console.log(`[Internationalization] Setting locale to ${locale}`);
+  return { initialized: true, locale };
+}
+
+export function onCommand(command: string, args: any) {
+  console.log(`[Internationalization] Command received: ${command}`);
+  if (command === 'i18n.extract') {
+    console.log('[Internationalization] Extracting translation keys');
+    return { action: 'extract', args };
+  } else if (command === 'i18n.translate') {
+    console.log('[Internationalization] Translating content');
+    return { action: 'translate', args };
+  }
+  return { action: 'unknown' };
+}
 /**
  * Internationalization
  * Provides functionality for internationalization (i18n) and localization (l10n)

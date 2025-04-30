@@ -4,9 +4,180 @@ export function activate() {
     console.log("[TOOL] process-lister activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[Process Lister] File written: ${filePath}`);
+  
+  // Check if the file is a process monitoring configuration file
+  if (filePath.endsWith('process-monitor.json') ||
+      filePath.endsWith('process-list.json') ||
+      filePath.endsWith('monitoring.json')) {
+    console.log(`[Process Lister] Detected process monitoring configuration file: ${filePath}`);
+    return {
+      detected: true,
+      filePath,
+      type: 'process-monitor-config'
+    };
+  }
+  
+  return { detected: false };
+}
+
+export function onSessionStart(context: any) {
+  console.log('[Process Lister] Session started');
+  
+  try {
+    // Log platform information
+    const platform = process.platform;
+    console.log(`[Process Lister] Platform: ${platform}`);
+    
+    // Get a quick count of running processes
+    listProcesses(undefined, 1000).then(processes => {
+      console.log(`[Process Lister] Found ${processes.length} running processes`);
+      
+      // Log top CPU and memory processes
+      const topCpuProcesses = [...processes]
+        .sort((a, b) => (b.cpu || 0) - (a.cpu || 0))
+        .slice(0, 3);
+      
+      const topMemoryProcesses = [...processes]
+        .sort((a, b) => (b.memory || 0) - (a.memory || 0))
+        .slice(0, 3);
+      
+      if (topCpuProcesses.length > 0) {
+        console.log('[Process Lister] Top CPU processes:');
+        topCpuProcesses.forEach(process => {
+          console.log(`  - PID ${process.pid}: ${process.command} (${process.cpu?.toFixed(1)}%)`);
+        });
+      }
+      
+      if (topMemoryProcesses.length > 0) {
+        console.log('[Process Lister] Top memory processes:');
+        topMemoryProcesses.forEach(process => {
+          console.log(`  - PID ${process.pid}: ${process.command} (${formatMemory(process.memory)})`);
+        });
+      }
+    }).catch(error => {
+      console.error(`[Process Lister] Error listing processes: ${error}`);
+    });
+    
+    return {
+      initialized: true,
+      platform
+    };
+  } catch (error) {
+    console.error(`[Process Lister] Error during initialization: ${error}`);
+    try {
+      console.error(`Error using API for token counting: ${error}`);
+      // Fall back to simple estimation if API call fails
+      return {
+        initialized: false,
+        error: String(error)
+      };
+    } catch (nestedError) {
+      return {
+        initialized: false,
+        error: 'Multiple errors occurred'
+      };
+    }
+  }
+}
+
+export function onCommand(command: string, args: any[]) {
+  console.log(`[Process Lister] Command received: ${command}`);
+  
+  try {
+    if (command === 'process.list') {
+      console.log('[Process Lister] Listing processes');
+      
+      const options = args && args.length > 0 ? args[0] : {};
+      const filter = options.filter;
+      const limit = options.limit || 100;
+      const sortBy = options.sortBy || 'cpu';
+      const sortOrder = options.sortOrder || 'desc';
+      
+      try {
+        // This is async, so we can't return the result directly
+        listProcesses(filter, limit, sortBy, sortOrder).then(processes => {
+          console.log(`[Process Lister] Found ${processes.length} processes matching criteria`);
+        }).catch(error => {
+          console.error(`[Process Lister] Error listing processes: ${error}`);
+        });
+        
+        return {
+          action: 'list',
+          filter,
+          limit,
+          sortBy,
+          sortOrder,
+          started: true
+        };
+      } catch (error) {
+        console.error(`[Process Lister] Error listing processes: ${error}`);
+        return { action: 'list', error: String(error) };
+      }
+    } else if (command === 'process.tree') {
+      console.log('[Process Lister] Generating process tree');
+      
+      const rootPid = args && args.length > 0 ? args[0].rootPid : undefined;
+      
+      try {
+        // This is async, so we can't return the result directly
+        listProcesses().then(processes => {
+          console.log(`[Process Lister] Generated process tree with ${processes.length} processes`);
+        }).catch(error => {
+          console.error(`[Process Lister] Error generating process tree: ${error}`);
+        });
+        
+        return {
+          action: 'tree',
+          rootPid,
+          started: true
+        };
+      } catch (error) {
+        console.error(`[Process Lister] Error generating process tree: ${error}`);
+        return { action: 'tree', error: String(error) };
+      }
+    } else if (command === 'process.find') {
+      console.log('[Process Lister] Finding processes by name or pattern');
+      
+      const pattern = args && args.length > 0 ?
+        (typeof args[0] === 'string' ? args[0] : args[0].pattern) : '';
+      
+      if (!pattern) {
+        return { action: 'find', error: 'No pattern specified' };
+      }
+      
+      try {
+        // This is async, so we can't return the result directly
+        listProcesses(pattern).then(processes => {
+          console.log(`[Process Lister] Found ${processes.length} processes matching pattern: ${pattern}`);
+        }).catch(error => {
+          console.error(`[Process Lister] Error finding processes: ${error}`);
+        });
+        
+        return {
+          action: 'find',
+          pattern,
+          started: true
+        };
+      } catch (error) {
+        console.error(`[Process Lister] Error finding processes: ${error}`);
+        return { action: 'find', error: String(error) };
+      }
+    }
+  } catch (error) {
+    console.error(`[Process Lister] Error processing command: ${error}`);
+    try {
+      console.error(`Error using API for token counting: ${error}`);
+      // Fall back to simple estimation if API call fails
+      return { action: 'error', error: String(error) };
+    } catch (nestedError) {
+      return { action: 'error', error: 'Multiple errors occurred' };
+    }
+  }
+  
+  return { action: 'unknown' };
+}
 /**
  * Process Lister
  * 

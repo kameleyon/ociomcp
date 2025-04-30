@@ -4,9 +4,247 @@ export function activate() {
     console.log("[TOOL] debug-assist activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[TOOL] Debug assist processing file: ${filePath}`);
+  
+  // Check if the file is a source code file
+  const extension = path.extname(filePath);
+  const isSourceCode = ['.js', '.jsx', '.ts', '.tsx', '.java', '.py', '.rb', '.go', '.php', '.c', '.cpp', '.cs'].includes(extension);
+  
+  if (isSourceCode) {
+    try {
+      // Look for common error patterns in the code
+      const errorPatterns = detectErrorPatterns(content, extension);
+      
+      if (errorPatterns.length > 0) {
+        console.log(`[TOOL] Detected ${errorPatterns.length} potential issues in ${filePath}:`);
+        errorPatterns.forEach((pattern, index) => {
+          console.log(`${index + 1}. ${pattern.message} (Line ${pattern.line})`);
+          if (pattern.suggestion) {
+            console.log(`   Suggestion: ${pattern.suggestion}`);
+          }
+        });
+      } else {
+        console.log(`[TOOL] No obvious issues detected in ${filePath}`);
+      }
+    } catch (error) {
+      console.error(`[TOOL] Error analyzing file: ${error}`);
+    }
+  }
+}
+
+export function onSessionStart(sessionId: string) {
+  console.log(`[TOOL] Debug assist initialized for session: ${sessionId}`);
+  
+  // Schedule a debug configuration check for the project
+  setTimeout(() => {
+    console.log('[TOOL] Checking for debug configurations...');
+    checkDebugConfigurations();
+  }, 3000); // Delay to ensure project files are loaded
+}
+
+export function onCommand(command: string, args: any[]) {
+  if (command === 'analyze-error') {
+    console.log('[TOOL] Analyzing error...');
+    
+    const errorMessage = args[0] || '';
+    const errorStack = args[1] || '';
+    const errorType = args[2];
+    const filePath = args[3];
+    const lineNumber = args[4];
+    const columnNumber = args[5];
+    
+    return handleAnalyzeError({
+      errorMessage,
+      errorStack,
+      errorType,
+      filePath,
+      lineNumber,
+      columnNumber,
+      codeContext: args[6],
+      language: args[7],
+      framework: args[8]
+    });
+  } else if (command === 'generate-fix') {
+    console.log('[TOOL] Generating fix...');
+    
+    const errorAnalysis = args[0];
+    const filePath = args[1] || '';
+    const applyFix = args[2] !== false;
+    
+    return handleGenerateFix({
+      errorAnalysis,
+      filePath,
+      applyFix,
+      generateMultipleOptions: args[3] || false
+    });
+  } else if (command === 'explain-error') {
+    console.log('[TOOL] Explaining error...');
+    
+    const errorMessage = args[0] || '';
+    const errorStack = args[1] || '';
+    const errorType = args[2];
+    
+    return handleExplainError({
+      errorMessage,
+      errorStack,
+      errorType,
+      language: args[3],
+      framework: args[4],
+      detailLevel: args[5] || 'intermediate'
+    });
+  } else if (command === 'create-debugger-config') {
+    console.log('[TOOL] Creating debugger configuration...');
+    
+    const language = args[0] || 'javascript';
+    const projectPath = args[1] || '.';
+    
+    return handleCreateDebuggerConfig({
+      language,
+      framework: args[2],
+      projectPath,
+      debugTool: args[3] || 'vscode',
+      configPath: args[4]
+    });
+  }
+  
+  return null;
+}
+
+/**
+ * Detects common error patterns in code
+ */
+function detectErrorPatterns(content: string, extension: string): Array<{message: string, line: number, suggestion?: string}> {
+  const patterns: Array<{message: string, line: number, suggestion?: string}> = [];
+  const lines = content.split('\n');
+  
+  // Check for language-specific patterns
+  if (extension === '.js' || extension === '.jsx' || extension === '.ts' || extension === '.tsx') {
+    // JavaScript/TypeScript patterns
+    
+    // Check for potential null/undefined access
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // Check for object property access without null checks
+      const propertyAccessPattern = /(\w+)\.(\w+)/g;
+      let match;
+      
+      while ((match = propertyAccessPattern.exec(line)) !== null) {
+        const obj = match[1];
+        const prop = match[2];
+        
+        // Skip common objects that are usually defined
+        if (['console', 'Math', 'JSON', 'Array', 'String', 'Number', 'Object', 'this'].includes(obj)) {
+          continue;
+        }
+        
+        // Check if there's a null check before this line
+        let hasNullCheck = false;
+        for (let j = Math.max(0, i - 5); j < i; j++) {
+          if (lines[j].includes(`if (${obj})`) || 
+              lines[j].includes(`if (${obj} !==`) || 
+              lines[j].includes(`if (${obj} !=`) ||
+              lines[j].includes(`${obj}?`) ||
+              lines[j].includes(`typeof ${obj} !==`)) {
+            hasNullCheck = true;
+            break;
+          }
+        }
+        
+        if (!hasNullCheck) {
+          patterns.push({
+            message: `Potential null/undefined access: '${obj}.${prop}'`,
+            line: i + 1,
+            suggestion: extension.includes('ts') ? 
+              `Consider using optional chaining: ${obj}?.${prop}` : 
+              `Add a null check: if (${obj} && ${obj}.${prop})`
+          });
+          break; // Only report one issue per line
+        }
+      }
+      
+      // Check for unhandled promises
+      if (line.includes('Promise') || line.includes('async') || line.includes('await')) {
+        let hasTryCatch = false;
+        
+        // Check if there's a try/catch block around this line
+        for (let j = Math.max(0, i - 10); j < i; j++) {
+          if (lines[j].includes('try {')) {
+            hasTryCatch = true;
+            break;
+          }
+        }
+        
+        if (!hasTryCatch && line.includes('await ') && !line.includes('.catch(')) {
+          patterns.push({
+            message: 'Unhandled promise rejection: await without try/catch',
+            line: i + 1,
+            suggestion: 'Wrap in try/catch block or add .catch() handler'
+          });
+        } else if (!hasTryCatch && line.includes('Promise') && !line.includes('.catch(')) {
+          patterns.push({
+            message: 'Potential unhandled promise: Promise without .catch()',
+            line: i + 1,
+            suggestion: 'Add .catch() handler or use try/catch with async/await'
+          });
+        }
+      }
+      
+      // Check for console.log statements
+      if (line.includes('console.log(')) {
+        patterns.push({
+          message: 'Debug code: console.log() statement',
+          line: i + 1,
+          suggestion: 'Remove or replace with proper logging for production code'
+        });
+      }
+    }
+  } else if (extension === '.py') {
+    // Python patterns
+    
+    // Check for bare except clauses
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      if (line === 'except:') {
+        patterns.push({
+          message: 'Bare except clause: catches all exceptions including KeyboardInterrupt',
+          line: i + 1,
+          suggestion: 'Specify exception type: except Exception:'
+        });
+      }
+      
+      // Check for print statements (potential debug code)
+      if (line.startsWith('print(')) {
+        patterns.push({
+          message: 'Debug code: print() statement',
+          line: i + 1,
+          suggestion: 'Remove or replace with proper logging for production code'
+        });
+      }
+    }
+  }
+  
+  return patterns;
+}
+
+/**
+ * Checks for debug configurations in the project
+ */
+function checkDebugConfigurations() {
+  console.log('[TOOL] Checking for debug configurations...');
+  
+  // This is a placeholder - in a real implementation, this would scan the filesystem
+  // For now, we'll just log a message
+  console.log('[TOOL] Recommendation: Use the "create-debugger-config" command to generate a debug configuration for your project');
+  console.log('[TOOL] Common debugging tips:');
+  console.log('- Use breakpoints to pause execution at specific points');
+  console.log('- Inspect variable values during execution');
+  console.log('- Use watch expressions to monitor variables');
+  console.log('- Step through code line by line to understand the flow');
+  console.log('- Use conditional breakpoints for complex scenarios');
+}
 /**
  * DebugAssist Tool
  * 
@@ -1101,4 +1339,3 @@ function getDocumentationUrl(errorType: string): string {
       return 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error';
   }
 }
-

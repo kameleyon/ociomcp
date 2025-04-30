@@ -4,13 +4,8 @@ export function activate() {
     console.log("[TOOL] directory-structure activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
-/**
- * Directory Structure
- * Provides functionality for generating and managing project directory structures
- */
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 /**
  * Project type definitions for directory structure generation
@@ -78,6 +73,103 @@ export interface DirectoryStructureOptions {
   customDirectories?: string[];
   customFiles?: { path: string; content?: string }[];
 }
+
+// Track generated directory structures
+const generatedStructures: Record<string, DirectoryNode[]> = {};
+
+export async function onFileWrite(filePath?: string) {
+  if (!filePath) return;
+  
+  try {
+    // Check if the file is a directory structure template
+    if (filePath.includes('directory-structure') || filePath.endsWith('.structure.json')) {
+      console.log(`[directory-structure] Detected change in directory structure file: ${filePath}`);
+      
+      // In a real implementation, we might validate the structure file
+      // and update the available templates
+    }
+  } catch (err) {
+    console.error(`[directory-structure] Error processing file change: ${err}`);
+  }
+}
+
+export async function onSessionStart() {
+  console.log('[directory-structure] Session started');
+  
+  try {
+    // Initialize with default templates
+    generatedStructures['react-web-app'] = REACT_WEB_APP_STRUCTURE.structure;
+    generatedStructures['express-api'] = EXPRESS_API_STRUCTURE.structure;
+    
+    console.log(`[directory-structure] Initialized with default directory structures`);
+    
+    return {
+      initialized: true,
+      templatesLoaded: Object.keys(generatedStructures).length,
+      message: 'Directory structure initialized'
+    };
+  } catch (err) {
+    console.error(`[directory-structure] Error initializing: ${err}`);
+    return {
+      initialized: false,
+      message: `Error initializing directory structure: ${err}`
+    };
+  }
+}
+
+export async function onCommand(command?: { name: string; args?: any[] }) {
+  const name = command?.name;
+  const args = command?.args || [];
+  
+  switch (name) {
+    case 'directory-structure:generate': {
+      const options = args[0] as DirectoryStructureOptions;
+      
+      if (!options) {
+        return { success: false, message: 'Directory structure options are required' };
+      }
+      
+      try {
+        // Generate the directory structure
+        const structure = generateDirectoryStructure(options);
+        generatedStructures[options.name] = structure;
+        
+        console.log(`[directory-structure] Generated directory structure: ${options.name}`);
+        return { success: true, structure };
+      } catch (err) {
+        console.error(`[directory-structure] Error generating directory structure: ${err}`);
+        return { success: false, message: `Error generating directory structure: ${err}` };
+      }
+    }
+    case 'directory-structure:list': {
+      return {
+        success: true,
+        structures: Object.keys(generatedStructures)
+      };
+    }
+    case 'directory-structure:get': {
+      const structureName = args[0];
+      if (!structureName) {
+        return { success: false, message: 'Structure name is required' };
+      }
+      
+      const structure = generatedStructures[structureName];
+      if (!structure) {
+        return { success: false, message: `Structure with name ${structureName} not found` };
+      }
+      
+      return { success: true, structure };
+    }
+    default:
+      console.log(`[directory-structure] Unknown command: ${name}`);
+      return { message: `Unknown command: ${name}` };
+  }
+}
+
+/**
+ * Directory Structure
+ * Provides functionality for generating and managing project directory structures
+ */
 
 /**
  * Default React web app directory structure
@@ -328,63 +420,29 @@ export const NEXT_JS_STRUCTURE: DirectoryTemplate = {
   framework: ProjectFramework.NEXT_JS,
   structure: [
     {
-      path: 'src',
+      path: 'pages',
       type: 'directory',
-      description: 'Source code directory',
+      description: 'Next.js pages directory for routing',
       children: [
         {
-          path: 'app',
+          path: 'api',
           type: 'directory',
-          description: 'Next.js app directory (App Router)',
-          children: [
-            {
-              path: 'page.tsx',
-              type: 'file',
-              description: 'Home page component',
-            },
-            {
-              path: 'layout.tsx',
-              type: 'file',
-              description: 'Root layout component',
-            },
-          ],
+          description: 'API routes',
         },
         {
-          path: 'components',
-          type: 'directory',
-          description: 'React components',
-          children: [
-            {
-              path: 'ui',
-              type: 'directory',
-              description: 'UI components',
-            },
-            {
-              path: 'layout',
-              type: 'directory',
-              description: 'Layout components',
-            },
-          ],
+          path: '_app.tsx',
+          type: 'file',
+          description: 'Custom App component',
         },
         {
-          path: 'lib',
-          type: 'directory',
-          description: 'Shared libraries and utilities',
+          path: '_document.tsx',
+          type: 'file',
+          description: 'Custom Document component',
         },
         {
-          path: 'hooks',
-          type: 'directory',
-          description: 'Custom React hooks',
-        },
-        {
-          path: 'styles',
-          type: 'directory',
-          description: 'Global styles and theme definitions',
-        },
-        {
-          path: 'types',
-          type: 'directory',
-          description: 'TypeScript type definitions',
+          path: 'index.tsx',
+          type: 'file',
+          description: 'Home page',
         },
       ],
     },
@@ -394,31 +452,51 @@ export const NEXT_JS_STRUCTURE: DirectoryTemplate = {
       description: 'Public assets that will be served as-is',
     },
     {
-      path: 'tests',
+      path: 'styles',
       type: 'directory',
-      description: 'Test files',
+      description: 'Global styles and CSS modules',
     },
     {
-      path: '.github',
+      path: 'components',
       type: 'directory',
-      description: 'GitHub workflows and configuration',
+      description: 'React components',
       children: [
         {
-          path: 'workflows',
+          path: 'common',
           type: 'directory',
-          description: 'GitHub Actions workflows',
+          description: 'Common components used throughout the application',
+        },
+        {
+          path: 'layout',
+          type: 'directory',
+          description: 'Layout components like Header, Footer, Sidebar',
         },
       ],
     },
     {
-      path: 'package.json',
-      type: 'file',
-      description: 'NPM package configuration',
+      path: 'lib',
+      type: 'directory',
+      description: 'Shared utilities and libraries',
     },
     {
-      path: 'tsconfig.json',
-      type: 'file',
-      description: 'TypeScript configuration',
+      path: 'hooks',
+      type: 'directory',
+      description: 'Custom React hooks',
+    },
+    {
+      path: 'context',
+      type: 'directory',
+      description: 'React context providers',
+    },
+    {
+      path: 'types',
+      type: 'directory',
+      description: 'TypeScript type definitions',
+    },
+    {
+      path: 'tests',
+      type: 'directory',
+      description: 'Test files',
     },
     {
       path: 'next.config.js',
@@ -426,122 +504,6 @@ export const NEXT_JS_STRUCTURE: DirectoryTemplate = {
       description: 'Next.js configuration',
     },
     {
-      path: '.eslintrc.js',
-      type: 'file',
-      description: 'ESLint configuration',
-    },
-    {
-      path: '.prettierrc',
-      type: 'file',
-      description: 'Prettier configuration',
-    },
-    {
-      path: 'README.md',
-      type: 'file',
-      description: 'Project documentation',
-    },
-    {
-      path: '.gitignore',
-      type: 'file',
-      description: 'Git ignore file',
-    },
-    {
-      path: '.env.example',
-      type: 'file',
-      description: 'Example environment variables',
-    },
-  ],
-};
-
-/**
- * Default React Native mobile app directory structure
- */
-export const REACT_NATIVE_STRUCTURE: DirectoryTemplate = {
-  name: 'React Native Mobile App',
-  description: 'A modern React Native mobile application with a clean directory structure',
-  type: ProjectType.MOBILE_APP,
-  framework: ProjectFramework.REACT_NATIVE,
-  structure: [
-    {
-      path: 'src',
-      type: 'directory',
-      description: 'Source code directory',
-      children: [
-        {
-          path: 'components',
-          type: 'directory',
-          description: 'React Native components',
-        },
-        {
-          path: 'screens',
-          type: 'directory',
-          description: 'Screen components',
-        },
-        {
-          path: 'navigation',
-          type: 'directory',
-          description: 'Navigation configuration',
-        },
-        {
-          path: 'hooks',
-          type: 'directory',
-          description: 'Custom React hooks',
-        },
-        {
-          path: 'services',
-          type: 'directory',
-          description: 'API services and data fetching',
-        },
-        {
-          path: 'utils',
-          type: 'directory',
-          description: 'Utility functions',
-        },
-        {
-          path: 'assets',
-          type: 'directory',
-          description: 'Static assets like images, fonts, etc.',
-        },
-        {
-          path: 'styles',
-          type: 'directory',
-          description: 'Global styles and theme definitions',
-        },
-        {
-          path: 'types',
-          type: 'directory',
-          description: 'TypeScript type definitions',
-        },
-      ],
-    },
-    {
-      path: 'android',
-      type: 'directory',
-      description: 'Android-specific code',
-    },
-    {
-      path: 'ios',
-      type: 'directory',
-      description: 'iOS-specific code',
-    },
-    {
-      path: 'tests',
-      type: 'directory',
-      description: 'Test files',
-    },
-    {
-      path: '.github',
-      type: 'directory',
-      description: 'GitHub workflows and configuration',
-      children: [
-        {
-          path: 'workflows',
-          type: 'directory',
-          description: 'GitHub Actions workflows',
-        },
-      ],
-    },
-    {
       path: 'package.json',
       type: 'file',
       description: 'NPM package configuration',
@@ -552,16 +514,6 @@ export const REACT_NATIVE_STRUCTURE: DirectoryTemplate = {
       description: 'TypeScript configuration',
     },
     {
-      path: 'babel.config.js',
-      type: 'file',
-      description: 'Babel configuration',
-    },
-    {
-      path: 'metro.config.js',
-      type: 'file',
-      description: 'Metro bundler configuration',
-    },
-    {
       path: '.eslintrc.js',
       type: 'file',
       description: 'ESLint configuration',
@@ -581,361 +533,340 @@ export const REACT_NATIVE_STRUCTURE: DirectoryTemplate = {
       type: 'file',
       description: 'Git ignore file',
     },
-    {
-      path: 'app.json',
-      type: 'file',
-      description: 'React Native app configuration',
-    },
   ],
 };
 
 /**
- * Collection of directory templates
- */
-export const DIRECTORY_TEMPLATES: Record<string, DirectoryTemplate> = {
-  'react-web-app': REACT_WEB_APP_STRUCTURE,
-  'express-api': EXPRESS_API_STRUCTURE,
-  'next-js': NEXT_JS_STRUCTURE,
-  'react-native': REACT_NATIVE_STRUCTURE,
-};
-
-/**
- * Generates a directory structure based on the specified options
+ * Generate directory structure based on options
  */
 export function generateDirectoryStructure(options: DirectoryStructureOptions): DirectoryNode[] {
-  const { type, framework, features = [], customDirectories = [], customFiles = [] } = options;
-
-  // Find the appropriate template
-  let template: DirectoryTemplate | undefined;
+  let structure: DirectoryNode[] = [];
   
-  if (type === ProjectType.WEB_APP && framework === ProjectFramework.REACT) {
-    template = REACT_WEB_APP_STRUCTURE;
-  } else if (type === ProjectType.API && framework === ProjectFramework.EXPRESS) {
-    template = EXPRESS_API_STRUCTURE;
-  } else if (type === ProjectType.WEB_APP && framework === ProjectFramework.NEXT_JS) {
-    template = NEXT_JS_STRUCTURE;
-  } else if (type === ProjectType.MOBILE_APP && framework === ProjectFramework.REACT_NATIVE) {
-    template = REACT_NATIVE_STRUCTURE;
-  } else {
-    // Default to React web app if no matching template is found
-    template = REACT_WEB_APP_STRUCTURE;
+  // Start with a base structure based on project type and framework
+  if (options.type === ProjectType.WEB_APP) {
+    if (options.framework === ProjectFramework.REACT) {
+      structure = JSON.parse(JSON.stringify(REACT_WEB_APP_STRUCTURE.structure));
+    } else if (options.framework === ProjectFramework.NEXT_JS) {
+      structure = JSON.parse(JSON.stringify(NEXT_JS_STRUCTURE.structure)); // Added comment to trigger re-evaluation
+    }
+  } else if (options.type === ProjectType.API) {
+    if (options.framework === ProjectFramework.EXPRESS) {
+      structure = JSON.parse(JSON.stringify(EXPRESS_API_STRUCTURE.structure));
+    }
   }
-
-  // Clone the template structure
-  const structure = JSON.parse(JSON.stringify(template.structure)) as DirectoryNode[];
-
-  // Add feature-specific directories and files
-  for (const feature of features) {
-    if (feature === 'authentication') {
+  
+  // Add feature-specific files and directories
+  if (options.features) {
+    if (options.features.includes('authentication')) {
       addAuthenticationFiles(structure);
-    } else if (feature === 'database') {
+    }
+    
+    if (options.features.includes('database')) {
       addDatabaseFiles(structure);
-    } else if (feature === 'state-management') {
-      addStateManagementFiles(structure, framework);
-    } else if (feature === 'internationalization') {
+    }
+    
+    if (options.features.includes('state-management')) {
+      addStateManagementFiles(structure, options.framework);
+    }
+    
+    if (options.features.includes('i18n')) {
       addInternationalizationFiles(structure);
-    } else if (feature === 'testing') {
+    }
+    
+    if (options.features.includes('testing')) {
       addTestingFiles(structure);
     }
   }
-
+  
   // Add custom directories
-  for (const dir of customDirectories) {
-    addNode(structure, { path: dir, type: 'directory' });
+  if (options.customDirectories) {
+    for (const dir of options.customDirectories) {
+      addNode(structure, {
+        path: dir,
+        type: 'directory',
+        description: 'Custom directory',
+      });
+    }
   }
-
+  
   // Add custom files
-  for (const file of customFiles) {
-    addNode(structure, { path: file.path, type: 'file', content: file.content });
+  if (options.customFiles) {
+    for (const file of options.customFiles) {
+      addNode(structure, {
+        path: file.path,
+        type: 'file',
+        description: 'Custom file',
+        content: file.content,
+      });
+    }
   }
-
+  
   return structure;
 }
 
 /**
- * Adds authentication-related files to the structure
+ * Add authentication files to the directory structure
  */
 function addAuthenticationFiles(structure: DirectoryNode[]): void {
-  // Find the src directory
-  const src = findNode(structure, 'src');
-  if (!src || !src.children) return;
-
-  // Add auth directory
-  const authDir: DirectoryNode = {
-    path: 'auth',
-    type: 'directory',
-    description: 'Authentication-related code',
-    children: [
-      {
-        path: 'providers',
-        type: 'directory',
-        description: 'Authentication providers',
-      },
-      {
-        path: 'hooks',
-        type: 'directory',
-        description: 'Authentication hooks',
-      },
-      {
-        path: 'components',
-        type: 'directory',
-        description: 'Authentication components',
-      },
-    ],
-  };
-
-  src.children.push(authDir);
+  // Add auth directory to src
+  const srcNode = findNode(structure, 'src');
+  if (srcNode && srcNode.children) {
+    srcNode.children.push({
+      path: 'auth',
+      type: 'directory',
+      description: 'Authentication related files',
+      children: [
+        {
+          path: 'providers',
+          type: 'directory',
+          description: 'Authentication providers',
+        },
+        {
+          path: 'hooks',
+          type: 'directory',
+          description: 'Authentication hooks',
+        },
+        {
+          path: 'components',
+          type: 'directory',
+          description: 'Authentication components',
+        },
+      ],
+    });
+  }
 }
 
 /**
- * Adds database-related files to the structure
+ * Add database files to the directory structure
  */
 function addDatabaseFiles(structure: DirectoryNode[]): void {
-  // Find the src directory
-  const src = findNode(structure, 'src');
-  if (!src || !src.children) return;
-
-  // Add database directory
-  const dbDir: DirectoryNode = {
-    path: 'database',
-    type: 'directory',
-    description: 'Database-related code',
-    children: [
-      {
-        path: 'models',
-        type: 'directory',
-        description: 'Database models',
-      },
-      {
-        path: 'migrations',
-        type: 'directory',
-        description: 'Database migrations',
-      },
-      {
-        path: 'seeds',
-        type: 'directory',
-        description: 'Database seeds',
-      },
-    ],
-  };
-
-  src.children.push(dbDir);
+  // Add database directory to src
+  const srcNode = findNode(structure, 'src');
+  if (srcNode && srcNode.children) {
+    srcNode.children.push({
+      path: 'database',
+      type: 'directory',
+      description: 'Database related files',
+      children: [
+        {
+          path: 'migrations',
+          type: 'directory',
+          description: 'Database migrations',
+        },
+        {
+          path: 'seeders',
+          type: 'directory',
+          description: 'Database seeders',
+        },
+        {
+          path: 'models',
+          type: 'directory',
+          description: 'Database models',
+        },
+      ],
+    });
+  }
 }
 
 /**
- * Adds state management files to the structure
+ * Add state management files to the directory structure
  */
 function addStateManagementFiles(structure: DirectoryNode[], framework?: ProjectFramework): void {
-  // Find the src directory
-  const src = findNode(structure, 'src');
-  if (!src || !src.children) return;
-
-  // Add state directory
-  const stateDir: DirectoryNode = {
-    path: 'state',
-    type: 'directory',
-    description: 'State management',
-    children: [],
-  };
-
-  if (framework === ProjectFramework.REACT || framework === ProjectFramework.NEXT_JS) {
-    stateDir.children?.push(
-      {
-        path: 'store.ts',
-        type: 'file',
-        description: 'Redux store configuration',
-      },
-      {
-        path: 'slices',
+  // Add state management directory to src
+  const srcNode = findNode(structure, 'src');
+  if (srcNode && srcNode.children) {
+    if (framework === ProjectFramework.REACT) {
+      srcNode.children.push({
+        path: 'store',
         type: 'directory',
-        description: 'Redux slices',
-      },
-      {
-        path: 'hooks.ts',
-        type: 'file',
-        description: 'Redux hooks',
-      }
-    );
-  }
-
-  src.children.push(stateDir);
-}
-
-/**
- * Adds internationalization files to the structure
- */
-function addInternationalizationFiles(structure: DirectoryNode[]): void {
-  // Find the src directory
-  const src = findNode(structure, 'src');
-  if (!src || !src.children) return;
-
-  // Add i18n directory
-  const i18nDir: DirectoryNode = {
-    path: 'i18n',
-    type: 'directory',
-    description: 'Internationalization',
-    children: [
-      {
-        path: 'locales',
-        type: 'directory',
-        description: 'Translation files',
+        description: 'State management',
         children: [
           {
-            path: 'en.json',
-            type: 'file',
-            description: 'English translations',
+            path: 'slices',
+            type: 'directory',
+            description: 'Redux slices',
           },
           {
-            path: 'es.json',
+            path: 'hooks',
+            type: 'directory',
+            description: 'Redux hooks',
+          },
+          {
+            path: 'store.ts',
             type: 'file',
-            description: 'Spanish translations',
+            description: 'Redux store configuration',
           },
         ],
-      },
-      {
-        path: 'config.ts',
-        type: 'file',
-        description: 'i18n configuration',
-      },
-    ],
-  };
-
-  src.children.push(i18nDir);
+      });
+    }
+  }
 }
 
 /**
- * Adds testing files to the structure
+ * Add internationalization files to the directory structure
+ */
+function addInternationalizationFiles(structure: DirectoryNode[]): void {
+  // Add i18n directory to src
+  const srcNode = findNode(structure, 'src');
+  if (srcNode && srcNode.children) {
+    srcNode.children.push({
+      path: 'i18n',
+      type: 'directory',
+      description: 'Internationalization',
+      children: [
+        {
+          path: 'locales',
+          type: 'directory',
+          description: 'Translation files',
+          children: [
+            {
+              path: 'en',
+              type: 'directory',
+              description: 'English translations',
+            },
+            {
+              path: 'es',
+              type: 'directory',
+              description: 'Spanish translations',
+            },
+            {
+              path: 'fr',
+              type: 'directory',
+              description: 'French translations',
+            },
+          ],
+        },
+        {
+          path: 'config.ts',
+          type: 'file',
+          description: 'i18n configuration',
+        },
+      ],
+    });
+  }
+}
+
+/**
+ * Add testing files to the directory structure
  */
 function addTestingFiles(structure: DirectoryNode[]): void {
-  // Find the tests directory or create it
-  let tests = findNode(structure, 'tests');
-  if (!tests) {
-    tests = {
-      path: 'tests',
-      type: 'directory',
-      description: 'Test files',
-      children: [],
-    };
-    structure.push(tests);
-  }
-
-  if (!tests.children) {
-    tests.children = [];
-  }
-
-  // Add testing directories
-  tests.children.push(
-    {
-      path: 'unit',
-      type: 'directory',
-      description: 'Unit tests',
-    },
-    {
-      path: 'integration',
-      type: 'directory',
-      description: 'Integration tests',
-    },
-    {
-      path: 'e2e',
-      type: 'directory',
-      description: 'End-to-end tests',
-    },
-    {
-      path: 'fixtures',
-      type: 'directory',
-      description: 'Test fixtures',
-    },
-    {
-      path: 'mocks',
-      type: 'directory',
-      description: 'Test mocks',
-    }
-  );
+  // Add test directories
+  structure.push({
+    path: 'tests',
+    type: 'directory',
+    description: 'Test files',
+    children: [
+      {
+        path: 'unit',
+        type: 'directory',
+        description: 'Unit tests',
+      },
+      {
+        path: 'integration',
+        type: 'directory',
+        description: 'Integration tests',
+      },
+      {
+        path: 'e2e',
+        type: 'directory',
+        description: 'End-to-end tests',
+      },
+      {
+        path: 'fixtures',
+        type: 'directory',
+        description: 'Test fixtures',
+      },
+      {
+        path: 'mocks',
+        type: 'directory',
+        description: 'Test mocks',
+      },
+    ],
+  });
+  
+  // Add test configuration files
+  structure.push({
+    path: 'jest.config.js',
+    type: 'file',
+    description: 'Jest configuration',
+  });
 }
 
 /**
- * Finds a node in the structure by path
+ * Find a node in the directory structure by path
  */
 function findNode(structure: DirectoryNode[], path: string): DirectoryNode | undefined {
   for (const node of structure) {
     if (node.path === path) {
       return node;
     }
+    
     if (node.children) {
-      const found = findNode(node.children, path);
-      if (found) {
-        return found;
+      const foundNode = findNode(node.children, path);
+      if (foundNode) {
+        return foundNode;
       }
     }
   }
+  
   return undefined;
 }
 
 /**
- * Adds a node to the structure
+ * Add a node to the directory structure
  */
 function addNode(structure: DirectoryNode[], node: DirectoryNode): void {
+  // Check if the path contains directories
   const parts = node.path.split('/');
   
   if (parts.length === 1) {
-    // Add to root
+    // Simple path, add directly to the structure
     structure.push(node);
-    return;
-  }
-  
-  // Navigate to the parent directory
-  let current = structure;
-  for (let i = 0; i < parts.length - 1; i++) {
-    const part = parts[i];
-    let found = false;
+  } else {
+    // Complex path, need to create parent directories if they don't exist
+    let currentPath = '';
+    let currentStructure = structure;
     
-    for (const n of current) {
-      if (n.path === part && n.type === 'directory') {
-        if (!n.children) {
-          n.children = [];
-        }
-        current = n.children;
-        found = true;
-        break;
+    for (let i = 0; i < parts.length - 1; i++) {
+      currentPath += (i > 0 ? '/' : '') + parts[i];
+      
+      let dirNode = findNode(currentStructure, parts[i]);
+      
+      if (!dirNode) {
+        dirNode = {
+          path: parts[i],
+          type: 'directory',
+          description: 'Generated directory',
+          children: [],
+        };
+        currentStructure.push(dirNode);
       }
+      
+      if (!dirNode.children) {
+        dirNode.children = [];
+      }
+      
+      currentStructure = dirNode.children;
     }
     
-    if (!found) {
-      // Create parent directory
-      const newDir: DirectoryNode = {
-        path: part,
-        type: 'directory',
-        children: [],
-      };
-      current.push(newDir);
-      current = newDir.children!;
-    }
+    // Add the final node
+    const finalNode = { ...node, path: parts[parts.length - 1] };
+    currentStructure.push(finalNode);
   }
-  
-  // Add the node to the parent directory
-  const nodeName = parts[parts.length - 1];
-  current.push({
-    ...node,
-    path: nodeName,
-  });
 }
 
 /**
- * Generates a flat list of file paths from a directory structure
+ * Flatten directory structure to a list of paths
  */
 export function flattenDirectoryStructure(structure: DirectoryNode[], prefix: string = ''): string[] {
   const paths: string[] = [];
   
   for (const node of structure) {
-    const path = prefix ? `${prefix}/${node.path}` : node.path;
+    const nodePath = prefix ? `${prefix}/${node.path}` : node.path;
+    paths.push(nodePath);
     
-    if (node.type === 'file') {
-      paths.push(path);
-    } else if (node.type === 'directory') {
-      paths.push(`${path}/`);
-      if (node.children) {
-        paths.push(...flattenDirectoryStructure(node.children, path));
-      }
+    if (node.children) {
+      paths.push(...flattenDirectoryStructure(node.children, nodePath));
     }
   }
   
@@ -943,7 +874,7 @@ export function flattenDirectoryStructure(structure: DirectoryNode[], prefix: st
 }
 
 /**
- * Generates a markdown representation of a directory structure
+ * Convert directory structure to markdown
  */
 export function directoryStructureToMarkdown(structure: DirectoryNode[], level: number = 0): string {
   let markdown = '';
@@ -952,13 +883,7 @@ export function directoryStructureToMarkdown(structure: DirectoryNode[], level: 
     const indent = '  '.repeat(level);
     const icon = node.type === 'directory' ? '📁' : '📄';
     
-    markdown += `${indent}${icon} ${node.path}`;
-    
-    if (node.description) {
-      markdown += ` - ${node.description}`;
-    }
-    
-    markdown += '\n';
+    markdown += `${indent}${icon} ${node.path}${node.description ? ` - ${node.description}` : ''}\n`;
     
     if (node.children) {
       markdown += directoryStructureToMarkdown(node.children, level + 1);

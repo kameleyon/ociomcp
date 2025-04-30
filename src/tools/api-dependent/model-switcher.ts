@@ -4,9 +4,82 @@ export function activate() {
     console.log("[TOOL] model-switcher activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[Model-Switcher] File written: ${filePath}`);
+  
+  // Check if the file contains model-related configuration
+  if (filePath.includes('model') || filePath.includes('config') || filePath.includes('settings')) {
+    console.log('[Model-Switcher] Detected potential model configuration file change');
+    
+    // Check for model references in content
+    const modelReferences = [];
+    
+    for (const model of config.fallbackModels) {
+      if (content.includes(model)) {
+        modelReferences.push(model);
+      }
+    }
+    
+    if (modelReferences.length > 0) {
+      console.log(`[Model-Switcher] Found references to models: ${modelReferences.join(', ')}`);
+      return {
+        detected: true,
+        filePath,
+        modelReferences
+      };
+    }
+  }
+  
+  return { detected: false };
+}
+
+export function onSessionStart(context: any) {
+  console.log('[Model-Switcher] Session started');
+  
+  // Initialize model switcher with default configuration
+  console.log('[Model-Switcher] Initializing model switcher');
+  
+  // Update configuration if provided in context
+  if (context?.modelSwitcher) {
+    if (context.modelSwitcher.thresholds) {
+      config.thresholds = {
+        ...config.thresholds,
+        ...context.modelSwitcher.thresholds
+      };
+    }
+    
+    if (context.modelSwitcher.fallbackModels) {
+      config.fallbackModels = context.modelSwitcher.fallbackModels;
+    }
+  }
+  
+  return {
+    initialized: true,
+    thresholds: config.thresholds,
+    fallbackModels: config.fallbackModels
+  };
+}
+
+export function onCommand(command: string, args: any) {
+  console.log(`[Model-Switcher] Command received: ${command}`);
+  
+  if (command === 'model.switch') {
+    console.log('[Model-Switcher] Switching model');
+    return { action: 'switchModel', args };
+  } else if (command === 'model.getAvailable') {
+    console.log('[Model-Switcher] Getting available models');
+    return { action: 'getAvailableModels', args };
+  } else if (command === 'model.configure') {
+    console.log('[Model-Switcher] Configuring model switching');
+    return { action: 'configureModelSwitching', args };
+  } else if (command === 'model.reset') {
+    console.log('[Model-Switcher] Resetting model configuration');
+    config = { ...defaultConfig };
+    return { action: 'reset', success: true };
+  }
+  
+  return { action: 'unknown' };
+}
 import { z } from 'zod';
 import * as fs from 'fs/promises';
 import * as path from 'path';

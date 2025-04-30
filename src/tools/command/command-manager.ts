@@ -4,9 +4,187 @@ export function activate() {
     console.log("[TOOL] command-manager activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[Command Manager] File written: ${filePath}`);
+  
+  // Check if the file is a command-related configuration file
+  if (filePath.endsWith('package.json') ||
+      filePath.endsWith('tsconfig.json') ||
+      filePath.endsWith('.npmrc') ||
+      filePath.endsWith('.yarnrc')) {
+    console.log(`[Command Manager] Detected configuration file change: ${filePath}`);
+    return {
+      detected: true,
+      filePath,
+      type: 'config'
+    };
+  }
+  
+  // Check for script files
+  const extension = filePath.substring(filePath.lastIndexOf('.')).toLowerCase();
+  const scriptExtensions = ['.sh', '.bat', '.cmd', '.ps1'];
+  
+  if (scriptExtensions.includes(extension)) {
+    console.log(`[Command Manager] Detected script file: ${filePath}`);
+    return {
+      detected: true,
+      filePath,
+      type: 'script'
+    };
+  }
+  
+  return { detected: false };
+}
+
+export function onSessionStart(context: any) {
+  console.log('[Command Manager] Session started');
+  
+  // Initialize the command manager
+  const manager = commandManager;
+  
+  // Log system information
+  const osType = platform();
+  // Use platform to determine shell instead of accessing private property
+  const shell = osType === 'win32' ? 'cmd.exe' : '/bin/bash';
+  
+  console.log(`[Command Manager] OS: ${osType}, Default Shell: ${shell}`);
+  
+  // List active sessions
+  const sessions = manager.listSessions();
+  if (sessions.length > 0) {
+    console.log(`[Command Manager] Found ${sessions.length} existing terminal sessions`);
+  }
+  
+  try {
+    // Check for running processes
+    manager.listProcesses().then(processes => {
+      console.log(`[Command Manager] Found ${processes.length} running processes`);
+    }).catch(error => {
+      console.error(`[Command Manager] Error listing processes: ${error}`);
+    });
+  } catch (error) {
+    console.error(`[Command Manager] Error during initialization: ${error}`);
+  }
+  
+  return {
+    initialized: true,
+    osType,
+    shell,
+    activeSessions: sessions.length
+  };
+}
+
+export function onCommand(command: string, args: any[]) {
+  console.log(`[Command Manager] Command received: ${command}`);
+  
+  try {
+    if (command === 'terminal.execute') {
+      console.log('[Command Manager] Executing command in terminal');
+      if (args && args.length > 0) {
+        const cmd = typeof args[0] === 'string' ? args[0] : args[0].command;
+        const cwd = args[0].cwd || process.cwd();
+        const timeout = args[0].timeout;
+        
+        // Execute the command
+        commandManager.executeCommand(cmd, cwd, timeout).then(result => {
+          console.log(`[Command Manager] Command executed with session ID: ${result.sessionId}`);
+        }).catch(error => {
+          console.error(`[Command Manager] Error executing command: ${error}`);
+        });
+        
+        return {
+          action: 'execute',
+          command: cmd,
+          cwd,
+          timeout
+        };
+      }
+    } else if (command === 'terminal.read') {
+      console.log('[Command Manager] Reading terminal output');
+      if (args && args.length > 0) {
+        const sessionId = typeof args[0] === 'string' ? args[0] : args[0].sessionId;
+        
+        try {
+          const output = commandManager.readOutput(sessionId);
+          return {
+            action: 'read',
+            sessionId,
+            output: output.output,
+            isRunning: output.isRunning,
+            exitCode: output.exitCode
+          };
+        } catch (error) {
+          console.error(`[Command Manager] Error reading output: ${error}`);
+          return { action: 'read', error: String(error) };
+        }
+      }
+    } else if (command === 'terminal.terminate') {
+      console.log('[Command Manager] Terminating terminal session');
+      if (args && args.length > 0) {
+        const sessionId = typeof args[0] === 'string' ? args[0] : args[0].sessionId;
+        
+        try {
+          const result = commandManager.forceTerminate(sessionId);
+          return { action: 'terminate', sessionId, success: result };
+        } catch (error) {
+          console.error(`[Command Manager] Error terminating session: ${error}`);
+          return { action: 'terminate', error: String(error) };
+        }
+      }
+    } else if (command === 'terminal.list') {
+      console.log('[Command Manager] Listing terminal sessions');
+      
+      try {
+        const sessions = commandManager.listSessions();
+        return { action: 'list', sessions };
+      } catch (error) {
+        console.error(`[Command Manager] Error listing sessions: ${error}`);
+        return { action: 'list', error: String(error) };
+      }
+    } else if (command === 'process.list') {
+      console.log('[Command Manager] Listing processes');
+      
+      try {
+        // This is async, so we can't return the result directly
+        commandManager.listProcesses().then(processes => {
+          console.log(`[Command Manager] Found ${processes.length} processes`);
+        }).catch(error => {
+          console.error(`[Command Manager] Error listing processes: ${error}`);
+        });
+        
+        return { action: 'listProcesses', started: true };
+      } catch (error) {
+        console.error(`[Command Manager] Error listing processes: ${error}`);
+        return { action: 'listProcesses', error: String(error) };
+      }
+    } else if (command === 'process.kill') {
+      console.log('[Command Manager] Killing process');
+      if (args && args.length > 0) {
+        const pid = typeof args[0] === 'number' ? args[0] : args[0].pid;
+        const signal = args[0].signal;
+        
+        try {
+          // This is async, so we can't return the result directly
+          commandManager.killProcess(pid, signal).then(result => {
+            console.log(`[Command Manager] Process ${pid} killed: ${result}`);
+          }).catch(error => {
+            console.error(`[Command Manager] Error killing process: ${error}`);
+          });
+          
+          return { action: 'killProcess', pid, signal, started: true };
+        } catch (error) {
+          console.error(`[Command Manager] Error killing process: ${error}`);
+          return { action: 'killProcess', error: String(error) };
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`[Command Manager] Error processing command: ${error}`);
+    return { action: 'error', error: String(error) };
+  }
+  
+  return { action: 'unknown' };
+}
 /**
  * Command Manager
  * Manages command execution and terminal sessions

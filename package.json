@@ -37,6 +37,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.8.0",
     "@nestjs/swagger": "^11.1.5",
+    "@types/fs-extra": "^11.0.4",
     "@types/semver": "^7.7.0",
     "@types/uuid": "^10.0.0",
     "@vscode/ripgrep": "^1.15.9",
@@ -46,6 +47,7 @@
     "concurrently": "^8.2.2",
     "cross-fetch": "^4.1.0",
     "dotenv": "^16.5.0",
+    "fs-extra": "^11.3.0",
     "glob": "^10.3.10",
     "semver": "^7.7.1",
     "uuid": "^11.1.0",

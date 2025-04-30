@@ -4,9 +4,46 @@ export function activate() {
     console.log("[TOOL] search activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Handles file write events for search operations.
+ * Clears any cached search results if file content changes.
+ */
+export function onFileWrite(event?: { path: string }) {
+  console.log(`[search] File write detected: ${event?.path}`);
+  // Clear cache or reinitialize any indexing as needed
+}
+
+/**
+ * Initializes search state at session start.
+ */
+export function onSessionStart(session?: { id: string }) {
+  console.log(`[search] Session started${session?.id ? `: ${session.id}` : ""}. Preparing search environment.`);
+  // Initialize caches or state if needed
+}
+
+/**
+ * Handles search commands.
+ * Dispatches to searchFiles, searchCode, or applyDiff.
+ */
+export async function onCommand(command?: { name: string; args?: any }) {
+  if (!command || !command.name) {
+    console.warn("[search] onCommand called without command data.");
+    return;
+  }
+  switch (command.name) {
+    case "search_files":
+      console.log("[search] Executing file search...");
+      return await searchFiles(command.args.path, command.args.regex, command.args.filePattern, command.args.timeoutMs);
+    case "search_code":
+      console.log("[search] Executing code search...");
+      return await searchCode(command.args.path, command.args.regex, command.args.filePattern, command.args.contextLines, command.args.timeoutMs);
+    case "apply_diff":
+      console.log("[search] Applying diff...");
+      return await applyDiff(command.args.path, command.args.diff);
+    default:
+      console.warn(`[search] Unknown command: ${command.name}`);
+  }
+}
 /**
  * Filesystem Search Operations
  * Implements search functionality for files and code

@@ -4,9 +4,93 @@ export function activate() {
     console.log("[TOOL] project-templates activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[TOOL] Project templates processing file: ${filePath}`);
+  
+  // Check if the file is a project template file
+  const isTemplateFile = filePath.includes('project-templates') || filePath.endsWith('.template.ts');
+  
+  if (isTemplateFile) {
+    console.log(`[TOOL] Detected change in project template file: ${filePath}`);
+    // In a real implementation, we might reload or update the templates
+  }
+}
+
+export function onSessionStart(sessionId: string) {
+  console.log(`[TOOL] Project templates initialized for session: ${sessionId}`);
+  
+  // Check for existing project templates
+  setTimeout(() => {
+    console.log('[TOOL] Checking for existing project templates...');
+    checkExistingTemplates();
+  }, 3000); // Delay to ensure project files are loaded
+}
+
+export function onCommand(command: string, args: any[]) {
+  if (command === 'list-project-templates') {
+    console.log('[TOOL] Listing project templates...');
+    
+    return handleListProjectTemplates();
+  } else if (command === 'get-project-template') {
+    console.log('[TOOL] Getting project template...');
+    
+    const templateName = args[0];
+    const framework = args[1] || 'react-vite';
+    
+    return handleGetProjectTemplate(templateName, framework);
+  } else if (command === 'generate-project-from-template') {
+    console.log('[TOOL] Generating project from template...');
+    
+    const templateName = args[0];
+    const options = args[1];
+    
+    return handleGenerateProjectFromTemplate(templateName, options);
+  }
+  
+  return null;
+}
+
+/**
+ * Checks for existing project templates
+ */
+function checkExistingTemplates() {
+  console.log('[TOOL] Checking for existing project templates...');
+  
+  // This is a placeholder - in a real implementation, this would scan the filesystem
+  // For now, we'll just log a message
+  console.log('[TOOL] Recommendation: Use the "list-project-templates" command to see available templates');
+  console.log('[TOOL] Common template tasks:');
+  console.log('- Listing available project templates');
+  console.log('- Getting a specific project template');
+  console.log('- Generating a project from a template');
+}
+
+/**
+ * Handles the list-project-templates command
+ */
+async function handleListProjectTemplates(): Promise<any> {
+  console.log('[TOOL] Handling list-project-templates command');
+  // Placeholder implementation
+  return { success: true, templates: Object.values(ProjectType) };
+}
+
+/**
+ * Handles the get-project-template command
+ */
+async function handleGetProjectTemplate(templateName: string, framework: string): Promise<any> {
+  console.log(`[TOOL] Handling get-project-template command for ${templateName} (${framework})`);
+  // Placeholder implementation
+  return { success: true, template: { name: templateName, framework: framework, description: 'Mock project template' } };
+}
+
+/**
+ * Handles the generate-project-from-template command
+ */
+async function handleGenerateProjectFromTemplate(templateName: string, options: any): Promise<any> {
+  console.log(`[TOOL] Handling generate-project-from-template command for ${templateName} with options:`, options);
+  // Placeholder implementation
+  return { success: true, message: `Project generated from template ${templateName} (mock)` };
+}
 /**
  * Project Templates
  * Provides templates for generating complete React projects with various configurations

@@ -4,9 +4,91 @@ export function activate() {
     console.log("[TOOL] schema-gen activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Handles file write events for schema or migration config files.
+ * If a relevant file changes, auto-generates schema or migration scripts.
+ */
+export async function onFileWrite(event?: { path: string; content?: string }) {
+  if (!event || !event.path) {
+    console.warn("[schema-gen] onFileWrite called without event data.");
+    return;
+  }
+  try {
+    if (event.path.endsWith('.schema.json')) {
+      console.log(`[schema-gen] Detected schema config file change: ${event.path}`);
+      const config = JSON.parse(event.content || await (await import('fs/promises')).readFile(event.path, 'utf-8'));
+      await handleGenerateSchema(config);
+      console.log(`[schema-gen] Schema files regenerated for ${event.path}`);
+    } else if (event.path.endsWith('.migration.json')) {
+      console.log(`[schema-gen] Detected migration config file change: ${event.path}`);
+      const config = JSON.parse(event.content || await (await import('fs/promises')).readFile(event.path, 'utf-8'));
+      await handleGenerateMigration(config);
+      console.log(`[schema-gen] Migration files regenerated for ${event.path}`);
+    }
+  } catch (err) {
+    console.error(`[schema-gen] Error during file-triggered generation:`, err);
+  }
+}
+
+/**
+ * Initializes or resets schema generator state at the start of a session.
+ */
+export function onSessionStart(session?: { id?: string }) {
+  console.log(`[schema-gen] Session started${session && session.id ? `: ${session.id}` : ""}. Preparing schema generation environment.`);
+  // Example: clear temp files, reset state, etc.
+  // ... actual reset logic
+}
+
+/**
+ * Handles schema-gen commands.
+ * Supports dynamic invocation of schema/migration generation or validation.
+ */
+export async function onCommand(command?: { name: string; args?: any }) {
+  if (!command || !command.name) {
+    console.warn("[schema-gen] onCommand called without command data.");
+    return;
+  }
+  switch (command.name) {
+    case "generate-schema":
+      console.log("[schema-gen] Generating database schema...");
+      try {
+        await handleGenerateSchema(command.args);
+        console.log("[schema-gen] Schema generation complete.");
+      } catch (err) {
+        console.error("[schema-gen] Schema generation failed:", err);
+      }
+      break;
+    case "generate-migration":
+      console.log("[schema-gen] Generating migration scripts...");
+      try {
+        await handleGenerateMigration(command.args);
+        console.log("[schema-gen] Migration generation complete.");
+      } catch (err) {
+        console.error("[schema-gen] Migration generation failed:", err);
+      }
+      break;
+    case "validate-schema":
+      console.log("[schema-gen] Validating schema configuration...");
+      try {
+        GenerateSchemaSchema.parse(command.args);
+        console.log("[schema-gen] Schema validation successful.");
+      } catch (err) {
+        console.error("[schema-gen] Schema validation failed:", err);
+      }
+      break;
+    case "validate-migration":
+      console.log("[schema-gen] Validating migration configuration...");
+      try {
+        GenerateMigrationSchema.parse(command.args);
+        console.log("[schema-gen] Migration validation successful.");
+      } catch (err) {
+        console.error("[schema-gen] Migration validation failed:", err);
+      }
+      break;
+    default:
+      console.warn(`[schema-gen] Unknown command: ${command.name}`);
+  }
+}
 /**
  * SchemaGen Tool
  * 
@@ -844,4 +926,3 @@ Object.entries(mongooseMigrationFiles).forEach(([filename, content]) => {
 /**
  * Generate SQL schema for PostgreSQL, MySQL, or SQLite
  */
-

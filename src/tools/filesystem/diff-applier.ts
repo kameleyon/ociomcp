@@ -4,9 +4,68 @@ export function activate() {
     console.log("[TOOL] diff-applier activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Handles file write events for diff/patch files.
+ * If a relevant file changes, triggers application of diffs to target files.
+ */
+export async function onFileWrite(event?: { path: string; content?: string }) {
+  if (!event || !event.path) {
+    console.warn("[diff-applier] onFileWrite called without event data.");
+    return;
+  }
+  try {
+    if (event.path.endsWith('.patch') || event.path.endsWith('.diff')) {
+      console.log(`[diff-applier] Detected diff/patch file change: ${event.path}`);
+      const diffContent = event.content || await (await import('fs/promises')).readFile(event.path, 'utf-8');
+      // In a real implementation, you would determine the target file(s) and apply the diff
+      // ... actual logic could go here
+    }
+  } catch (err) {
+    console.error(`[diff-applier] Error during file-triggered diff application:`, err);
+  }
+}
+
+/**
+ * Initializes or resets diff applier state at the start of a session.
+ */
+export function onSessionStart(session?: { id?: string }) {
+  console.log(`[diff-applier] Session started${session && session.id ? `: ${session.id}` : ""}. Preparing diff applier environment.`);
+  // Example: clear temp files, reset state, etc.
+  // ... actual reset logic
+}
+
+/**
+ * Handles diff applier commands.
+ * Supports dynamic invocation of diff application or validation.
+ */
+export async function onCommand(command?: { name: string; args?: any }) {
+  if (!command || !command.name) {
+    console.warn("[diff-applier] onCommand called without command data.");
+    return;
+  }
+  switch (command.name) {
+    case "apply-diff":
+      console.log("[diff-applier] Applying diff...");
+      try {
+        await handleApplyDiff(command.args);
+        console.log("[diff-applier] Diff application complete.");
+      } catch (err) {
+        console.error("[diff-applier] Diff application failed:", err);
+      }
+      break;
+    case "validate-diff-schema":
+      console.log("[diff-applier] Validating diff schema...");
+      try {
+        ApplyDiffSchema.parse(command.args);
+        console.log("[diff-applier] Diff schema validation successful.");
+      } catch (err) {
+        console.error("[diff-applier] Diff schema validation failed:", err);
+      }
+      break;
+    default:
+      console.warn(`[diff-applier] Unknown command: ${command.name}`);
+  }
+}
 /**
  * Diff Applier
  * 
@@ -535,4 +594,3 @@ export async function handleApplyDiff(args: any) {
     };
   }
 }
-

@@ -4,9 +4,165 @@ export function activate() {
     console.log("[TOOL] output-reader activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[Output Reader] File written: ${filePath}`);
+  
+  // Check if the file is a log file
+  if (filePath.endsWith('.log') ||
+      filePath.includes('logs/') ||
+      filePath.includes('/logs/')) {
+    console.log(`[Output Reader] Detected log file: ${filePath}`);
+    return {
+      detected: true,
+      filePath,
+      type: 'log'
+    };
+  }
+  
+  // Check for output files
+  if (filePath.endsWith('.out') ||
+      filePath.endsWith('.err') ||
+      filePath.endsWith('.stdout') ||
+      filePath.endsWith('.stderr')) {
+    console.log(`[Output Reader] Detected output file: ${filePath}`);
+    return {
+      detected: true,
+      filePath,
+      type: 'output'
+    };
+  }
+  
+  return { detected: false };
+}
+
+export function onSessionStart(context: any) {
+  console.log('[Output Reader] Session started');
+  
+  // Log active processes
+  const processes = getMonitoredProcesses();
+  console.log(`[Output Reader] Found ${processes.length} active monitored processes`);
+  
+  // Clear old processes that might have been left over
+  for (const process of processes) {
+    // If process has been running for more than 24 hours, stop monitoring it
+    if (process.runningTime > 24 * 60 * 60 * 1000) {
+      console.log(`[Output Reader] Stopping monitoring for stale process: ${process.pid}`);
+      stopMonitoring(process.pid);
+    }
+  }
+  
+  return {
+    initialized: true,
+    activeProcesses: processes.length
+  };
+}
+
+export function onCommand(command: string, args: any[]) {
+  console.log(`[Output Reader] Command received: ${command}`);
+  
+  try {
+    if (command === 'output.start') {
+      console.log('[Output Reader] Starting output monitoring');
+      if (args && args.length > 0) {
+        const options = typeof args[0] === 'string'
+          ? { command: args[0] }
+          : args[0];
+        
+        try {
+          const result = startMonitoring(
+            options.command,
+            options.args,
+            options.cwd,
+            options.shell,
+            options.env,
+            options.outputLimit
+          );
+          
+          return {
+            action: 'start',
+            pid: result.pid,
+            command: result.command
+          };
+        } catch (error) {
+          console.error(`[Output Reader] Error starting monitoring: ${error}`);
+          return { action: 'start', error: String(error) };
+        }
+      }
+    } else if (command === 'output.stop') {
+      console.log('[Output Reader] Stopping output monitoring');
+      if (args && args.length > 0) {
+        const pid = typeof args[0] === 'number' ? args[0] : args[0].pid;
+        
+        try {
+          const result = stopMonitoring(pid);
+          return { action: 'stop', pid, success: result };
+        } catch (error) {
+          console.error(`[Output Reader] Error stopping monitoring: ${error}`);
+          return { action: 'stop', error: String(error) };
+        }
+      }
+    } else if (command === 'output.get') {
+      console.log('[Output Reader] Getting output');
+      if (args && args.length > 0) {
+        const pid = typeof args[0] === 'number' ? args[0] : args[0].pid;
+        const lines = args[0].lines;
+        const tail = args[0].tail !== false; // Default to true
+        
+        try {
+          const result = getOutput(pid, lines, tail);
+          return {
+            action: 'get',
+            pid,
+            exists: result.exists,
+            stdout: result.stdout,
+            stderr: result.stderr
+          };
+        } catch (error) {
+          console.error(`[Output Reader] Error getting output: ${error}`);
+          return { action: 'get', error: String(error) };
+        }
+      }
+    } else if (command === 'output.clear') {
+      console.log('[Output Reader] Clearing output');
+      if (args && args.length > 0) {
+        const pid = typeof args[0] === 'number' ? args[0] : args[0].pid;
+        
+        try {
+          const result = clearOutput(pid);
+          return { action: 'clear', pid, success: result };
+        } catch (error) {
+          console.error(`[Output Reader] Error clearing output: ${error}`);
+          return { action: 'clear', error: String(error) };
+        }
+      }
+    } else if (command === 'output.list') {
+      console.log('[Output Reader] Listing monitored processes');
+      
+      try {
+        const processes = getMonitoredProcesses();
+        return {
+          action: 'list',
+          processes,
+          count: processes.length
+        };
+      } catch (error) {
+        console.error(`[Output Reader] Error listing processes: ${error}`);
+        return { action: 'list', error: String(error) };
+      }
+    }
+  } catch (error) {
+    console.error(`[Output Reader] Error processing command: ${error}`);
+    try {
+      console.error(`Error using API for token counting: ${error}`);
+      // Fall back to simple estimation if API call fails
+      return { action: 'error', error: String(error) };
+    } catch (nestedError) {
+      return { action: 'error', error: 'Multiple errors occurred' };
+    }
+  }
+  
+  return { action: 'unknown' };
+}
 /**
  * Output Reader
  * 

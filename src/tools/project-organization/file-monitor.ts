@@ -4,9 +4,178 @@ export function activate() {
     console.log("[TOOL] file-monitor activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[TOOL] File monitor processing file: ${filePath}`);
+  
+  // Get file size in bytes
+  const fileSize = Buffer.from(content).length;
+  const fileType = getFileType(filePath);
+  const severity = getFileSizeSeverity(fileType, fileSize);
+  
+  // Log file size information
+  console.log(`[TOOL] File size: ${formatFileSize(fileSize)} (${severity})`);
+  
+  // Provide suggestions if file size exceeds warning threshold
+  if (severity !== FileSizeSeverity.OK) {
+    const thresholds = FILE_SIZE_THRESHOLDS[fileType];
+    console.log(`[TOOL] File size exceeds recommended threshold of ${formatFileSize(thresholds.warning)}`);
+    
+    // Generate specific suggestions based on file type
+    const suggestions = generateFileSizeSuggestions(fileType, filePath, fileSize);
+    if (suggestions.length > 0) {
+      console.log('[TOOL] Optimization suggestions:');
+      suggestions.forEach(suggestion => console.log(`- ${suggestion}`));
+    }
+  }
+}
+
+export function onSessionStart(sessionId: string) {
+  console.log(`[TOOL] File monitor initialized for session: ${sessionId}`);
+  
+  // Schedule a file size analysis for the project
+  setTimeout(() => {
+    console.log('[TOOL] Running project-wide file size analysis...');
+    analyzeProjectFileSizes();
+  }, 3000); // Delay to ensure project files are loaded
+}
+
+export function onCommand(command: string, args: any[]) {
+  if (command === 'analyze-file-sizes') {
+    console.log('[TOOL] Running file size analysis...');
+    
+    // If a specific path is provided, analyze only that path
+    const path = args[0] || '.';
+    const result = analyzeProjectFileSizes(path);
+    
+    return result;
+  } else if (command === 'suggest-optimizations') {
+    const filePath = args[0];
+    const fileContent = args[1];
+    
+    if (!filePath || !fileContent) {
+      return { error: 'File path and content are required' };
+    }
+    
+    const fileType = getFileType(filePath);
+    const fileSize = Buffer.from(fileContent).length;
+    
+    // Generate specific suggestions
+    if (fileType === FileType.JAVASCRIPT || fileType === FileType.TYPESCRIPT) {
+      return suggestCodeSplitting(filePath, fileContent);
+    } else if (fileType === FileType.CSS) {
+      return suggestCssOptimizations(filePath, fileContent);
+    } else {
+      const suggestions = generateFileSizeSuggestions(fileType, filePath, fileSize);
+      return { suggestions };
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Generates file size optimization suggestions based on file type
+ */
+function generateFileSizeSuggestions(fileType: FileType, filePath: string, fileSize: number): string[] {
+  const suggestions: string[] = [];
+  
+  switch (fileType) {
+    case FileType.JAVASCRIPT:
+    case FileType.TYPESCRIPT:
+      suggestions.push(
+        'Consider code splitting to reduce initial load time',
+        'Use tree shaking to eliminate unused code',
+        'Minify the code to reduce file size',
+        'Consider using dynamic imports for components not needed immediately'
+      );
+      break;
+    
+    case FileType.CSS:
+      suggestions.push(
+        'Remove unused CSS rules',
+        'Consider using a CSS preprocessor to better organize styles',
+        'Use CSS minification',
+        'Consider CSS-in-JS or CSS Modules to scope styles'
+      );
+      break;
+    
+    case FileType.HTML:
+      suggestions.push(
+        'Minify HTML',
+        'Remove unnecessary comments and whitespace',
+        'Consider using lazy loading for images and scripts'
+      );
+      break;
+    
+    case FileType.IMAGE:
+      suggestions.push(
+        'Compress the image using tools like ImageOptim or TinyPNG',
+        'Consider using WebP format for better compression',
+        'Use responsive images with srcset to serve appropriate sizes',
+        'Consider lazy loading for images not in the initial viewport'
+      );
+      break;
+    
+    case FileType.JSON:
+      suggestions.push(
+        'Remove unnecessary fields',
+        'Consider paginating or chunking large JSON data',
+        'Use a more efficient data format for large datasets'
+      );
+      break;
+    
+    default:
+      suggestions.push(
+        'Consider compressing the file',
+        'Check if the file contains unnecessary data that can be removed'
+      );
+  }
+  
+  return suggestions;
+}
+
+/**
+ * Analyzes file sizes for the entire project or a specific path
+ */
+function analyzeProjectFileSizes(path: string = '.'): any {
+  // This is a placeholder - in a real implementation, this would scan the filesystem
+  // For now, we'll just return a mock report
+  
+  console.log(`[TOOL] Analyzing file sizes in path: ${path}`);
+  
+  // Mock file list for demonstration
+  const mockFiles = [
+    { path: 'src/index.js', size: 50 * 1024, lastModified: new Date() },
+    { path: 'src/components/App.js', size: 120 * 1024, lastModified: new Date() },
+    { path: 'src/styles/main.css', size: 80 * 1024, lastModified: new Date() },
+    { path: 'public/images/banner.jpg', size: 2 * 1024 * 1024, lastModified: new Date() },
+    { path: 'data/config.json', size: 30 * 1024, lastModified: new Date() },
+  ];
+  
+  // Generate report
+  const report = analyzeFileSizes(mockFiles);
+  
+  // Log summary
+  console.log(`[TOOL] Total size: ${formatFileSize(report.totalSize)}`);
+  console.log(`[TOOL] Total files: ${report.totalFiles}`);
+  console.log(`[TOOL] Large files: ${report.largeFiles.length}`);
+  
+  if (report.largeFiles.length > 0) {
+    console.log('[TOOL] Large files:');
+    report.largeFiles.forEach(file => {
+      console.log(`- ${file.path}: ${formatFileSize(file.size)} (${file.severity})`);
+    });
+  }
+  
+  if (report.suggestions.length > 0) {
+    console.log('[TOOL] Suggestions:');
+    report.suggestions.forEach(suggestion => {
+      console.log(`- ${suggestion}`);
+    });
+  }
+  
+  return report;
+}
 /**
  * File Monitor
  * Provides functionality for monitoring file sizes and suggesting optimizations

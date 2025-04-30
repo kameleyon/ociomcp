@@ -4,9 +4,132 @@ export function activate() {
     console.log("[TOOL] test-manager activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[TOOL] Test manager processing file: ${filePath}`);
+  
+  // Check if the file is a test file
+  const isTestFile = /\.(test|spec)\.(js|ts|jsx|tsx)$/i.test(filePath);
+  
+  if (isTestFile) {
+    console.log(`[TOOL] Test file modified: ${filePath}`);
+    
+    // In a real implementation, we might automatically run tests or update test results
+    // For now, we'll just log the detection
+    
+    // Check if there are existing test results for this file
+    if (globalThis.testResults && globalThis.testResults[filePath]) {
+      // Mark the existing test results as outdated
+      globalThis.testResults[filePath].results.outdated = true;
+      console.log(`[TOOL] Marked test results for ${filePath} as outdated due to file modification`);
+    }
+  }
+}
+
+export async function onSessionStart(sessionId: string) {
+  console.log(`[TOOL] Test manager initialized for session: ${sessionId}`);
+  
+  // Check for existing test results
+  setTimeout(() => {
+    console.log('[TOOL] Checking for existing test results...');
+    checkExistingTestResults();
+  }, 3000); // Delay to ensure project files are loaded
+}
+
+export async function onCommand(command: string, args: any[]) {
+  if (command === 'run-tests') {
+    console.log('[TOOL] Running tests...');
+    
+    const testPattern = args[0];
+    const testFiles = args[1];
+    const testNames = args[2];
+    const framework = args[3] || 'auto';
+    const watch = args[4] !== false;
+    const coverage = args[5] !== false;
+    const updateSnapshots = args[6] !== false;
+    const bail = args[7] !== false;
+    const verbose = args[8] !== false;
+    const timeout = args[9] || 60000;
+    const additionalArgs = args[10];
+    
+    return handleRunTests({
+      testPattern,
+      testFiles,
+      testNames,
+      framework,
+      watch,
+      coverage,
+      updateSnapshots,
+      bail,
+      verbose,
+      timeout,
+      additionalArgs
+    });
+  } else if (command === 'find-tests') {
+    console.log('[TOOL] Finding tests...');
+    
+    const directory = args[0] || '.';
+    const recursive = args[1] !== false;
+    const testPattern = args[2];
+    const excludePattern = args[3];
+    const framework = args[4] || 'auto';
+    const includeSkipped = args[5] !== false;
+    
+    return handleFindTests({
+      directory,
+      recursive,
+      testPattern,
+      excludePattern,
+      framework,
+      includeSkipped
+    });
+  } else if (command === 'generate-test-report') {
+    console.log('[TOOL] Generating test report...');
+    
+    const testResults = args[0];
+    const format = args[1] || 'text';
+    const outputPath = args[2];
+    const includeFailureDetails = args[3] !== false;
+    const includeCoverage = args[4] !== false;
+    
+    return handleGenerateTestReport({
+      testResults,
+      format,
+      outputPath,
+      includeFailureDetails,
+      includeCoverage
+    });
+  } else if (command === 'analyze-test-coverage') {
+    console.log('[TOOL] Analyzing test coverage...');
+    
+    const coverageData = args[0];
+    const threshold = args[1];
+    const excludePatterns = args[2];
+    
+    return handleAnalyzeTestCoverage({
+      coverageData,
+      threshold,
+      excludePatterns
+    });
+  }
+  
+  return null;
+}
+
+/**
+ * Checks for existing test results
+ */
+function checkExistingTestResults() {
+  console.log('[TOOL] Checking for existing test results...');
+  
+  // This is a placeholder - in a real implementation, this would check a database or file system
+  // For now, we'll just log a message
+  console.log('[TOOL] Recommendation: Use the "run-tests" command to execute tests and generate results');
+  console.log('[TOOL] Common test management tasks:');
+  console.log('- Running all tests');
+  console.log('- Running specific test files or patterns');
+  console.log('- Running tests with coverage');
+  console.log('- Generating test reports');
+}
 // Exporting TestRunResult interface
 export { TestRunResult };
 // Exporting report generation functions
@@ -1458,4 +1581,3 @@ function generateCoverageReport(analysis: any): string {
   
   return report;
 }
-

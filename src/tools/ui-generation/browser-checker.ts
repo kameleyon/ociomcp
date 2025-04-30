@@ -4,9 +4,356 @@ export function activate() {
     console.log("[TOOL] browser-checker activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[TOOL] Browser checker processing file: ${filePath}`);
+  
+  // Check if the file is a web-related file
+  const isWebFile = filePath.endsWith('.html') || 
+                    filePath.endsWith('.htm') || 
+                    filePath.endsWith('.css') || 
+                    filePath.endsWith('.scss') || 
+                    filePath.endsWith('.less') || 
+                    filePath.endsWith('.js') || 
+                    filePath.endsWith('.jsx') || 
+                    filePath.endsWith('.ts') || 
+                    filePath.endsWith('.tsx');
+  
+  if (isWebFile) {
+    try {
+      // Check the file for browser compatibility issues
+      const issues = checkFileForCompatibility(filePath, content, {
+        projectPath: '.', // Assuming current directory is project root
+        browsers: [
+          { name: 'chrome', version: 'latest' },
+          { name: 'firefox', version: 'latest' },
+          { name: 'safari', version: 'latest' },
+          { name: 'edge', version: 'latest' },
+          { name: 'ie11', version: '*' } // Check for IE11 compatibility
+        ],
+        minify: false,
+        checkCss: filePath.endsWith('.css') || filePath.endsWith('.scss') || filePath.endsWith('.less'),
+        checkJs: filePath.endsWith('.js') || filePath.endsWith('.jsx') || filePath.endsWith('.ts') || filePath.endsWith('.tsx'),
+        checkHtml: filePath.endsWith('.html') || filePath.endsWith('.htm'),
+        generatePolyfills: true,
+        generateFixes: true
+      });
+      
+      // Log issues
+      if (issues.issues.length > 0) {
+        console.log(`[TOOL] Found ${issues.issues.length} browser compatibility issues in ${filePath}:`);
+        issues.issues.forEach((issue, index) => {
+          console.log(`${index + 1}. ${issue.description} (${issue.severity})`);
+          console.log(`   Rule: ${issue.rule}`);
+          console.log(`   Affected Browsers: ${issue.browsers.map(b => `${b.name} ${b.versions.join(',')}`).join(', ')}`);
+          if (issue.suggestion) {
+            console.log(`   Suggestion: ${issue.suggestion}`);
+          }
+        });
+      } else {
+        console.log(`[TOOL] No browser compatibility issues found in ${filePath}`);
+      }
+    } catch (error) {
+      console.error(`[TOOL] Error checking file for compatibility: ${error}`);
+    }
+  }
+}
+
+export function onSessionStart(sessionId: string) {
+  console.log(`[TOOL] Browser checker initialized for session: ${sessionId}`);
+  
+  // Check for common browser compatibility issues in the project
+  setTimeout(() => {
+    console.log('[TOOL] Checking for common browser compatibility issues...');
+    checkCommonCompatibilityIssues();
+  }, 3000); // Delay to ensure project files are loaded
+}
+
+export function onCommand(command: string, args: any[]) {
+  if (command === 'check-browser-compatibility') {
+    console.log('[TOOL] Checking browser compatibility...');
+    
+    const projectPath = args[0] || '.';
+    const browsers = args[1] || ['chrome', 'firefox', 'safari', 'edge'];
+    const minVersions = args[2];
+    const checkCss = args[3] !== false;
+    const checkJs = args[4] !== false;
+    const checkHtml = args[5] !== false;
+    const generatePolyfills = args[6] !== false;
+    const generateFixes = args[7] !== false;
+    const outputFormat = args[8] || 'markdown';
+    const outputPath = args[9];
+    const ignoreFiles = args[10];
+    const ignoreRules = args[11];
+    const customRules = args[12];
+    
+    return checkBrowserCompatibility({
+      projectPath,
+      browsers: browsers.map((name: string) => ({ name, version: 'latest' })), // Assuming latest version unless minVersions is provided
+      minVersions,
+      minify: false, // Minification is not handled by this tool
+      checkCss,
+      checkJs,
+      checkHtml,
+      generatePolyfills,
+      generateFixes,
+      outputFormat,
+      outputPath,
+      ignoreFiles,
+      ignoreRules,
+      customRules
+    });
+  } else if (command === 'generate-polyfills') {
+    console.log('[TOOL] Generating polyfills list...');
+    
+    const issues = args[0];
+    const options = args[1] || {};
+    
+    return {
+      content: [{
+        type: "text",
+        text: generatePolyfillsList(issues, options)
+      }],
+    };
+  } else if (command === 'generate-compatibility-report') {
+    console.log('[TOOL] Generating compatibility report...');
+    
+    const result = args[0];
+    const options = args[1] || {};
+    
+    return {
+      content: [{
+        type: "text",
+        text: generateReport(result, options)
+      }],
+    };
+  }
+  
+  return null;
+}
+
+/**
+ * Checks a file for browser compatibility issues
+ */
+function checkFileForCompatibility(filePath: string, content: string, options: BrowserCheckerOptions): {
+  issues: CompatibilityIssue[];
+  polyfills: string[];
+  fixes: Map<string, string>;
+} {
+  const issues: CompatibilityIssue[] = [];
+  
+  // Determine file type
+  const fileExtension = path.extname(filePath).toLowerCase();
+  
+  // Check CSS
+  if (options.checkCss && (fileExtension === '.css' || fileExtension === '.scss' || fileExtension === '.less')) {
+    issues.push(...checkCssContent(content, filePath, options));
+  }
+  
+  // Check JS
+  if (options.checkJs && (fileExtension === '.js' || fileExtension === '.jsx' || fileExtension === '.ts' || fileExtension === '.tsx')) {
+    issues.push(...checkJsContent(content, filePath, options));
+  }
+  
+  // Check HTML
+  if (options.checkHtml && (fileExtension === '.html' || fileExtension === '.htm')) {
+    issues.push(...checkHtmlContent(content, filePath, options));
+  }
+  
+  // Filter issues based on ignored rules
+  const filteredIssues = issues.filter(issue => !options.ignoreRules?.includes(issue.rule));
+  
+  // Generate polyfills and fixes based on filtered issues
+  const polyfills = options.generatePolyfills ? generatePolyfillsList(filteredIssues, options) : [];
+  const fixes = options.generateFixes ? generateFixesMap(filteredIssues) : new Map<string, string>();
+  
+  return { issues: filteredIssues, polyfills, fixes };
+}
+
+/**
+ * Checks CSS content for compatibility issues
+ */
+function checkCssContent(content: string, filePath: string, options: BrowserCheckerOptions): CompatibilityIssue[] {
+  const issues: CompatibilityIssue[] = [];
+  
+  // Simple regex-based check for known incompatible CSS properties
+  for (const [property, data] of Object.entries(browserCompatibilityDatabase.css) as [string, any][]) {
+    const regex = new RegExp(property.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g');
+    let match;
+    
+    while ((match = regex.exec(content)) !== null) {
+      // Check if the property is supported in the target browsers
+      const affectedBrowsers = data.browsers.filter((b: any) => 
+        options.browsers.some(targetBrowser => 
+          targetBrowser.name === b.name && 
+          (b.versions[0] === '*' || b.versions.some((v: string) => isVersionOlder(targetBrowser.version, v)))
+        )
+      );
+      
+      if (affectedBrowsers.length > 0) {
+        issues.push({
+          file: filePath,
+          line: getLineNumber(content, match.index),
+          column: getColumnNumber(content, match.index),
+          code: match[0],
+          rule: property,
+          description: data.description,
+          severity: data.severity || 'warning',
+          browsers: affectedBrowsers,
+          suggestion: data.suggestion,
+          fix: data.fix
+        });
+      }
+    }
+  }
+  
+  return issues;
+}
+
+/**
+ * Checks JavaScript content for compatibility issues
+ */
+function checkJsContent(content: string, filePath: string, options: BrowserCheckerOptions): CompatibilityIssue[] {
+  const issues: CompatibilityIssue[] = [];
+  
+  // Simple regex-based check for known incompatible JS features
+  for (const [feature, data] of Object.entries(browserCompatibilityDatabase.js) as [string, any][]) {
+    const regex = new RegExp(feature.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g');
+    let match;
+    
+    while ((match = regex.exec(content)) !== null) {
+      // Check if the feature is supported in the target browsers
+      const affectedBrowsers = data.browsers.filter((b: any) => 
+        options.browsers.some(targetBrowser => 
+          targetBrowser.name === b.name && 
+          (b.versions[0] === '*' || b.versions.some((v: string) => isVersionOlder(targetBrowser.version, v)))
+        )
+      );
+      
+      if (affectedBrowsers.length > 0) {
+        issues.push({
+          file: filePath,
+          line: getLineNumber(content, match.index),
+          column: getColumnNumber(content, match.index),
+          code: match[0],
+          rule: feature,
+          description: data.description,
+          severity: data.severity || 'warning',
+          browsers: affectedBrowsers,
+          suggestion: data.suggestion,
+          fix: data.fix
+        });
+      }
+    }
+  }
+  
+  return issues;
+}
+
+/**
+ * Checks HTML content for compatibility issues
+ */
+function checkHtmlContent(content: string, filePath: string, options: BrowserCheckerOptions): CompatibilityIssue[] {
+  const issues: CompatibilityIssue[] = [];
+  
+  // Simple regex-based check for known incompatible HTML elements or attributes
+  for (const [element, data] of Object.entries(browserCompatibilityDatabase.html) as [string, any][]) {
+    const regex = new RegExp(element.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g');
+    let match;
+    
+    while ((match = regex.exec(content)) !== null) {
+      // Check if the element is supported in the target browsers
+      const affectedBrowsers = data.browsers.filter((b: any) => 
+        options.browsers.some(targetBrowser => 
+          targetBrowser.name === b.name && 
+          (b.versions[0] === '*' || b.versions.some((v: string) => isVersionOlder(targetBrowser.version, v)))
+        )
+      );
+      
+      if (affectedBrowsers.length > 0) {
+        issues.push({
+          file: filePath,
+          line: getLineNumber(content, match.index),
+          column: getColumnNumber(content, match.index),
+          code: match[0],
+          rule: element,
+          description: data.description,
+          severity: data.severity || 'warning',
+          browsers: affectedBrowsers,
+          suggestion: data.suggestion,
+          fix: data.fix
+        });
+      }
+    }
+  }
+  
+  return issues;
+}
+
+/**
+ * Checks for common browser compatibility issues in the project
+ */
+function checkCommonCompatibilityIssues() {
+  console.log('[TOOL] Checking for common browser compatibility issues...');
+  
+  // This is a placeholder - in a real implementation, this would scan the project
+  // For now, we'll just log a message
+  console.log('[TOOL] Recommendation: Use the "check-browser-compatibility" command to scan your project for issues');
+  console.log('[TOOL] Common compatibility issues to watch for:');
+  console.log('- Using new CSS properties without fallbacks or prefixes');
+  console.log('- Using new JavaScript features without transpilation or polyfills');
+  console.log('- Using new HTML5 elements without polyfills');
+  console.log('- Browser-specific bugs or rendering differences');
+}
+
+/**
+ * Checks if a version is older than another version
+ */
+function isVersionOlder(currentVersion: string, targetVersion: string): boolean {
+  // Simple version comparison (e.g., "1.2.3" vs "1.2")
+  const currentParts = currentVersion.split('.').map(Number);
+  const targetParts = targetVersion.split('.').map(Number);
+  
+  for (let i = 0; i < Math.max(currentParts.length, targetParts.length); i++) {
+    const current = currentParts[i] || 0;
+    const target = targetParts[i] || 0;
+    
+    if (current < target) return true;
+    if (current > target) return false;
+  }
+  
+  return false; // Versions are the same or target is older
+}
+
+/**
+ * Gets the line number from content and index
+ */
+function getLineNumber(content: string, index: number): number {
+  return content.substring(0, index).split('\n').length;
+}
+
+/**
+ * Gets the column number from content and index
+ */
+function getColumnNumber(content: string, index: number): number {
+  const lastNewlineIndex = content.lastIndexOf('\n', index - 1);
+  return index - lastNewlineIndex;
+}
+
+/**
+ * Generates a map of fixes by file
+ */
+function generateFixesMap(issues: CompatibilityIssue[]): Map<string, string> {
+  const fixes = new Map<string, string>();
+  
+  issues.forEach(issue => {
+    if (issue.fix) {
+      const existingFix = fixes.get(issue.file) || '';
+      fixes.set(issue.file, existingFix + `\n\n/* Fix for ${issue.rule} at line ${issue.line} */\n${issue.fix}`);
+    }
+  });
+  
+  return fixes;
+}
 /**
  * Browser Checker
  * 
@@ -963,4 +1310,3 @@ function generateHtmlReport(
 
   return report;
 }
-

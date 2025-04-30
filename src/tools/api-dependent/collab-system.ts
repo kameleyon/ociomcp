@@ -4,9 +4,92 @@ export function activate() {
     console.log("[TOOL] collab-system activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[Collab-System] File written: ${filePath}`);
+  
+  // Check if there's an active collaboration session
+  if (activeSessions.size > 0) {
+    console.log(`[Collab-System] Active collaboration sessions detected: ${activeSessions.size}`);
+    
+    // Find sessions that might be affected by this file change
+    const affectedSessions = [];
+    
+    for (const [sessionId, session] of activeSessions.entries()) {
+      const fileInSession = session.files.some((file: any) => file.path === filePath);
+      
+      if (fileInSession) {
+        console.log(`[Collab-System] File ${filePath} is part of session ${sessionId}`);
+        affectedSessions.push(sessionId);
+      }
+    }
+    
+    if (affectedSessions.length > 0) {
+      return {
+        detected: true,
+        filePath,
+        affectedSessions,
+        needsSync: true
+      };
+    }
+  }
+  
+  return { detected: false };
+}
+
+export function onSessionStart(context: any) {
+  console.log('[Collab-System] Session started');
+  
+  // Initialize collaboration system
+  console.log('[Collab-System] Initializing collaboration system');
+  
+  // Ensure sessions directory exists
+  ensureSessionsDirectory().catch(error => {
+    console.error('[Collab-System] Failed to create sessions directory:', error);
+  });
+  
+  // Load existing sessions if any
+  const userId = context?.userId || 'anonymous';
+  const projectId = context?.projectId || 'default';
+  
+  return {
+    initialized: true,
+    userId,
+    projectId,
+    activeSessions: activeSessions.size
+  };
+}
+
+export function onCommand(command: string, args: any) {
+  console.log(`[Collab-System] Command received: ${command}`);
+  
+  if (command === 'collab.createSession') {
+    console.log('[Collab-System] Creating collaboration session');
+    return { action: 'createSession', args };
+  } else if (command === 'collab.joinSession') {
+    console.log('[Collab-System] Joining collaboration session');
+    return { action: 'joinSession', args };
+  } else if (command === 'collab.updateFile') {
+    console.log('[Collab-System] Updating file in collaboration session');
+    return { action: 'updateFile', args };
+  } else if (command === 'collab.getSessionStatus') {
+    console.log('[Collab-System] Getting session status');
+    return { action: 'getSessionStatus', args };
+  } else if (command === 'collab.leaveSession') {
+    console.log('[Collab-System] Leaving collaboration session');
+    const { sessionId, userId } = args || {};
+    if (sessionId && activeSessions.has(sessionId)) {
+      const session = activeSessions.get(sessionId);
+      const index = session.participants.indexOf(userId);
+      if (index !== -1) {
+        session.participants.splice(index, 1);
+      }
+      return { action: 'leaveSession', success: true };
+    }
+    return { action: 'leaveSession', success: false };
+  }
+  
+  return { action: 'unknown' };
+}
 import { z } from 'zod';
 import * as fs from 'fs/promises';
 import * as path from 'path';

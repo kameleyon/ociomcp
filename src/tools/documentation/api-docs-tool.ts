@@ -4,9 +4,78 @@ export function activate() {
     console.log("[TOOL] api-docs-tool activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Handles file write events for API source or documentation config files.
+ * If a relevant file changes, triggers documentation regeneration.
+ */
+export async function onFileWrite(event?: { path: string; content?: string }) {
+  if (!event || !event.path) {
+    console.warn("[api-docs-tool] onFileWrite called without event data.");
+    return;
+  }
+  try {
+    if (event.path.endsWith('.api-docs.json') || event.path.endsWith('.api-docs.config.json')) {
+      console.log(`[api-docs-tool] Detected API docs config file change: ${event.path}`);
+      const config = JSON.parse(event.content || await (await import('fs/promises')).readFile(event.path, 'utf-8'));
+      const tool = new APIDocsTool(config);
+      await tool.generate();
+      console.log(`[api-docs-tool] API documentation regenerated for ${event.path}`);
+    } else if (/\.(js|ts|jsx|tsx)$/.test(event.path)) {
+      console.log(`[api-docs-tool] Detected API source file change: ${event.path}`);
+      // Optionally trigger re-parsing or regeneration
+      // ... actual logic could go here
+    }
+  } catch (err) {
+    console.error(`[api-docs-tool] Error during file-triggered documentation generation:`, err);
+  }
+}
+
+/**
+ * Initializes or resets API docs tool state at the start of a session.
+ */
+export function onSessionStart(session?: { id?: string }) {
+  console.log(`[api-docs-tool] Session started${session && session.id ? `: ${session.id}` : ""}. Preparing API docs tool environment.`);
+  // Example: clear temp files, reset state, etc.
+  // ... actual reset logic
+}
+
+/**
+ * Handles API docs tool commands.
+ * Supports dynamic invocation of documentation generation, validation, or reporting.
+ */
+export async function onCommand(command?: { name: string; args?: any }) {
+  if (!command || !command.name) {
+    console.warn("[api-docs-tool] onCommand called without command data.");
+    return;
+  }
+  switch (command.name) {
+    case "generate-docs":
+      console.log("[api-docs-tool] Generating API documentation...");
+      try {
+        const tool = new APIDocsTool(command.args);
+        await tool.generate();
+        console.log("[api-docs-tool] API documentation generation complete.");
+      } catch (err) {
+        console.error("[api-docs-tool] API documentation generation failed:", err);
+      }
+      break;
+    case "validate-docs":
+      console.log("[api-docs-tool] Validating API documentation schema...");
+      try {
+        GenerateAPIDocsSchema.parse(command.args);
+        console.log("[api-docs-tool] API documentation schema validation successful.");
+      } catch (err) {
+        console.error("[api-docs-tool] API documentation schema validation failed:", err);
+      }
+      break;
+    case "report-docs":
+      console.log("[api-docs-tool] Reporting API documentation status...");
+      // ... actual reporting logic
+      break;
+    default:
+      console.warn(`[api-docs-tool] Unknown command: ${command.name}`);
+  }
+}
 /**
  * API Docs Tool
  * 
@@ -1110,4 +1179,3 @@ function parseHapiModels(content: string, filePath: string): ParsedModel[] {
   // Implementation would extract model definitions from Hapi routes
   return []; // Placeholder implementation
 }
-

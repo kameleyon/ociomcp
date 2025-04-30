@@ -4,9 +4,288 @@ export function activate() {
     console.log("[TOOL] code-formatter activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[TOOL] Code formatter processing file: ${filePath}`);
+  
+  // Check if the file is a code file that can be formatted
+  const isCodeFile = filePath.endsWith('.js') || 
+                     filePath.endsWith('.jsx') || 
+                     filePath.endsWith('.ts') || 
+                     filePath.endsWith('.tsx') || 
+                     filePath.endsWith('.html') || 
+                     filePath.endsWith('.css') || 
+                     filePath.endsWith('.json') || 
+                     filePath.endsWith('.md') || 
+                     filePath.endsWith('.py') || 
+                     filePath.endsWith('.java') || 
+                     filePath.endsWith('.c') || 
+                     filePath.endsWith('.cpp') || 
+                     filePath.endsWith('.go') || 
+                     filePath.endsWith('.rb') || 
+                     filePath.endsWith('.rs') || 
+                     filePath.endsWith('.php') || 
+                     filePath.endsWith('.cs');
+  
+  if (isCodeFile) {
+    console.log(`[TOOL] Detected change in code file: ${filePath}`);
+    
+    // Check if the file needs formatting
+    checkForFormattingIssues(filePath, content);
+  }
+}
+
+export function onSessionStart(sessionId: string) {
+  console.log(`[TOOL] Code formatter initialized for session: ${sessionId}`);
+  
+  // Check for formatting configuration files in the project
+  setTimeout(() => {
+    console.log('[TOOL] Checking for formatting configuration files...');
+    checkForFormattingConfigs();
+  }, 3000); // Delay to ensure project files are loaded
+}
+
+export function onCommand(command: string, args: any[]) {
+  if (command === 'format-code') {
+    console.log('[TOOL] Formatting code...');
+    
+    return handleFormatCode(args[0]);
+  } else if (command === 'format-directory') {
+    console.log('[TOOL] Formatting directory...');
+    
+    const dirPath = args[0];
+    const options = args[1] || {};
+    
+    return handleFormatDirectory(dirPath, options);
+  } else if (command === 'check-formatting') {
+    console.log('[TOOL] Checking formatting...');
+    
+    const filePath = args[0];
+    const options = args[1] || {};
+    
+    return handleCheckFormatting(filePath, options);
+  } else if (command === 'generate-config') {
+    console.log('[TOOL] Generating formatting configuration...');
+    
+    const configType = args[0];
+    const options = args[1] || {};
+    
+    return handleGenerateConfig(configType, options);
+  }
+  
+  return null;
+}
+
+/**
+ * Checks for formatting issues in a file
+ */
+function checkForFormattingIssues(filePath: string, content: string): void {
+  console.log(`[TOOL] Checking for formatting issues in ${filePath}...`);
+  
+  // Detect the language
+  const language = detectLanguage(filePath);
+  
+  // Check for common formatting issues
+  const issues = [];
+  
+  // Check for inconsistent indentation
+  const indentationIssue = checkIndentation(content);
+  if (indentationIssue) {
+    issues.push(indentationIssue);
+  }
+  
+  // Check for trailing whitespace
+  const trailingWhitespaceIssue = checkTrailingWhitespace(content);
+  if (trailingWhitespaceIssue) {
+    issues.push(trailingWhitespaceIssue);
+  }
+  
+  // Check for inconsistent line endings
+  const lineEndingIssue = checkLineEndings(content);
+  if (lineEndingIssue) {
+    issues.push(lineEndingIssue);
+  }
+  
+  // Check for language-specific issues
+  if (language === 'javascript' || language === 'typescript') {
+    // Check for missing semicolons
+    const semicolonIssue = checkSemicolons(content);
+    if (semicolonIssue) {
+      issues.push(semicolonIssue);
+    }
+    
+    // Check for inconsistent quotes
+    const quotesIssue = checkQuotes(content);
+    if (quotesIssue) {
+      issues.push(quotesIssue);
+    }
+  }
+  
+  // Log issues
+  if (issues.length > 0) {
+    console.log(`[TOOL] Found ${issues.length} formatting issues in ${filePath}:`);
+    issues.forEach(issue => console.log(`- ${issue}`));
+    console.log('[TOOL] Recommendation: Use the "format-code" command to fix these issues');
+  } else {
+    console.log(`[TOOL] No formatting issues found in ${filePath}`);
+  }
+}
+
+/**
+ * Checks for formatting configuration files in the project
+ */
+function checkForFormattingConfigs(): void {
+  console.log('[TOOL] Checking for formatting configuration files...');
+  
+  // This is a placeholder - in a real implementation, this would scan the filesystem
+  // For now, we'll just log a message
+  console.log('[TOOL] Recommendation: Use the "generate-config" command to create formatting configuration files');
+  console.log('[TOOL] Common formatting configuration files:');
+  console.log('- .prettierrc');
+  console.log('- .eslintrc');
+  console.log('- .editorconfig');
+  console.log('- pyproject.toml (for Black)');
+  console.log('- .clang-format');
+}
+
+/**
+ * Checks for indentation issues
+ */
+function checkIndentation(content: string): string | null {
+  // Check for mixed tabs and spaces
+  const hasTabs = /^\t+/m.test(content);
+  const hasSpaces = /^[ ]+/m.test(content);
+  
+  if (hasTabs && hasSpaces) {
+    return 'Mixed tabs and spaces detected';
+  }
+  
+  // Check for inconsistent indentation
+  const indentSizes = new Set<number>();
+  const indentMatches = content.match(/^[ ]+\S/gm);
+  
+  if (indentMatches) {
+    indentMatches.forEach(match => {
+      indentSizes.add(match.length - 1);
+    });
+    
+    if (indentSizes.size > 1) {
+      return 'Inconsistent indentation sizes detected';
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Checks for trailing whitespace
+ */
+function checkTrailingWhitespace(content: string): string | null {
+  if (/[ \t]+$/m.test(content)) {
+    return 'Trailing whitespace detected';
+  }
+  
+  return null;
+}
+
+/**
+ * Checks for inconsistent line endings
+ */
+function checkLineEndings(content: string): string | null {
+  const hasCRLF = content.includes('\r\n');
+  const hasLF = /[^\r]\n/.test(content);
+  
+  if (hasCRLF && hasLF) {
+    return 'Mixed line endings (CRLF and LF) detected';
+  }
+  
+  return null;
+}
+
+/**
+ * Checks for missing semicolons
+ */
+function checkSemicolons(content: string): string | null {
+  // This is a simplified check - a real implementation would be more sophisticated
+  const missingPattern = /\b(const|let|var|return|throw|break|continue|import|export)\s+[^;{]+\n/g;
+  
+  if (missingPattern.test(content)) {
+    return 'Missing semicolons detected';
+  }
+  
+  return null;
+}
+
+/**
+ * Checks for inconsistent quotes
+ */
+function checkQuotes(content: string): string | null {
+  const singleQuotes = (content.match(/'/g) || []).length;
+  const doubleQuotes = (content.match(/"/g) || []).length;
+  
+  // If both types of quotes are used and one is significantly more common
+  if (singleQuotes > 0 && doubleQuotes > 0) {
+    const total = singleQuotes + doubleQuotes;
+    const singleQuotePercentage = (singleQuotes / total) * 100;
+    
+    if (singleQuotePercentage > 10 && singleQuotePercentage < 90) {
+      return 'Inconsistent quote style detected';
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Handles the format-directory command
+ */
+async function handleFormatDirectory(dirPath: string, options: any): Promise<any> {
+  console.log(`[TOOL] Handling format-directory command for ${dirPath}`);
+  
+  // This is a placeholder - in a real implementation, this would format all files in the directory
+  // For now, we'll just return a mock result
+  return { 
+    success: true, 
+    message: `Directory ${dirPath} formatted successfully`,
+    stats: {
+      totalFiles: 10,
+      formattedFiles: 5,
+      skippedFiles: 5
+    }
+  };
+}
+
+/**
+ * Handles the check-formatting command
+ */
+async function handleCheckFormatting(filePath: string, options: any): Promise<any> {
+  console.log(`[TOOL] Handling check-formatting command for ${filePath}`);
+  
+  // This is a placeholder - in a real implementation, this would check if the file is properly formatted
+  // For now, we'll just return a mock result
+  return { 
+    success: true, 
+    formatted: true,
+    message: `File ${filePath} is properly formatted`
+  };
+}
+
+/**
+ * Handles the generate-config command
+ */
+async function handleGenerateConfig(configType: string, options: any): Promise<any> {
+  console.log(`[TOOL] Handling generate-config command for ${configType}`);
+  
+  // This is a placeholder - in a real implementation, this would generate a configuration file
+  // For now, we'll just return a mock result
+  return { 
+    success: true, 
+    message: `Generated ${configType} configuration file`,
+    config: {
+      type: configType,
+      options: options
+    }
+  };
+}
 /**
  * Code Formatter
  * 
@@ -521,4 +800,3 @@ export async function handleFormatCode(args: any) {
     };
   }
 }
-

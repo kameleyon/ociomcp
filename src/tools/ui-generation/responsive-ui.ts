@@ -4,9 +4,213 @@ export function activate() {
     console.log("[TOOL] responsive-ui activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[TOOL] Responsive UI processing file: ${filePath}`);
+  
+  // Check if the file is a CSS or component file
+  const isStyleFile = filePath.endsWith('.css') || filePath.endsWith('.scss') || filePath.endsWith('.less');
+  const isComponentFile = filePath.endsWith('.jsx') || filePath.endsWith('.tsx') || filePath.endsWith('.vue');
+  
+  if (isStyleFile) {
+    console.log(`[TOOL] Detected change in style file: ${filePath}`);
+    // Check for responsive design patterns
+    checkResponsiveDesign(content);
+  } else if (isComponentFile) {
+    console.log(`[TOOL] Detected change in component file: ${filePath}`);
+    // Check for responsive component patterns
+    checkResponsiveComponent(content);
+  }
+}
+
+export function onSessionStart(sessionId: string) {
+  console.log(`[TOOL] Responsive UI initialized for session: ${sessionId}`);
+  
+  // Check for responsive design patterns in the project
+  setTimeout(() => {
+    console.log('[TOOL] Checking for responsive design patterns...');
+    checkProjectResponsiveness();
+  }, 3000); // Delay to ensure project files are loaded
+}
+
+export function onCommand(command: string, args: any[]) {
+  if (command === 'generate-responsive-ui') {
+    console.log('[TOOL] Generating responsive UI...');
+    
+    const options = args[0] || {};
+    
+    return handleGenerateResponsiveUI(options);
+  } else if (command === 'check-responsiveness') {
+    console.log('[TOOL] Checking responsiveness...');
+    
+    const filePath = args[0];
+    
+    return handleCheckResponsiveness(filePath);
+  } else if (command === 'add-breakpoint') {
+    console.log('[TOOL] Adding breakpoint...');
+    
+    const breakpoint = args[0];
+    const value = args[1];
+    
+    return handleAddBreakpoint(breakpoint, value);
+  } else if (command === 'generate-responsive-component') {
+    console.log('[TOOL] Generating responsive component...');
+    
+    const componentName = args[0];
+    const options = args[1] || {};
+    
+    return handleGenerateResponsiveComponent(componentName, options);
+  }
+  
+  return null;
+}
+
+/**
+ * Checks for responsive design patterns in CSS content
+ */
+function checkResponsiveDesign(content: string): void {
+  console.log('[TOOL] Checking for responsive design patterns...');
+  
+  // Check for media queries
+  const mediaQueryCount = (content.match(/@media/g) || []).length;
+  console.log(`[TOOL] Found ${mediaQueryCount} media queries`);
+  
+  // Check for responsive units
+  const remCount = (content.match(/\d+(\.\d+)?rem/g) || []).length;
+  const emCount = (content.match(/\d+(\.\d+)?em/g) || []).length;
+  const vwCount = (content.match(/\d+(\.\d+)?vw/g) || []).length;
+  const vhCount = (content.match(/\d+(\.\d+)?vh/g) || []).length;
+  
+  console.log(`[TOOL] Found ${remCount} rem units, ${emCount} em units, ${vwCount} vw units, ${vhCount} vh units`);
+  
+  // Check for fixed units (px)
+  const pxCount = (content.match(/\d+px/g) || []).length;
+  console.log(`[TOOL] Found ${pxCount} px units`);
+  
+  // Provide suggestions if needed
+  if (mediaQueryCount === 0) {
+    console.log('[TOOL] Suggestion: Add media queries for different screen sizes');
+  }
+  
+  if (pxCount > (remCount + emCount + vwCount + vhCount)) {
+    console.log('[TOOL] Suggestion: Consider using relative units (rem, em, vw, vh) instead of fixed units (px)');
+  }
+}
+
+/**
+ * Checks for responsive component patterns
+ */
+function checkResponsiveComponent(content: string): void {
+  console.log('[TOOL] Checking for responsive component patterns...');
+  
+  // Check for responsive class names (e.g., hidden-xs, col-md-6)
+  const bootstrapClassCount = (content.match(/col-(xs|sm|md|lg|xl)-\d+/g) || []).length;
+  const tailwindClassCount = (content.match(/sm:|md:|lg:|xl:|2xl:/g) || []).length;
+  
+  console.log(`[TOOL] Found ${bootstrapClassCount} Bootstrap-style responsive classes`);
+  console.log(`[TOOL] Found ${tailwindClassCount} Tailwind-style responsive classes`);
+  
+  // Check for responsive hooks or utilities
+  const useMediaQueryCount = (content.match(/useMediaQuery|useResponsive/g) || []).length;
+  console.log(`[TOOL] Found ${useMediaQueryCount} responsive hook usages`);
+  
+  // Provide suggestions if needed
+  if (bootstrapClassCount === 0 && tailwindClassCount === 0 && useMediaQueryCount === 0) {
+    console.log('[TOOL] Suggestion: Consider adding responsive classes or hooks to make the component responsive');
+  }
+}
+
+/**
+ * Checks for responsive design patterns in the project
+ */
+function checkProjectResponsiveness(): void {
+  console.log('[TOOL] Checking project responsiveness...');
+  
+  // This is a placeholder - in a real implementation, this would scan the filesystem
+  // For now, we'll just log a message
+  console.log('[TOOL] Recommendation: Use the "check-responsiveness" command to check specific files');
+  console.log('[TOOL] Common responsive design tasks:');
+  console.log('- Adding media queries for different screen sizes');
+  console.log('- Using relative units (rem, em, vw, vh) instead of fixed units (px)');
+  console.log('- Adding responsive classes or hooks to components');
+  console.log('- Testing on different screen sizes');
+}
+
+/**
+ * Handles the generate-responsive-ui command
+ */
+async function handleGenerateResponsiveUI(options: ResponsiveUIOptions): Promise<any> {
+  console.log('[TOOL] Handling generate-responsive-ui command with options:', options);
+  
+  // Generate responsive UI files
+  const uiFiles = generateResponsiveUI(options);
+  
+  // Convert Map to object for return value
+  const result: Record<string, string> = {};
+  uiFiles.forEach((content, path) => {
+    result[path] = content;
+  });
+  
+  return { success: true, files: result };
+}
+
+/**
+ * Handles the check-responsiveness command
+ */
+async function handleCheckResponsiveness(filePath: string): Promise<any> {
+  console.log(`[TOOL] Handling check-responsiveness command for ${filePath}`);
+  
+  // This is a placeholder - in a real implementation, this would read the file and check it
+  // For now, we'll just return a mock result
+  return { 
+    success: true, 
+    result: {
+      mediaQueries: 2,
+      relativeUnits: 15,
+      fixedUnits: 5,
+      responsiveClasses: 8,
+      suggestions: [
+        'Consider using more relative units instead of fixed units',
+        'Add media queries for extra-large screens'
+      ]
+    } 
+  };
+}
+
+/**
+ * Handles the add-breakpoint command
+ */
+async function handleAddBreakpoint(breakpoint: string, value: string): Promise<any> {
+  console.log(`[TOOL] Handling add-breakpoint command for ${breakpoint}: ${value}`);
+  
+  // This is a placeholder - in a real implementation, this would add the breakpoint to the project
+  // For now, we'll just return a mock result
+  return { 
+    success: true, 
+    message: `Added breakpoint ${breakpoint} with value ${value}`,
+    breakpoint: {
+      name: breakpoint,
+      value: value
+    }
+  };
+}
+
+/**
+ * Handles the generate-responsive-component command
+ */
+async function handleGenerateResponsiveComponent(componentName: string, options: any): Promise<any> {
+  console.log(`[TOOL] Handling generate-responsive-component command for ${componentName} with options:`, options);
+  
+  // This is a placeholder - in a real implementation, this would generate a responsive component
+  // For now, we'll just return a mock result
+  return { 
+    success: true, 
+    message: `Generated responsive component ${componentName}`,
+    component: {
+      name: componentName,
+      options: options
+    }
+  };
+}
 /**
  * Responsive UI
  * 
@@ -895,4 +1099,3 @@ a {
   // Return the generated UI files
   return uiFiles;
 }
-

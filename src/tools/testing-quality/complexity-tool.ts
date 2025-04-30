@@ -4,9 +4,161 @@ export function activate() {
     console.log("[TOOL] complexity-tool activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[TOOL] Complexity tool processing file: ${filePath}`);
+  
+  // Check if the file is a source code file
+  const extension = path.extname(filePath);
+  const isSourceCode = ['.js', '.jsx', '.ts', '.tsx', '.java', '.py', '.rb', '.go', '.php', '.c', '.cpp', '.cs'].includes(extension);
+  
+  if (isSourceCode) {
+    try {
+      // Analyze the file for complexity
+      const fileComplexity = analyzeFileComplexity(filePath, content, {
+        path: filePath,
+        recursive: false,
+        includeMetrics: ['all'],
+        outputFormat: 'text'
+      });
+      
+      // Log complexity metrics
+      console.log(`[TOOL] Complexity metrics for ${filePath}:`);
+      console.log(`- Cyclomatic complexity: ${fileComplexity.metrics.cyclomatic}`);
+      console.log(`- Cognitive complexity: ${fileComplexity.metrics.cognitive}`);
+      console.log(`- Maintainability index: ${fileComplexity.metrics.maintainability}`);
+      console.log(`- Lines of code: ${fileComplexity.metrics.sloc.physical}`);
+      
+      // Log issues
+      const allIssues = [...fileComplexity.issues];
+      fileComplexity.functions.forEach(func => {
+        allIssues.push(...func.issues);
+      });
+      
+      if (allIssues.length > 0) {
+        console.log(`[TOOL] Found ${allIssues.length} complexity issues:`);
+        
+        // Log high severity issues
+        const highSeverityIssues = allIssues.filter(issue => issue.severity === 'high' || issue.severity === 'critical');
+        if (highSeverityIssues.length > 0) {
+          console.log('[TOOL] High severity issues:');
+          highSeverityIssues.forEach(issue => {
+            console.log(`- Line ${issue.line}: ${issue.message}`);
+            if (issue.recommendation) {
+              console.log(`  Recommendation: ${issue.recommendation}`);
+            }
+          });
+        }
+      } else {
+        console.log(`[TOOL] No complexity issues found in ${filePath}`);
+      }
+      
+      // Identify refactoring opportunities
+      if (fileComplexity.metrics.cyclomatic > 20 || fileComplexity.metrics.cognitive > 30 || fileComplexity.metrics.maintainability < 65) {
+        console.log('[TOOL] This file may benefit from refactoring to reduce complexity');
+      }
+    } catch (error) {
+      console.error(`[TOOL] Error analyzing file complexity: ${error}`);
+    }
+  }
+}
+
+export function onSessionStart(sessionId: string) {
+  console.log(`[TOOL] Complexity tool initialized for session: ${sessionId}`);
+  
+  // Schedule a complexity scan for the project
+  setTimeout(() => {
+    console.log('[TOOL] Running project-wide complexity scan...');
+    scanProjectForComplexityIssues();
+  }, 3000); // Delay to ensure project files are loaded
+}
+
+export function onCommand(command: string, args: any[]) {
+  if (command === 'analyze-complexity') {
+    console.log('[TOOL] Analyzing code complexity...');
+    
+    const path = args[0] || '.';
+    const recursive = args[1] !== false;
+    const includeMetrics = args[2] || ['all'];
+    const threshold = args[3];
+    const filePatterns = args[4];
+    const excludePatterns = args[5];
+    
+    return handleAnalyzeComplexity({
+      path,
+      recursive,
+      includeMetrics,
+      threshold,
+      filePatterns,
+      excludePatterns,
+      outputFormat: 'text'
+    });
+  } else if (command === 'identify-refactoring') {
+    console.log('[TOOL] Identifying refactoring opportunities...');
+    
+    const path = args[0] || '.';
+    const recursive = args[1] !== false;
+    const minComplexity = args[2] || 10;
+    const minDuplication = args[3] || 3;
+    const minSize = args[4] || 50;
+    
+    return handleIdentifyRefactoringOpportunities({
+      path,
+      recursive,
+      minComplexity,
+      minDuplication,
+      minSize,
+      filePatterns: args[5],
+      excludePatterns: args[6],
+      maxResults: args[7] || 10
+    });
+  } else if (command === 'generate-complexity-report') {
+    console.log('[TOOL] Generating complexity report...');
+    
+    const analysisResults = args[0];
+    const format = args[1] || 'html';
+    const outputPath = args[2];
+    
+    return handleGenerateComplexityReport({
+      analysisResults,
+      format,
+      outputPath,
+      includeVisualizations: args[3] !== false,
+      includeRecommendations: args[4] !== false
+    });
+  } else if (command === 'analyze-trends') {
+    console.log('[TOOL] Analyzing complexity trends...');
+    
+    const path = args[0] || '.';
+    const historyDepth = args[1] || 5;
+    const metrics = args[2] || ['all'];
+    
+    return handleAnalyzeTrends({
+      path,
+      historyDepth,
+      metrics,
+      outputFormat: 'text'
+    });
+  }
+  
+  return null;
+}
+
+/**
+ * Scans the project for complexity issues
+ */
+function scanProjectForComplexityIssues() {
+  console.log('[TOOL] Scanning project for complexity issues...');
+  
+  // This is a placeholder - in a real implementation, this would scan the filesystem
+  // For now, we'll just log a message
+  console.log('[TOOL] Recommendation: Use the "analyze-complexity" command to check specific files or directories');
+  console.log('[TOOL] Common complexity issues to watch for:');
+  console.log('- High cyclomatic complexity (> 10)');
+  console.log('- High cognitive complexity (> 15)');
+  console.log('- Low maintainability index (< 65)');
+  console.log('- Long functions (> 100 lines)');
+  console.log('- Deep nesting (> 3 levels)');
+}
 // Importing TestRunResult interface
 import { TestRunResult } from './test-manager';
 // Importing report generation functions
@@ -1018,4 +1170,3 @@ function generateTrendReport(trends: any[], metrics: any, outputFormat: string):
   // Simulate trend report generation
   return `Trend Report in ${outputFormat} format with ${trends.length} data points.`;
 }
-

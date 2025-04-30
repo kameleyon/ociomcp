@@ -4,9 +4,106 @@ export function activate() {
     console.log("[TOOL] documentation-generator activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  // Check if the file is a documentation file that needs to be processed
+  if (filePath.endsWith('.md') || filePath.endsWith('.mdx')) {
+    console.log(`[TOOL] Documentation generator processing file: ${filePath}`);
+    
+    // Check if this is a README or other documentation file
+    if (filePath.toLowerCase().includes('readme') || 
+        filePath.toLowerCase().includes('docs/') || 
+        filePath.toLowerCase().includes('documentation/')) {
+      
+      // Analyze the content and suggest improvements
+      const suggestions = analyzeDocumentation(content);
+      if (suggestions.length > 0) {
+        console.log('[TOOL] Documentation improvement suggestions:');
+        suggestions.forEach(suggestion => console.log(`- ${suggestion}`));
+      }
+    }
+  }
+}
+
+export function onSessionStart(sessionId: string) {
+  console.log(`[TOOL] Documentation generator initialized for session: ${sessionId}`);
+  
+  // Check for missing documentation files in the project
+  setTimeout(() => {
+    checkForMissingDocumentation();
+  }, 2000); // Delay to ensure project files are loaded
+}
+
+export function onCommand(command: string, args: any[]) {
+  if (command === 'generate-docs') {
+    const options = args[0] || {};
+    console.log('[TOOL] Generating documentation with options:', options);
+    
+    // Generate documentation based on the provided options
+    const docContent = generateDocumentation({
+      projectName: options.projectName || 'Project',
+      projectDescription: options.projectDescription || 'Project description',
+      type: options.type || DocumentationType.README,
+      format: options.format || DocumentationFormat.MARKDOWN,
+      ...options
+    });
+    
+    console.log('[TOOL] Documentation generated successfully');
+    return docContent;
+  }
+  
+  return null;
+}
+
+/**
+ * Analyzes documentation content and suggests improvements
+ */
+function analyzeDocumentation(content: string): string[] {
+  const suggestions: string[] = [];
+  
+  // Check for minimum length
+  if (content.length < 500) {
+    suggestions.push('Documentation is quite brief. Consider adding more details.');
+  }
+  
+  // Check for headings
+  if (!content.includes('# ') && !content.includes('## ')) {
+    suggestions.push('Add headings to improve document structure and readability.');
+  }
+  
+  // Check for code examples
+  if (!content.includes('```')) {
+    suggestions.push('Consider adding code examples to illustrate usage.');
+  }
+  
+  // Check for installation instructions
+  if (!content.toLowerCase().includes('install') && !content.toLowerCase().includes('setup')) {
+    suggestions.push('Add installation or setup instructions.');
+  }
+  
+  // Check for usage examples
+  if (!content.toLowerCase().includes('usage') && !content.toLowerCase().includes('example')) {
+    suggestions.push('Add usage examples to help users get started.');
+  }
+  
+  return suggestions;
+}
+
+/**
+ * Checks for missing documentation files in the project
+ */
+function checkForMissingDocumentation() {
+  const essentialDocs = [
+    'README.md',
+    'CONTRIBUTING.md',
+    'LICENSE'
+  ];
+  
+  console.log('[TOOL] Checking for essential documentation files...');
+  
+  // This is a placeholder - in a real implementation, this would check the filesystem
+  // For now, we'll just log a message
+  console.log('[TOOL] Recommendation: Ensure your project includes these essential documentation files:', essentialDocs.join(', '));
+}
 /**
  * Documentation Generator
  * Provides functionality for generating project documentation

@@ -4,9 +4,113 @@ export function activate() {
     console.log("[TOOL] cms-connector activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Handles file write events for CMS config or content model files.
+ * If a relevant file changes, triggers reconnection or model sync.
+ */
+export async function onFileWrite(event?: { path: string; content?: string }) {
+  if (!event || !event.path) {
+    console.warn("[cms-connector] onFileWrite called without event data.");
+    return;
+  }
+  try {
+    if (event.path.endsWith('.cms-config.json')) {
+      console.log(`[cms-connector] Detected CMS config file change: ${event.path}`);
+      const config = JSON.parse(event.content || await (await import('fs/promises')).readFile(event.path, 'utf-8'));
+      await connectCMS(config);
+      console.log(`[cms-connector] CMS reconnected for ${event.path}`);
+    } else if (event.path.endsWith('.content-model.json')) {
+      console.log(`[cms-connector] Detected content model file change: ${event.path}`);
+      const model = JSON.parse(event.content || await (await import('fs/promises')).readFile(event.path, 'utf-8'));
+      // Example: sync model to CMS (requires config/context)
+      // ... actual sync logic could go here
+    }
+  } catch (err) {
+    console.error(`[cms-connector] Error during file-triggered CMS operation:`, err);
+  }
+}
+
+/**
+ * Initializes or resets CMS connector state at the start of a session.
+ */
+export function onSessionStart(session?: { id?: string }) {
+  console.log(`[cms-connector] Session started${session && session.id ? `: ${session.id}` : ""}. Preparing CMS connector environment.`);
+  // Example: clear caches, reset state, etc.
+  // ... actual reset logic
+}
+
+/**
+ * Handles CMS connector commands.
+ * Supports dynamic invocation of CMS operations (connect, fetch, create, update, delete, validate).
+ */
+export async function onCommand(command?: { name: string; args?: any }) {
+  if (!command || !command.name) {
+    console.warn("[cms-connector] onCommand called without command data.");
+    return;
+  }
+  switch (command.name) {
+    case "connect":
+      console.log("[cms-connector] Connecting to CMS...");
+      try {
+        await connectCMS(command.args);
+        console.log("[cms-connector] CMS connection successful.");
+      } catch (err) {
+        console.error("[cms-connector] CMS connection failed:", err);
+      }
+      break;
+    case "fetch":
+      console.log("[cms-connector] Fetching content from CMS...");
+      try {
+        const connector = new CMSConnector(command.args);
+        await connector.fetch(command.args.query || {});
+        console.log("[cms-connector] Content fetch complete.");
+      } catch (err) {
+        console.error("[cms-connector] Content fetch failed:", err);
+      }
+      break;
+    case "create":
+      console.log("[cms-connector] Creating content in CMS...");
+      try {
+        const connector = new CMSConnector(command.args);
+        await connector.create(command.args.data);
+        console.log("[cms-connector] Content creation complete.");
+      } catch (err) {
+        console.error("[cms-connector] Content creation failed:", err);
+      }
+      break;
+    case "update":
+      console.log("[cms-connector] Updating content in CMS...");
+      try {
+        const connector = new CMSConnector(command.args);
+        await connector.update(command.args.id, command.args.data);
+        console.log("[cms-connector] Content update complete.");
+      } catch (err) {
+        console.error("[cms-connector] Content update failed:", err);
+      }
+      break;
+    case "delete":
+      console.log("[cms-connector] Deleting content from CMS...");
+      try {
+        const connector = new CMSConnector(command.args);
+        await connector.delete(command.args.id);
+        console.log("[cms-connector] Content deletion complete.");
+      } catch (err) {
+        console.error("[cms-connector] Content deletion failed:", err);
+      }
+      break;
+    case "validate-connection":
+      console.log("[cms-connector] Validating CMS connection...");
+      try {
+        await validateCMSConnection(command.args);
+        console.log("[cms-connector] CMS connection validation successful.");
+      } catch (err) {
+        console.error("[cms-connector] CMS connection validation failed:", err);
+      }
+      break;
+    default:
+      console.warn(`[cms-connector] Unknown command: ${command.name}`);
+  }
+}
 import axios from 'axios';
 
 /**
@@ -2084,4 +2188,3 @@ class CustomCMSClient extends BaseCMSClient {
     }
   }
 }
-

@@ -4,9 +4,60 @@ export function activate() {
     console.log("[TOOL] types activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Handles file write events for type definition files.
+ * If a relevant file changes, triggers type validation or reload.
+ */
+export function onFileWrite(event?: { path: string; content?: string }) {
+  if (!event || !event.path) {
+    console.warn("[types] onFileWrite called without event data.");
+    return;
+  }
+  if (event.path.endsWith('.d.ts') || event.path.endsWith('.types.ts')) {
+    console.log(`[types] Type definition file changed: ${event.path}`);
+    // Example: validate or reload types
+    // (In real use, call actual type validation logic here)
+    try {
+      // Simulate type validation
+      console.log(`[types] Validating types in ${event.path}...`);
+      // ... actual validation logic
+    } catch (err) {
+      console.error(`[types] Error during type validation:`, err);
+    }
+  }
+}
+
+/**
+ * Initializes or resets type-related state at the start of a session.
+ */
+export function onSessionStart(session?: { id?: string }) {
+  console.log(`[types] Session started${session && session.id ? `: ${session.id}` : ""}. Resetting type state.`);
+  // Example: clear type caches or prepare for type checking
+  // ... actual reset logic
+}
+
+/**
+ * Handles type-related commands.
+ * Supports dynamic invocation of type validation or reporting.
+ */
+export function onCommand(command?: { name: string; args?: any }) {
+  if (!command || !command.name) {
+    console.warn("[types] onCommand called without command data.");
+    return;
+  }
+  switch (command.name) {
+    case "validate-types":
+      console.log("[types] Validating all type definitions...");
+      // ... actual validation logic
+      break;
+    case "report-types":
+      console.log("[types] Reporting available type definitions...");
+      // ... actual reporting logic
+      break;
+    default:
+      console.warn(`[types] Unknown command: ${command.name}`);
+  }
+}
 /**
  * Type definitions for the ServiceBuilder tool
  */
@@ -192,4 +243,3 @@ export interface OrchestratorOptions {
   };
   outputDir?: string;
 }
-

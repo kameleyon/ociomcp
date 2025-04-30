@@ -4,9 +4,235 @@ export function activate() {
     console.log("[TOOL] performance-profiler activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[TOOL] Performance profiler processing file: ${filePath}`);
+  
+  // Check if the file is a source code file
+  const extension = path.extname(filePath);
+  const isSourceCode = ['.js', '.jsx', '.ts', '.tsx', '.java', '.py', '.rb', '.go', '.php', '.c', '.cpp', '.cs'].includes(extension);
+  
+  if (isSourceCode) {
+    try {
+      // Check if there's a performance profile for this file
+      if (globalThis.performanceProfiles && globalThis.performanceProfiles[filePath]) {
+        // Mark the existing profile as outdated
+        globalThis.performanceProfiles[filePath].outdated = true;
+        console.log(`[TOOL] Marked performance profile for ${filePath} as outdated due to file modification`);
+      }
+      
+      // Look for potential performance bottlenecks in the code
+      const bottlenecks = detectPerformanceBottlenecks(content, extension);
+      
+      if (bottlenecks.length > 0) {
+        console.log(`[TOOL] Detected ${bottlenecks.length} potential performance bottlenecks in ${filePath}:`);
+        bottlenecks.forEach((bottleneck, index) => {
+          console.log(`${index + 1}. ${bottleneck.message} (Line ${bottleneck.line})`);
+          if (bottleneck.suggestion) {
+            console.log(`   Suggestion: ${bottleneck.suggestion}`);
+          }
+        });
+      } else {
+        console.log(`[TOOL] No obvious performance bottlenecks detected in ${filePath}`);
+      }
+    } catch (error) {
+      console.error(`[TOOL] Error analyzing file: ${error}`);
+    }
+  }
+}
+
+export function onSessionStart(sessionId: string) {
+  console.log(`[TOOL] Performance profiler initialized for session: ${sessionId}`);
+  
+  // Check for existing performance profiles
+  setTimeout(() => {
+    console.log('[TOOL] Checking for existing performance profiles...');
+    checkExistingProfiles();
+  }, 3000); // Delay to ensure project files are loaded
+}
+
+export function onCommand(command: string, args: any[]) {
+  if (command === 'profile-code') {
+    console.log('[TOOL] Profiling code...');
+    
+    const target = args[0];
+    const iterations = args[1] || 100;
+    const warmupIterations = args[2] || 5;
+    const timeout = args[3] || 30000;
+    const memoryProfiling = args[4] !== false;
+    const cpuProfiling = args[5] !== false;
+    
+    return handleProfileCode({
+      target,
+      iterations,
+      warmupIterations,
+      timeout,
+      memoryProfiling,
+      cpuProfiling
+    });
+  } else if (command === 'analyze-hot-paths') {
+    console.log('[TOOL] Analyzing hot paths...');
+    
+    const profileData = args[0];
+    const threshold = args[1] || 10;
+    const includeNodeModules = args[2] !== false;
+    const sortBy = args[3] || 'time';
+    const limit = args[4] || 10;
+    
+    return handleAnalyzeHotPaths({
+      profileData,
+      threshold,
+      includeNodeModules,
+      sortBy,
+      limit
+    });
+  } else if (command === 'generate-performance-report') {
+    console.log('[TOOL] Generating performance report...');
+    
+    const profileData = args[0];
+    const format = args[1] || 'text';
+    const includeRecommendations = args[2] !== false;
+    const includeCharts = args[3] !== false;
+    const outputPath = args[4];
+    
+    return handleGeneratePerformanceReport({
+      profileData,
+      format,
+      includeRecommendations,
+      includeCharts,
+      outputPath
+    });
+  } else if (command === 'compare-performance') {
+    console.log('[TOOL] Comparing performance...');
+    
+    const baseline = args[0];
+    const current = args[1];
+    const threshold = args[2] || 5;
+    const includeImprovedMetrics = args[3] !== false;
+    
+    return handleComparePerformance({
+      baseline,
+      current,
+      threshold,
+      includeImprovedMetrics
+    });
+  }
+  
+  return null;
+}
+
+/**
+ * Detects common performance bottlenecks in code
+ */
+function detectPerformanceBottlenecks(content: string, extension: string): Array<{message: string, line: number, suggestion?: string}> {
+  const bottlenecks: Array<{message: string, line: number, suggestion?: string}> = [];
+  const lines = content.split('\n');
+  
+  // Check for language-specific patterns
+  if (extension === '.js' || extension === '.jsx' || extension === '.ts' || extension === '.tsx') {
+    // JavaScript/TypeScript patterns
+    
+    // Check for nested loops
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // Simple check for nested loops (may have false positives)
+      if ((line.includes('for (') || line.includes('while (')) && 
+          i + 5 < lines.length) {
+        
+        // Look for another loop in the next few lines
+        let loopBody = lines.slice(i + 1, i + 6).join('\n');
+        if (loopBody.includes('for (') || loopBody.includes('while (')) {
+          bottlenecks.push({
+            message: 'Potential performance bottleneck: nested loops',
+            line: i + 1,
+            suggestion: 'Consider optimizing the algorithm to avoid nested loops or reduce iterations'
+          });
+        }
+      }
+    }
+    
+    // Check for inefficient array operations in loops
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // Simple check for array methods inside loops
+      if ((line.includes('for (') || line.includes('while (')) && 
+          i + 5 < lines.length) {
+        
+        // Look for array methods in the next few lines
+        let loopBody = lines.slice(i + 1, i + 6).join('\n');
+        if (loopBody.includes('.map(') || loopBody.includes('.filter(') || loopBody.includes('.forEach(') || loopBody.includes('.reduce(')) {
+          bottlenecks.push({
+            message: 'Potential performance bottleneck: inefficient array operation inside loop',
+            line: i + 1,
+            suggestion: 'Consider optimizing array operations or using a different approach'
+          });
+        }
+      }
+    }
+    
+    // Check for excessive DOM manipulation in loops
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // Simple check for DOM manipulation methods inside loops
+      if ((line.includes('for (') || line.includes('while (')) && 
+          i + 5 < lines.length) {
+        
+        // Look for DOM manipulation methods in the next few lines
+        let loopBody = lines.slice(i + 1, i + 6).join('\n');
+        if (loopBody.includes('.appendChild(') || loopBody.includes('.insertBefore(') || loopBody.includes('.removeChild(') || loopBody.includes('.innerHTML =')) {
+          bottlenecks.push({
+            message: 'Potential performance bottleneck: excessive DOM manipulation in loop',
+            line: i + 1,
+            suggestion: 'Consider using document fragments or updating the DOM outside the loop'
+          });
+        }
+      }
+    }
+  } else if (extension === '.py') {
+    // Python patterns
+    
+    // Check for nested loops
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // Simple check for nested loops (may have false positives)
+      if ((line.includes('for ') || line.includes('while ')) && 
+          i + 5 < lines.length) {
+        
+        // Look for another loop in the next few lines
+        let loopBody = lines.slice(i + 1, i + 6).join('\n');
+        if (loopBody.includes('for ') || loopBody.includes('while ')) {
+          bottlenecks.push({
+            message: 'Potential performance bottleneck: nested loops',
+            line: i + 1,
+            suggestion: 'Consider optimizing the algorithm to avoid nested loops or reduce iterations'
+          });
+        }
+      }
+    }
+  }
+  
+  return bottlenecks;
+}
+
+/**
+ * Checks for existing performance profiles
+ */
+function checkExistingProfiles() {
+  console.log('[TOOL] Checking for existing performance profiles...');
+  
+  // This is a placeholder - in a real implementation, this would check a database or file system
+  // For now, we'll just log a message
+  console.log('[TOOL] Recommendation: Use the "profile-code" command to profile specific code or functions');
+  console.log('[TOOL] Common performance bottlenecks:');
+  console.log('- Inefficient algorithms');
+  console.log('- Excessive database queries');
+  console.log('- Large data processing');
+  console.log('- Network latency');
+  console.log('- Blocking operations');
+}
 /**
  * PerformanceProfiler Tool
  * 
@@ -1243,4 +1469,3 @@ function formatChange(change: number): string {
   const prefix = change > 0 ? '+' : '';
   return `${prefix}${change.toFixed(2)}%`;
 }
-

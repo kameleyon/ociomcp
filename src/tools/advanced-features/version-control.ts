@@ -4,9 +4,77 @@ export function activate() {
     console.log("[TOOL] version-control activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string, previousContent?: string) {
+  console.log(`[Version-Control] File written: ${filePath}`);
+  
+  // Determine change type
+  let changeType = ChangeType.MODIFY;
+  if (!previousContent) {
+    changeType = ChangeType.ADD;
+  }
+  
+  // Record the change
+  const change: Omit<FileChange, 'timestamp'> = {
+    path: filePath,
+    type: changeType,
+    content: content,
+    oldContent: previousContent,
+    severity: calculateChangeSeverity({
+      path: filePath,
+      type: changeType,
+      content: content,
+      oldContent: previousContent,
+      timestamp: new Date()
+    })
+  };
+  
+  console.log(`[Version-Control] Recorded ${changeType} change for ${filePath}`);
+  return { recorded: true, change };
+}
+
+export function onSessionStart(context: any) {
+  console.log('[Version-Control] Session started');
+  
+  // Initialize or load version control state
+  const state = context?.versionControlState || createVersionControlState();
+  console.log(`[Version-Control] Initialized with ${state.snapshots.length} snapshots`);
+  
+  // Create automatic session start snapshot if configured
+  if (context?.autoSnapshot) {
+    const snapshot = {
+      id: `session-${Date.now()}`,
+      name: 'Session Start',
+      description: 'Automatic snapshot created at session start',
+      changes: [],
+      timestamp: new Date(),
+      tags: ['auto', 'session-start']
+    };
+    console.log(`[Version-Control] Created automatic session start snapshot: ${snapshot.id}`);
+    return { initialized: true, state, snapshot };
+  }
+  
+  return { initialized: true, state };
+}
+
+export function onCommand(command: string, args: any) {
+  console.log(`[Version-Control] Command received: ${command}`);
+  
+  if (command === 'version.snapshot') {
+    console.log('[Version-Control] Creating snapshot');
+    return { action: 'snapshot', args };
+  } else if (command === 'version.revert') {
+    console.log('[Version-Control] Reverting to snapshot');
+    return { action: 'revert', args };
+  } else if (command === 'version.diff') {
+    console.log('[Version-Control] Generating diff');
+    return { action: 'diff', args };
+  } else if (command === 'version.report') {
+    console.log('[Version-Control] Generating report');
+    return { action: 'report', args };
+  }
+  
+  return { action: 'unknown' };
+}
 /**
  * Version Control
  * Provides functionality for tracking changes, creating snapshots, and reverting changes

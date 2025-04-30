@@ -521,7 +521,7 @@ import {
   generateDirectoryStructure,
   directoryStructureToMarkdown,
   flattenDirectoryStructure,
-  DIRECTORY_TEMPLATES,
+  DirectoryTemplate,
 } from './directory-structure.js';
 
 import {

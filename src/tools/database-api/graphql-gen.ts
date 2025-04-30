@@ -4,9 +4,68 @@ export function activate() {
     console.log("[TOOL] graphql-gen activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Handles file write events for GraphQL model/config files.
+ * If a relevant file changes, auto-regenerates schema and resolvers.
+ */
+export async function onFileWrite(event?: { path: string; content?: string }) {
+  if (!event || !event.path) {
+    console.warn("[graphql-gen] onFileWrite called without event data.");
+    return;
+  }
+  if (event.path.endsWith('.graphql-model.json') || event.path.endsWith('.graphql-config.json')) {
+    console.log(`[graphql-gen] Detected GraphQL model/config file change: ${event.path}`);
+    try {
+      const config = JSON.parse(event.content || await (await import('fs/promises')).readFile(event.path, 'utf-8'));
+      await handleGenerateGraphQLSchema(config);
+      console.log(`[graphql-gen] Schema and resolvers regenerated for ${event.path}`);
+    } catch (err) {
+      console.error(`[graphql-gen] Error during schema regeneration:`, err);
+    }
+  }
+}
+
+/**
+ * Initializes or resets GraphQL generator state at the start of a session.
+ */
+export function onSessionStart(session?: { id?: string }) {
+  console.log(`[graphql-gen] Session started${session && session.id ? `: ${session.id}` : ""}. Preparing GraphQL generation environment.`);
+  // Example: clear temp files, reset state, etc.
+  // ... actual reset logic
+}
+
+/**
+ * Handles GraphQL generator commands.
+ * Supports dynamic invocation of schema/resolver generation or validation.
+ */
+export async function onCommand(command?: { name: string; args?: any }) {
+  if (!command || !command.name) {
+    console.warn("[graphql-gen] onCommand called without command data.");
+    return;
+  }
+  switch (command.name) {
+    case "generate":
+      console.log("[graphql-gen] Generating GraphQL schema and resolvers...");
+      try {
+        await handleGenerateGraphQLSchema(command.args);
+        console.log("[graphql-gen] Generation complete.");
+      } catch (err) {
+        console.error("[graphql-gen] Generation failed:", err);
+      }
+      break;
+    case "validate":
+      console.log("[graphql-gen] Validating GraphQL schema configuration...");
+      try {
+        GenerateGraphQLSchemaSchema.parse(command.args);
+        console.log("[graphql-gen] Validation successful.");
+      } catch (err) {
+        console.error("[graphql-gen] Validation failed:", err);
+      }
+      break;
+    default:
+      console.warn(`[graphql-gen] Unknown command: ${command.name}`);
+  }
+}
 // src/database-api/graphql-gen.ts
 
 import * as fs from 'fs/promises';
@@ -112,4 +171,3 @@ export async function handleGenerateGraphQLSchema(args: any) {
     content: [{ type: 'text', text: `GraphQL Schema and Resolvers generated in ${outputDir}` }],
   };
 }
-

@@ -4,9 +4,163 @@ export function activate() {
     console.log("[TOOL] process-killer activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[Process Killer] File written: ${filePath}`);
+  
+  // Check if the file is a process-related configuration file
+  if (filePath.endsWith('process.json') ||
+      filePath.endsWith('processes.json') ||
+      filePath.endsWith('pm2.json') ||
+      filePath.endsWith('nodemon.json')) {
+    console.log(`[Process Killer] Detected process configuration file: ${filePath}`);
+    return {
+      detected: true,
+      filePath,
+      type: 'process-config'
+    };
+  }
+  
+  // Check for script files that might start processes
+  const extension = filePath.substring(filePath.lastIndexOf('.')).toLowerCase();
+  const scriptExtensions = ['.sh', '.bat', '.cmd', '.ps1'];
+  
+  if (scriptExtensions.includes(extension)) {
+    console.log(`[Process Killer] Detected script file: ${filePath}`);
+    return {
+      detected: true,
+      filePath,
+      type: 'script'
+    };
+  }
+  
+  return { detected: false };
+}
+
+export function onSessionStart(context: any) {
+  console.log('[Process Killer] Session started');
+  
+  try {
+    // Log platform information
+    const platform = process.platform;
+    console.log(`[Process Killer] Platform: ${platform}`);
+    
+    // Check for any lingering Node.js processes that might be from previous sessions
+    findProcessesByName('node').then(pids => {
+      if (pids.length > 0) {
+        console.log(`[Process Killer] Found ${pids.length} Node.js processes running`);
+      }
+    }).catch(error => {
+      console.error(`[Process Killer] Error finding Node.js processes: ${error}`);
+    });
+    
+    return {
+      initialized: true,
+      platform
+    };
+  } catch (error) {
+    console.error(`[Process Killer] Error during initialization: ${error}`);
+    return {
+      initialized: false,
+      error: String(error)
+    };
+  }
+}
+
+export function onCommand(command: string, args: any[]) {
+  console.log(`[Process Killer] Command received: ${command}`);
+  
+  try {
+    if (command === 'process.kill') {
+      console.log('[Process Killer] Killing process');
+      if (args && args.length > 0) {
+        const pid = typeof args[0] === 'number' ? args[0] : args[0].pid;
+        const force = args[0].force === true;
+        const signal = args[0].signal || 'SIGTERM';
+        
+        try {
+          // This is async, so we can't return the result directly
+          killProcess(pid, force, signal).then(result => {
+            console.log(`[Process Killer] Process ${pid} killed: ${result}`);
+          }).catch(error => {
+            console.error(`[Process Killer] Error killing process: ${error}`);
+          });
+          
+          return {
+            action: 'kill',
+            pid,
+            force,
+            signal,
+            started: true
+          };
+        } catch (error) {
+          console.error(`[Process Killer] Error killing process: ${error}`);
+          return { action: 'kill', error: String(error) };
+        }
+      }
+    } else if (command === 'process.killByName') {
+      console.log('[Process Killer] Killing processes by name');
+      if (args && args.length > 0) {
+        const name = typeof args[0] === 'string' ? args[0] : args[0].name;
+        const force = args[0].force === true;
+        const signal = args[0].signal || 'SIGTERM';
+        
+        try {
+          // This is async, so we can't return the result directly
+          killProcessesByName(name, force, signal).then(count => {
+            console.log(`[Process Killer] Killed ${count} processes matching name: ${name}`);
+          }).catch(error => {
+            console.error(`[Process Killer] Error killing processes: ${error}`);
+          });
+          
+          return {
+            action: 'killByName',
+            name,
+            force,
+            signal,
+            started: true
+          };
+        } catch (error) {
+          console.error(`[Process Killer] Error killing processes: ${error}`);
+          return { action: 'killByName', error: String(error) };
+        }
+      }
+    } else if (command === 'process.find') {
+      console.log('[Process Killer] Finding processes by name');
+      if (args && args.length > 0) {
+        const name = typeof args[0] === 'string' ? args[0] : args[0].name;
+        
+        try {
+          // This is async, so we can't return the result directly
+          findProcessesByName(name).then(pids => {
+            console.log(`[Process Killer] Found ${pids.length} processes matching name: ${name}`);
+          }).catch(error => {
+            console.error(`[Process Killer] Error finding processes: ${error}`);
+          });
+          
+          return {
+            action: 'find',
+            name,
+            started: true
+          };
+        } catch (error) {
+          console.error(`[Process Killer] Error finding processes: ${error}`);
+          return { action: 'find', error: String(error) };
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`[Process Killer] Error processing command: ${error}`);
+    try {
+      console.error(`Error using API for token counting: ${error}`);
+      // Fall back to simple estimation if API call fails
+      return { action: 'error', error: String(error) };
+    } catch (nestedError) {
+      return { action: 'error', error: 'Multiple errors occurred' };
+    }
+  }
+  
+  return { action: 'unknown' };
+}
 /**
  * Process Killer
  * 

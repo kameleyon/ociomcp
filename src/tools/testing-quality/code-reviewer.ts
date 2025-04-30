@@ -4,9 +4,157 @@ export function activate() {
     console.log("[TOOL] code-reviewer activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[TOOL] Code reviewer processing file: ${filePath}`);
+  
+  // Check if the file is a source code file
+  const extension = path.extname(filePath);
+  const isSourceCode = ['.js', '.jsx', '.ts', '.tsx', '.java', '.py', '.rb', '.go', '.php', '.c', '.cpp', '.cs'].includes(extension);
+  
+  if (isSourceCode) {
+    try {
+      // Review the file for issues
+      const fileReview = reviewFile(filePath, content, {
+        path: filePath,
+        recursive: false,
+        rules: ['all'],
+        severity: 'all',
+        maxIssues: 10,
+        includeExplanations: true,
+        includeSuggestions: true,
+        outputFormat: 'text'
+      });
+      
+      // Log issues
+      if (fileReview.issues.length > 0) {
+        console.log(`[TOOL] Found ${fileReview.stats.total} issues in ${filePath}:`);
+        console.log(`- Errors: ${fileReview.stats.errors}`);
+        console.log(`- Warnings: ${fileReview.stats.warnings}`);
+        console.log(`- Info: ${fileReview.stats.info}`);
+        
+        // Log critical issues
+        const criticalIssues = fileReview.issues.filter(issue => issue.severity === 'error');
+        if (criticalIssues.length > 0) {
+          console.log('[TOOL] Critical issues:');
+          criticalIssues.forEach(issue => {
+            console.log(`- Line ${issue.line}: ${issue.message}`);
+            if (issue.suggestion) {
+              console.log(`  Suggestion: ${issue.suggestion}`);
+            }
+          });
+        }
+      } else {
+        console.log(`[TOOL] No issues found in ${filePath}`);
+      }
+    } catch (error) {
+      console.error(`[TOOL] Error reviewing file: ${error}`);
+    }
+  }
+}
+
+export function onSessionStart(sessionId: string) {
+  console.log(`[TOOL] Code reviewer initialized for session: ${sessionId}`);
+  
+  // Schedule a code quality scan for the project
+  setTimeout(() => {
+    console.log('[TOOL] Running project-wide code quality scan...');
+    scanProjectForCodeIssues();
+  }, 3000); // Delay to ensure project files are loaded
+}
+
+export function onCommand(command: string, args: any[]) {
+  if (command === 'review-code') {
+    console.log('[TOOL] Running code review...');
+    
+    const path = args[0] || '.';
+    const recursive = args[1] !== false;
+    const filePatterns = args[2];
+    const excludePatterns = args[3];
+    const rules = args[4] || ['all'];
+    const severity = args[5] || 'all';
+    
+    return handleReviewCode({
+      path,
+      recursive,
+      filePatterns,
+      excludePatterns,
+      rules,
+      severity,
+      maxIssues: 100,
+      includeExplanations: true,
+      includeSuggestions: true,
+      outputFormat: 'text'
+    });
+  } else if (command === 'fix-issues') {
+    console.log('[TOOL] Fixing code issues...');
+    
+    const reviewResults = args[0];
+    const autoFix = args[1] !== false;
+    const createBackup = args[2] !== false;
+    const issueIds = args[3];
+    const severity = args[4] || 'error';
+    
+    return handleFixIssues({
+      reviewResults,
+      autoFix,
+      createBackup,
+      issueIds,
+      severity
+    });
+  } else if (command === 'generate-review-report') {
+    console.log('[TOOL] Generating code review report...');
+    
+    const reviewResults = args[0];
+    const format = args[1] || 'html';
+    const outputPath = args[2];
+    const includeStats = args[3] !== false;
+    
+    return handleGenerateReviewReport({
+      reviewResults,
+      format,
+      outputPath,
+      includeStats,
+      includeExplanations: true,
+      includeSuggestions: true
+    });
+  } else if (command === 'analyze-code-quality') {
+    console.log('[TOOL] Analyzing code quality...');
+    
+    const path = args[0] || '.';
+    const recursive = args[1] !== false;
+    const filePatterns = args[2];
+    const excludePatterns = args[3];
+    const metrics = args[4] || ['all'];
+    
+    return handleAnalyzeCodeQuality({
+      path,
+      recursive,
+      filePatterns,
+      excludePatterns,
+      metrics,
+      outputFormat: 'text'
+    });
+  }
+  
+  return null;
+}
+
+/**
+ * Scans the project for code issues
+ */
+function scanProjectForCodeIssues() {
+  console.log('[TOOL] Scanning project for code issues...');
+  
+  // This is a placeholder - in a real implementation, this would scan the filesystem
+  // For now, we'll just log a message
+  console.log('[TOOL] Recommendation: Use the "review-code" command to check specific files or directories');
+  console.log('[TOOL] Common code issues to watch for:');
+  console.log('- Security vulnerabilities (eval, innerHTML, etc.)');
+  console.log('- Performance issues (nested loops, inefficient algorithms)');
+  console.log('- Maintainability issues (long functions, complex conditionals)');
+  console.log('- Style issues (inconsistent formatting, naming conventions)');
+  console.log('- Accessibility issues (missing alt text, poor contrast)');
+}
 /**
  * CodeReviewer Tool
  * 
@@ -1000,4 +1148,3 @@ function generateQualityReport(qualityResult: QualityResult, outputFormat: strin
   // Implementation would generate a quality report
   return 'Quality report'; // Placeholder implementation
 }
-

@@ -4,9 +4,65 @@ export function activate() {
     console.log("[TOOL] ai-connector activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[AI-Connector] File written: ${filePath}`);
+  
+  // Check if the file is a prompt or contains API calls
+  if (filePath.includes('prompt') || content.includes('openai') || content.includes('anthropic') || content.includes('api.')) {
+    console.log('[AI-Connector] Detected potential AI-related file change');
+    
+    // Check for API keys in the content and warn if found
+    if (content.includes('sk-') || content.includes('api-key')) {
+      console.log('[AI-Connector] WARNING: Potential API key detected in file content');
+      return { warning: true, type: 'api-key-exposure', filePath };
+    }
+    
+    return { detected: true, filePath };
+  }
+  
+  return { detected: false };
+}
+
+export function onSessionStart(context: any) {
+  console.log('[AI-Connector] Session started');
+  
+  // Initialize AI connector with default settings
+  const provider = context?.defaultProvider || defaultConfig.defaultProvider;
+  const model = context?.defaultModel || defaultConfig.defaultModel;
+  
+  console.log(`[AI-Connector] Initializing with provider: ${provider}, model: ${model}`);
+  
+  // Clear response cache on session start
+  responseCache.clear();
+  
+  return {
+    initialized: true,
+    provider,
+    model,
+    supportedProviders: Object.keys(defaultConfig.providers)
+  };
+}
+
+export function onCommand(command: string, args: any) {
+  console.log(`[AI-Connector] Command received: ${command}`);
+  
+  if (command === 'ai.generate') {
+    console.log('[AI-Connector] Generating text with AI model');
+    return { action: 'generate', args };
+  } else if (command === 'ai.listModels') {
+    console.log('[AI-Connector] Listing available AI models');
+    return { action: 'listModels', args };
+  } else if (command === 'ai.configure') {
+    console.log('[AI-Connector] Configuring AI connector');
+    return { action: 'configure', args };
+  } else if (command === 'ai.clearCache') {
+    console.log('[AI-Connector] Clearing response cache');
+    responseCache.clear();
+    return { action: 'clearCache', success: true };
+  }
+  
+  return { action: 'unknown' };
+}
 import { z } from 'zod';
 import * as fs from 'fs/promises';
 import * as path from 'path';

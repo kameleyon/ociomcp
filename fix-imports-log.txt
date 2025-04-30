@@ -39,6 +39,7 @@ Processing: C:\Users\Administrator\myAPP\ociomcp\dist\lib\resource-manager.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\prompts-handler.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\run-with-tools.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\setup-claude-server.js
+Processing: C:\Users\Administrator\myAPP\ociomcp\dist\snapshot.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\custom-stdio.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\prompts-handler.js
@@ -46,16 +47,6 @@ Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\run-with-tools.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\advanced-features\api-integration.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\advanced-features\content-generator.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\advanced-features\index.js
-  Found import/export without .js extension: './version-control' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\advanced-features\index.js
-  Found import/export without .js extension: './content-generator' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\advanced-features\index.js
-  Found import/export without .js extension: './content-generator' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\advanced-features\index.js
-  Found import/export without .js extension: './api-client' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\advanced-features\index.js
-  Found import/export without .js extension: './i18n' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\advanced-features\index.js
-  Found import/export without .js extension: './version-control' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\advanced-features\index.js
-  Found import/export without .js extension: './content-generator' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\advanced-features\index.js
-  Found import/export without .js extension: './api-client' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\advanced-features\index.js
-  Found import/export without .js extension: './i18n' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\advanced-features\index.js
-  Fixed 9 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\advanced-features\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\advanced-features\internationalization.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\advanced-features\translation-gen.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\advanced-features\version-control.js
@@ -70,52 +61,22 @@ Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\automated-tools\
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\automated-tools\chat-initiator.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\automated-tools\code-fixer.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\automated-tools\code-splitter.js
-  Found import/export without .js extension: './${baseName}-split/${componentName}' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\automated-tools\code-splitter.js
-  Found import/export without .js extension: './${baseName}-split/${functionName}' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\automated-tools\code-splitter.js
-  Found import/export without .js extension: './${baseName}-split/${className}' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\automated-tools\code-splitter.js
-  Fixed 3 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\automated-tools\code-splitter.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\automated-tools\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\automated-tools\path-enforcer.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\automated-tools\plan-creator.js
+Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\automated-tools\snapshot.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\automated-tools\tone-adjuster.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\browser-launcher.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\cmd-executor.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\command-manager.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\env-manager.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\handlers.js
-  Found import/export without .js extension: './cmd-executor' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\handlers.js
-  Found import/export without .js extension: './output-reader' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\handlers.js
-  Found import/export without .js extension: './session-killer' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\handlers.js
-  Found import/export without .js extension: './session-lister' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\handlers.js
-  Found import/export without .js extension: './process-lister' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\handlers.js
-  Found import/export without .js extension: './process-killer' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\handlers.js
-  Found import/export without .js extension: './browser-launcher' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\handlers.js
-  Found import/export without .js extension: './env-manager' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\handlers.js
-  Fixed 8 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\handlers.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\index.js
-  Found import/export without .js extension: './command-manager' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\index.js
-  Found import/export without .js extension: './handlers' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\index.js
-  Found import/export without .js extension: './types' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\index.js
-  Found import/export without .js extension: './cmd-executor' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\index.js
-  Found import/export without .js extension: './output-reader' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\index.js
-  Found import/export without .js extension: './session-killer' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\index.js
-  Found import/export without .js extension: './session-lister' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\index.js
-  Found import/export without .js extension: './process-lister' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\index.js
-  Found import/export without .js extension: './process-killer' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\index.js
-  Found import/export without .js extension: './browser-launcher' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\index.js
-  Found import/export without .js extension: './env-manager' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\index.js
-  Fixed 11 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\output-reader.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\process-killer.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\process-lister.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\session-killer.js
-  Found import/export without .js extension: './cmd-executor' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\session-killer.js
-  Found import/export without .js extension: './output-reader' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\session-killer.js
-  Fixed 2 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\session-killer.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\session-lister.js
-  Found import/export without .js extension: './cmd-executor' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\session-lister.js
-  Found import/export without .js extension: './output-reader' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\session-lister.js
-  Fixed 2 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\session-lister.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\command\types.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\context-management\chat-transition.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\context-management\context-tracker.js
@@ -127,8 +88,6 @@ Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\database-api\sch
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\database-api\service-builder.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\database-api\types.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\database-api\wasm-tool.js
-  Found import/export without .js extension: './schema-gen' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\database-api\wasm-tool.js
-  Fixed 1 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\database-api\wasm-tool.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\documentation\api-docs-tool.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\documentation\cms-connector.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\documentation\docs-updater.js
@@ -155,8 +114,6 @@ Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\persistence\sess
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\project-organization\directory-structure.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\project-organization\documentation-generator.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\project-organization\file-monitor.js
-  Found import/export without .js extension: './${filePath}' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\project-organization\file-monitor.js
-  Fixed 1 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\project-organization\file-monitor.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\project-organization\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\project-planning\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\project-planning\plan-generator.js
@@ -165,197 +122,50 @@ Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\project-planning
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\access-checker.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\code-reviewer.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\complexity-tool.js
-  Found import/export without .js extension: './test-manager' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\complexity-tool.js
-  Fixed 1 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\complexity-tool.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\debug-assist.js
-  Found import/export without .js extension: './module' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\debug-assist.js
-  Fixed 1 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\debug-assist.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\error-resolver.js
-  Found import/export without .js extension: './module' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\error-resolver.js
-  Found import/export without .js extension: './module' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\error-resolver.js
-  Fixed 2 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\error-resolver.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\index.js
-  Found import/export without .js extension: './test-generator' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\index.js
-  Found import/export without .js extension: './debug-assist' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\index.js
-  Found import/export without .js extension: './performance-profiler' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\index.js
-  Found import/export without .js extension: './test-manager' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\index.js
-  Found import/export without .js extension: './access-checker' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\index.js
-  Found import/export without .js extension: './code-reviewer' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\index.js
-  Found import/export without .js extension: './complexity-tool' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\index.js
-  Fixed 7 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\performance-profiler.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\test-generator.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\testing-quality\test-manager.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\tools\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\browser-checker.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\component-gen.js
-  Found import/export without .js extension: '../theme' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\component-gen.js
-  Found import/export without .js extension: './${componentName}' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\component-gen.js
-  Fixed 2 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\component-gen.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\component-templates.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\enhancement-tool.js
-  Found import/export without .js extension: '../database-api/generators' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\enhancement-tool.js
-  Found import/export without .js extension: './browser-checker' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\enhancement-tool.js
-  Fixed 2 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\enhancement-tool.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\context-generator.js
-  Found import/export without .js extension: '../context/FlowContext' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\context-generator.js
-  Found import/export without .js extension: '../store/flowSlice' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\context-generator.js
-  Found import/export without .js extension: '../store/store' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\context-generator.js
-  Fixed 3 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\context-generator.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\examples\checkout-flow.js
-  Found import/export without .js extension: '../index' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\examples\checkout-flow.js
-  Fixed 1 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\examples\checkout-flow.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\flow-designer.js
-  Found import/export without .js extension: './schema' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\flow-designer.js
-  Found import/export without .js extension: './react-generator-core' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\flow-designer.js
-  Fixed 2 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\flow-designer.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\index.js
-  Found import/export without .js extension: './flow-designer' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\index.js
-  Found import/export without .js extension: './flow-designer' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\index.js
-  Found import/export without .js extension: './schema' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\index.js
-  Found import/export without .js extension: './utils' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\index.js
-  Found import/export without .js extension: './react-generator-core' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\index.js
-  Found import/export without .js extension: './step-component-generator' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\index.js
-  Found import/export without .js extension: './navigation-component-generator' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\index.js
-  Found import/export without .js extension: './context-generator' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\index.js
-  Found import/export without .js extension: './style-generator' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\index.js
-  Found import/export without .js extension: './validation-generator' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\index.js
-  Fixed 10 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\navigation-component-generator.js
-  Found import/export without .js extension: '../context/FlowContext' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\navigation-component-generator.js
-  Fixed 1 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\navigation-component-generator.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\react-generator-core.js
-  Found import/export without .js extension: './utils' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\react-generator-core.js
-  Found import/export without .js extension: './step-component-generator' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\react-generator-core.js
-  Found import/export without .js extension: './navigation-component-generator' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\react-generator-core.js
-  Found import/export without .js extension: './context-generator' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\react-generator-core.js
-  Found import/export without .js extension: './style-generator' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\react-generator-core.js
-  Found import/export without .js extension: './validation-generator' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\react-generator-core.js
-  Found import/export without .js extension: './context/FlowContext' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\react-generator-core.js
-  Found import/export without .js extension: './components/FlowBreadcrumbs' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\react-generator-core.js
-  Found import/export without .js extension: './components/ProgressIndicator' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\react-generator-core.js
-  Found import/export without .js extension: './components/SummaryView' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\react-generator-core.js
-  Found import/export without .js extension: './${toKebabCase(name)}' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\react-generator-core.js
-  Found import/export without .js extension: './schema' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\react-generator-core.js
-  Found import/export without .js extension: './utils/validation' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\react-generator-core.js
-  Fixed 13 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\react-generator-core.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\schema.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\step-component-generator.js
-  Found import/export without .js extension: './utils' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\step-component-generator.js
-  Found import/export without .js extension: '../context/FlowContext' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\step-component-generator.js
-  Found import/export without .js extension: '../utils/validation' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\step-component-generator.js
-  Fixed 3 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\step-component-generator.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\style-generator.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\tests\flow-designer.test.js
-  Found import/export without .js extension: '../index' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\tests\flow-designer.test.js
-  Fixed 1 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\tests\flow-designer.test.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\utils.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\validation-generator.js
-  Found import/export without .js extension: './validation' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\validation-generator.js
-  Fixed 1 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer\validation-generator.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer.js
-  Found import/export without .js extension: './flow-designer/index' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer.js
-  Fixed 1 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\flow-designer.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\angular-generator.js
-  Found import/export without .js extension: './utils' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\angular-generator.js
-  Found import/export without .js extension: './custom-icons' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\angular-generator.js
-  Fixed 2 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\angular-generator.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\handlers.js
-  Found import/export without .js extension: './react-generator' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\handlers.js
-  Found import/export without .js extension: './vue-generator' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\handlers.js
-  Found import/export without .js extension: './angular-generator' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\handlers.js
-  Fixed 3 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\handlers.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\index.js
-  Found import/export without .js extension: './schemas' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\index.js
-  Found import/export without .js extension: './handlers' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\index.js
-  Fixed 2 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\react-generator.js
-  Found import/export without .js extension: './utils' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\react-generator.js
-  Found import/export without .js extension: './types' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\react-generator.js
-  Found import/export without .js extension: './types' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\react-generator.js
-  Found import/export without .js extension: './custom-icons' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\react-generator.js
-  Found import/export without .js extension: './types' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\react-generator.js
-  Found import/export without .js extension: './${managerName}' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\react-generator.js
-  Found import/export without .js extension: './types' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\react-generator.js
-  Found import/export without .js extension: './${managerName}' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\react-generator.js
-  Found import/export without .js extension: './${managerName}' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\react-generator.js
-  Found import/export without .js extension: './${managerName}' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\react-generator.js
-  Fixed 10 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\react-generator.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\schemas.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\solid-generator.js
-  Found import/export without .js extension: './types' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\solid-generator.js
-  Found import/export without .js extension: './types' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\solid-generator.js
-  Found import/export without .js extension: './custom-icons' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\solid-generator.js
-  Found import/export without .js extension: './types' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\solid-generator.js
-  Found import/export without .js extension: './${managerName}' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\solid-generator.js
-  Found import/export without .js extension: './types' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\solid-generator.js
-  Found import/export without .js extension: './${managerName}' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\solid-generator.js
-  Found import/export without .js extension: './${managerName}' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\solid-generator.js
-  Found import/export without .js extension: './${managerName}' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\solid-generator.js
-  Fixed 9 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\solid-generator.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\svelte-generator.js
-  Found import/export without .js extension: './types' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\svelte-generator.js
-  Found import/export without .js extension: './custom-icons' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\svelte-generator.js
-  Found import/export without .js extension: './custom-icons' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\svelte-generator.js
-  Found import/export without .js extension: './types' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\svelte-generator.js
-  Fixed 4 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\svelte-generator.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\types.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\utils.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\vue-generator.js
-  Found import/export without .js extension: './utils' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\vue-generator.js
-  Found import/export without .js extension: './custom-icons' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\vue-generator.js
-  Found import/export without .js extension: './custom-icons' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\vue-generator.js
-  Fixed 3 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager\vue-generator.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager.js
-  Found import/export without .js extension: './icon-manager/index' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager.js
-  Found import/export without .js extension: './types' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager.js
-  Found import/export without .js extension: './types' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager.js
-  Found import/export without .js extension: './custom-icons' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager.js
-  Found import/export without .js extension: './types' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager.js
-  Found import/export without .js extension: './${managerName}' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager.js
-  Found import/export without .js extension: './types' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager.js
-  Found import/export without .js extension: './${managerName}' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager.js
-  Found import/export without .js extension: './${managerName}' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager.js
-  Found import/export without .js extension: './${managerName}' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager.js
-  Found import/export without .js extension: './custom-icons' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager.js
-  Found import/export without .js extension: './custom-icons' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager.js
-  Fixed 12 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\icon-manager.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\index.js
-  Found import/export without .js extension: './page-gen' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\index.js
-  Found import/export without .js extension: './project-gen' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\index.js
-  Found import/export without .js extension: './flow-designer' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\index.js
-  Found import/export without .js extension: './responsive-ui' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\index.js
-  Found import/export without .js extension: './icon-manager' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\index.js
-  Found import/export without .js extension: './token-extractor' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\index.js
-  Found import/export without .js extension: './token-extractor-handler' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\index.js
-  Found import/export without .js extension: './pwa-converter' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\index.js
-  Found import/export without .js extension: './browser-checker' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\index.js
-  Found import/export without .js extension: './enhancement-tool' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\index.js
-  Found import/export without .js extension: './page-templates' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\index.js
-  Found import/export without .js extension: './component-gen' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\index.js
-  Found import/export without .js extension: './project-templates' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\index.js
-  Fixed 13 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\page-gen.js
-  Found import/export without .js extension: '../components/Header' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\page-gen.js
-  Found import/export without .js extension: '../components/Footer' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\page-gen.js
-  Found import/export without .js extension: '../components/Navigation' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\page-gen.js
-  Found import/export without .js extension: '../theme' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\page-gen.js
-  Fixed 4 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\page-gen.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\page-templates.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\project-gen.js
-  Found import/export without .js extension: './App' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\project-gen.js
-  Fixed 1 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\project-gen.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\project-templates.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\pwa-converter.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\responsive-ui.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\token-extractor-handler.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\token-extractor.js
-  Found import/export without .js extension: './tokens' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\token-extractor.js
-  Found import/export without .js extension: './tokens' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\token-extractor.js
-  Found import/export without .js extension: './tokens' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\token-extractor.js
-  Found import/export without .js extension: './tokens' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\token-extractor.js
-  Found import/export without .js extension: './theme-store' in C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\token-extractor.js
-  Fixed 5 imports in: C:\Users\Administrator\myAPP\ociomcp\dist\src\tools\ui-generation\token-extractor.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\accessibility\checker.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\accessibility\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\accessibility\report-generator.js
@@ -400,6 +210,15 @@ Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\auto
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\auto-continue\token-counter.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\auto-continue\types.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\auto-continue.js
+Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\automated-tools\auto-continue.js
+Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\automated-tools\chat-initiator.js
+Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\automated-tools\code-fixer.js
+Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\automated-tools\code-splitter.js
+Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\automated-tools\index.js
+Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\automated-tools\path-enforcer.js
+Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\automated-tools\plan-creator.js
+Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\automated-tools\snapshot.js
+Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\automated-tools\tone-adjuster.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\chat-initiator.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\code-fixer\auto-fixer.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\code-fixer\base-code-fixer.js
@@ -437,12 +256,16 @@ Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\code
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\code-fixer.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\code-splitter\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\code-splitter.js
+Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\context-management\chat-transition.js
+Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\context-management\context-tracker.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\new-chat-initiator\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\path-enforcer\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\path-enforcer.js
+Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\persistence\session-state.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\plan-creator.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\project-plan-generator\index.js
+Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\snapshot.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\automated-tools\tone-adjuster.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\command\browser-launcher.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\command\cmd-executor.js
@@ -630,8 +453,8 @@ Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\utils\index.js
 Processing: C:\Users\Administrator\myAPP\ociomcp\dist\tools\utils\openrouter-utils.js
 
 ----- Summary -----
-Total files processed: 437
-Files modified: 36
-Total imports fixed: 156
+Total files processed: 452
+Files modified: 0
+Total imports fixed: 0
 Files with errors: 0
-Finished processing all files.
+No files were modified. No matching imports found or no .js files present.

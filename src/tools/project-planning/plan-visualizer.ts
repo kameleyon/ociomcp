@@ -4,9 +4,158 @@ export function activate() {
     console.log("[TOOL] plan-visualizer activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[TOOL] Plan visualizer processing file: ${filePath}`);
+  
+  // Check if the file is a project plan file
+  if (filePath.includes('plan') || 
+      filePath.includes('roadmap') || 
+      filePath.includes('project') ||
+      filePath.endsWith('.plan.json') || 
+      filePath.endsWith('.plan.md')) {
+    
+    try {
+      // Try to parse the file as a project plan
+      const plan = parseProjectPlan(filePath, content);
+      
+      if (plan) {
+        console.log('[TOOL] Detected project plan:');
+        console.log(`- Plan name: ${plan.name}`);
+        console.log(`- Phases: ${plan.phases.length}`);
+        
+        // Generate visualizations
+        const markdown = renderAsMarkdown(plan);
+        const ganttChart = renderAsGanttChart(plan);
+        
+        console.log('[TOOL] Generated visualizations for the project plan');
+        console.log('[TOOL] Use the "visualize-plan" command to view these visualizations');
+      }
+    } catch (error) {
+      console.error(`[TOOL] Error processing file: ${error}`);
+    }
+  }
+}
+
+export function onSessionStart(sessionId: string) {
+  console.log(`[TOOL] Plan visualizer initialized for session: ${sessionId}`);
+  
+  // Check for existing project plans to visualize
+  setTimeout(() => {
+    checkForExistingPlans();
+  }, 2500); // Delay to ensure project files are loaded
+}
+
+export function onCommand(command: string, args: any[]) {
+  if (command === 'visualize-plan') {
+    console.log('[TOOL] Visualizing project plan...');
+    
+    const plan = args[0];
+    const format = args[1] || 'markdown';
+    
+    if (!plan) {
+      console.error('[TOOL] No plan provided for visualization');
+      return { error: 'No plan provided for visualization' };
+    }
+    
+    // Generate the visualization based on the requested format
+    let visualization;
+    switch (format) {
+      case 'gantt':
+        visualization = renderAsGanttChart(plan);
+        break;
+      case 'html':
+        visualization = renderAsHTML(plan);
+        break;
+      case 'markdown':
+      default:
+        visualization = renderAsMarkdown(plan);
+        break;
+    }
+    
+    console.log(`[TOOL] Project plan visualization generated in ${format} format`);
+    return { visualization, format };
+  } else if (command === 'export-plan') {
+    const plan = args[0];
+    const format = args[1] || 'markdown';
+    const filePath = args[2] || `project-plan.${format === 'html' ? 'html' : 'md'}`;
+    
+    if (!plan) {
+      console.error('[TOOL] No plan provided for export');
+      return { error: 'No plan provided for export' };
+    }
+    
+    // Generate the visualization based on the requested format
+    let content;
+    switch (format) {
+      case 'gantt':
+        content = renderAsGanttChart(plan);
+        break;
+      case 'html':
+        content = renderAsHTML(plan);
+        break;
+      case 'markdown':
+      default:
+        content = renderAsMarkdown(plan);
+        break;
+    }
+    
+    console.log(`[TOOL] Project plan exported to ${filePath} in ${format} format`);
+    return { content, filePath, format };
+  }
+  
+  return null;
+}
+
+/**
+ * Parses a project plan from file content
+ */
+function parseProjectPlan(filePath: string, content: string): ProjectPlan | null {
+  try {
+    // Check if it's a JSON file
+    if (filePath.endsWith('.json') || filePath.endsWith('.plan.json')) {
+      try {
+        const data = JSON.parse(content);
+        
+        // Check if it has the required properties of a project plan
+        if (data.name && Array.isArray(data.phases)) {
+          return data as ProjectPlan;
+        }
+      } catch (e) {
+        // Not valid JSON or not a project plan, continue with other checks
+      }
+    }
+    
+    // For markdown files, try to extract plan information
+    if (filePath.endsWith('.md') || filePath.endsWith('.plan.md')) {
+      // This is a placeholder - in a real implementation, this would parse markdown
+      // For now, we'll just check for some basic plan structure
+      if (content.includes('# Project Plan') || 
+          content.includes('## Phases') || 
+          content.includes('| Task |')) {
+        
+        console.log('[TOOL] Detected markdown project plan, but parsing is not implemented');
+        // Return null as we don't have actual parsing logic for markdown
+        return null;
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error(`[TOOL] Error parsing project plan: ${error}`);
+    return null;
+  }
+}
+
+/**
+ * Checks for existing project plans in the project
+ */
+function checkForExistingPlans() {
+  console.log('[TOOL] Checking for existing project plans to visualize...');
+  
+  // This is a placeholder - in a real implementation, this would scan the filesystem
+  // For now, we'll just log a message
+  console.log('[TOOL] Recommendation: Use the "visualize-plan" command to generate visualizations for your project plans');
+}
 import { ProjectPlan, Phase, Task, calculateProgress } from './project-plan.js';
 
 /**

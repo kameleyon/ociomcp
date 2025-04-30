@@ -4,9 +4,69 @@ export function activate() {
     console.log("[TOOL] typescript-error-fixer activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Handles file write events to TypeScript error fixer config.
+ * If a .ts or config file changes, automatically run error-fixing.
+ */
+export async function onFileWrite(event?: { path: string; content?: string }) {
+  if (!event || !event.path) {
+    console.warn("[typescript-error-fixer] onFileWrite called without event data.");
+    return;
+  }
+  const ext = event.path.split('.').pop();
+      if (ext === 'ts' || event.path.endsWith('ts-error-fixer.json')) {
+    console.log(`[typescript-error-fixer] Detected change, running fixes on ${event.path}`);
+    try {
+      await handleTypeScriptErrorFixer({ fixAll: true, dryRun: false });
+      console.log("[typescript-error-fixer] Error fixing completed.");
+    } catch (err) {
+      console.error("[typescript-error-fixer] Error during automatic fix:", err);
+    }
+  }
+}
+
+/**
+ * Initializes or resets state for the TypeScript Error Fixer at session start.
+ */
+export function onSessionStart(session?: { id?: string }) {
+  console.log(`[typescript-error-fixer] Session started${session && session.id ? `: ${session.id}` : ""}. Preparing error-fix environment.`);
+  // In real use, clear caches or load up fix metadata here.
+}
+
+/**
+ * Handles commands for TypeScript error fixer.
+ * Supported commands:
+ * - fix-errors: run all fixes
+ * - validate-fixer-schema: validate input args against schema
+ */
+export async function onCommand(command?: { name: string; args?: any }) {
+  if (!command || !command.name) {
+    console.warn("[typescript-error-fixer] onCommand called without command data.");
+    return;
+  }
+  switch (command.name) {
+    case "fix-errors":
+      console.log("[typescript-error-fixer] Running TypeScript error fixes...");
+      try {
+        const result = await handleTypeScriptErrorFixer(command.args);
+        console.log("[typescript-error-fixer] Fix result:", result);
+      } catch (err) {
+        console.error("[typescript-error-fixer] Fixing failed:", err);
+      }
+      break;
+    case "validate-fixer-schema":
+      console.log("[typescript-error-fixer] Validating TypeScriptErrorFixerSchema...");
+      try {
+        TypeScriptErrorFixerSchema.parse(command.args);
+        console.log("[typescript-error-fixer] Schema validation successful.");
+      } catch (err) {
+        console.error("[typescript-error-fixer] Schema validation failed:", err);
+      }
+      break;
+    default:
+      console.warn(`[typescript-error-fixer] Unknown command: ${command.name}`);
+  }
+}
 import fs from "fs/promises";
 import path from "path";
 import { z } from "zod";

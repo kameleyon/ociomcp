@@ -4,9 +4,67 @@ export function activate() {
     console.log("[TOOL] import-fixer activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Handles file write events for JavaScript/TypeScript files.
+ * If a relevant file changes, triggers import fixing or logging.
+ */
+export async function onFileWrite(event?: { path: string; content?: string }) {
+  if (!event || !event.path) {
+    console.warn("[import-fixer] onFileWrite called without event data.");
+    return;
+  }
+  try {
+    if (event.path.endsWith('.js') || event.path.endsWith('.ts')) {
+      console.log(`[import-fixer] Detected JS/TS file change: ${event.path}`);
+      // Optionally trigger import fixing or log the event
+      // ... actual logic could go here
+    }
+  } catch (err) {
+    console.error(`[import-fixer] Error during file-triggered import fixing:`, err);
+  }
+}
+
+/**
+ * Initializes or resets import fixer state at the start of a session.
+ */
+export function onSessionStart(session?: { id?: string }) {
+  console.log(`[import-fixer] Session started${session && session.id ? `: ${session.id}` : ""}. Preparing import fixer environment.`);
+  // Example: clear temp files, reset state, etc.
+  // ... actual reset logic
+}
+
+/**
+ * Handles import fixer commands.
+ * Supports dynamic invocation of import fixing or validation.
+ */
+export async function onCommand(command?: { name: string; args?: any }) {
+  if (!command || !command.name) {
+    console.warn("[import-fixer] onCommand called without command data.");
+    return;
+  }
+  switch (command.name) {
+    case "fix-imports":
+      console.log("[import-fixer] Fixing imports...");
+      try {
+        await handleImportFixer(command.args);
+        console.log("[import-fixer] Import fixing complete.");
+      } catch (err) {
+        console.error("[import-fixer] Import fixing failed:", err);
+      }
+      break;
+    case "validate-import-fixer-schema":
+      console.log("[import-fixer] Validating import fixer schema...");
+      try {
+        ImportFixerSchema.parse(command.args);
+        console.log("[import-fixer] Import fixer schema validation successful.");
+      } catch (err) {
+        console.error("[import-fixer] Import fixer schema validation failed:", err);
+      }
+      break;
+    default:
+      console.warn(`[import-fixer] Unknown command: ${command.name}`);
+  }
+}
 import fs from "fs";
 import path from "path";
 import { z } from "zod";

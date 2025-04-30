@@ -4,9 +4,70 @@ export function activate() {
     console.log("[TOOL] schema-checker activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Handles file write events for schema files (JSON/YAML).
+ * Triggers schema validation.
+ */
+export async function onFileWrite(event?: { path: string; content?: string }) {
+  if (!event || !event.path) {
+    console.warn("[schema-checker] onFileWrite called without event data.");
+    return;
+  }
+  if (event.path.endsWith('.schema.json') || event.path.endsWith('.schema.yaml') || event.path.endsWith('.schema.yml')) {
+    console.log(`[schema-checker] Detected schema file change: ${event.path}`);
+    try {
+      const result = await validateSchema(event.path, event.content);
+      if (!result.valid) {
+        console.error(`[schema-checker] Schema validation errors: ${result.errors.join(', ')}`);
+      } else {
+        console.log(`[schema-checker] Schema is valid: ${event.path}`);
+      }
+    } catch (err) {
+      console.error("[schema-checker] Error validating schema:", err);
+    }
+  }
+}
+
+/**
+ * Initializes or resets schema checker state at the start of a session.
+ */
+export function onSessionStart(session?: { id?: string }) {
+  console.log(`[schema-checker] Session started${session && session.id ? `: ${session.id}` : ""}. Preparing schema checker environment.`);
+  // Example: clear previous reports or caches
+}
+
+/**
+ * Handles schema checker commands.
+ * Supports schema validation and report generation.
+ */
+export async function onCommand(command?: { name: string; args?: any }) {
+  if (!command || !command.name) {
+    console.warn("[schema-checker] onCommand called without command data.");
+    return;
+  }
+  switch (command.name) {
+    case "validate-schema":
+      console.log("[schema-checker] Validating schema...");
+      try {
+        const result = await validateSchema(command.args.path);
+        return { valid: result.valid, errors: result.errors };
+      } catch (err) {
+        console.error("[schema-checker] Validation failed:", err);
+        throw err;
+      }
+    case "generate-schema-report":
+      console.log("[schema-checker] Generating schema report...");
+      try {
+        const report = await generateSchemaReport(command.args.path);
+        return report;
+      } catch (err) {
+        console.error("[schema-checker] Report generation failed:", err);
+        throw err;
+      }
+    default:
+      console.warn(`[schema-checker] Unknown command: ${command.name}`);
+  }
+}
 /**
  * Schema Checker
  * 
@@ -18,6 +79,34 @@ import * as path from 'path';
 import { z } from 'zod';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
+
+/**
+ * Validates a JSON Schema file by checking JSON parse and schema compilation.
+ */
+async function validateSchema(filePath: string, content?: string): Promise<{ valid: boolean; errors: string[] }> {
+  try {
+    const schemaText = content || await fs.readFile(filePath, 'utf-8');
+    const schema = JSON.parse(schemaText);
+    const ajv = new Ajv({ allErrors: true, strict: false });
+    addFormats(ajv);
+    ajv.compile(schema);
+    return { valid: true, errors: [] };
+  } catch (err: any) {
+    return { valid: false, errors: [err.message || String(err)] };
+  }
+}
+
+/**
+ * Generates a simple report for a JSON Schema file.
+ */
+async function generateSchemaReport(filePath: string): Promise<{ report: string }> {
+  try {
+    const schemaText = await fs.readFile(filePath, 'utf-8');
+    return { report: schemaText };
+  } catch (err: any) {
+    throw new Error(`Error generating schema report: ${err.message || String(err)}`);
+  }
+}
 // Define JSONSchema7 type locally instead of importing
 type JSONSchema7 = {
   $id?: string;

@@ -4,9 +4,186 @@ export function activate() {
     console.log("[TOOL] error-resolver activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[TOOL] Error resolver processing file: ${filePath}`);
+  
+  // Check if the file is a log file or contains error messages
+  if (filePath.endsWith('.log') || filePath.includes('error') || filePath.includes('debug')) {
+    try {
+      // Analyze the content for error messages
+      const errors = extractErrorsFromFile(content);
+      
+      if (errors.length > 0) {
+        console.log(`[TOOL] Detected ${errors.length} potential errors in ${filePath}:`);
+        
+        // Analyze the first detected error
+        const firstError = errors[0];
+        const analysis = analyzeError({
+          errorMessage: firstError.message,
+          errorStack: firstError.stack,
+          language: 'unknown', // Language might be unknown from log files
+          filePath: filePath,
+          lineNumber: firstError.line
+        });
+        
+        console.log('[TOOL] Analysis of the first error:');
+        console.log(`- Type: ${analysis.errorType}`);
+        console.log(`- Category: ${analysis.errorCategory}`);
+        console.log(`- Description: ${analysis.description}`);
+        
+        // Generate solutions
+        const solutions = generateSolutions(analysis, 1);
+        if (solutions.length > 0) {
+          console.log('[TOOL] Suggested solution:');
+          console.log(`- ${solutions[0].description}`);
+          if (solutions[0].explanation) {
+            console.log(`  Explanation: ${solutions[0].explanation}`);
+          }
+        }
+      } else {
+        console.log(`[TOOL] No errors detected in ${filePath}`);
+      }
+    } catch (error) {
+      console.error(`[TOOL] Error analyzing file: ${error}`);
+    }
+  }
+}
+
+export function onSessionStart(sessionId: string) {
+  console.log(`[TOOL] Error resolver initialized for session: ${sessionId}`);
+  
+  // Check for common project errors or known issues
+  setTimeout(() => {
+    console.log('[TOOL] Checking for known project issues...');
+    checkKnownIssues();
+  }, 3000); // Delay to ensure project files are loaded
+}
+
+export function onCommand(command: string, args: any[]) {
+  if (command === 'analyze-error') {
+    console.log('[TOOL] Analyzing error...');
+    
+    const errorMessage = args[0] || '';
+    const errorStack = args[1] || '';
+    const language = args[2] || 'javascript';
+    
+    return handleAnalyzeError({
+      errorMessage,
+      errorStack,
+      language,
+      framework: args[3],
+      filePath: args[4],
+      lineNumber: args[5],
+      columnNumber: args[6],
+      codeContext: args[7]
+    });
+  } else if (command === 'generate-solution') {
+    console.log('[TOOL] Generating solution...');
+    
+    const errorAnalysis = args[0];
+    const solutionCount = args[1] || 1;
+    
+    return handleGenerateSolution({
+      errorAnalysis,
+      solutionCount,
+      includeExplanation: args[2] !== false,
+      includeCode: args[3] !== false
+    });
+  } else if (command === 'apply-solution') {
+    console.log('[TOOL] Applying solution...');
+    
+    const solution = args[0];
+    const filePath = args[1];
+    
+    return handleApplySolution({
+      solution,
+      filePath,
+      createBackup: args[2] !== false
+    });
+  } else if (command === 'search-error-database') {
+    console.log('[TOOL] Searching error database...');
+    
+    const query = args[0] || '';
+    const language = args[1];
+    const framework = args[2];
+    const limit = args[3] || 5;
+    
+    return handleSearchErrorDatabase({
+      query,
+      language,
+      framework,
+      limit
+    });
+  }
+  
+  return null;
+}
+
+/**
+ * Extracts error messages from file content
+ */
+function extractErrorsFromFile(content: string): Array<{message: string, stack?: string, line?: number}> {
+  const errors: Array<{message: string, stack?: string, line?: number}> = [];
+  const lines = content.split('\n');
+  
+  // Simple pattern matching for error messages
+  const errorPatterns = [
+    /error:/i,
+    /exception:/i,
+    /failed:/i,
+    /uncaught/i,
+    /stack trace:/i
+  ];
+  
+  let currentError: {message: string, stack?: string, line?: number} | null = null;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // Check if the line matches any error pattern
+    if (errorPatterns.some(pattern => pattern.test(line))) {
+      // If we were already tracking an error, save it
+      if (currentError) {
+        errors.push(currentError);
+      }
+      
+      // Start a new error
+      currentError = { message: line.trim(), line: i + 1, stack: '' };
+    } else if (currentError) {
+      // If we are tracking an error, append the line to the stack trace
+      // Stop if we encounter an empty line or a line that doesn't look like a stack trace
+      if (line.trim() === '' || !line.trim().startsWith('at ')) {
+        errors.push(currentError);
+        currentError = null;
+      } else {
+        currentError.stack = (currentError.stack || '') + line + '\n';
+      }
+    }
+  }
+  
+  // Save the last error if any
+  if (currentError) {
+    errors.push(currentError);
+  }
+  
+  return errors;
+}
+
+/**
+ * Checks for known project issues
+ */
+function checkKnownIssues() {
+  console.log('[TOOL] Checking for known project issues...');
+  
+  // This is a placeholder - in a real implementation, this would check an issue tracker or database
+  // For now, we'll just log a message
+  console.log('[TOOL] Recommendation: Use the "search-error-database" command to look for solutions to known errors');
+  console.log('[TOOL] Common project issues to check:');
+  console.log('- Dependency conflicts');
+  console.log('- Configuration errors');
+  console.log('- Environment setup problems');
+  console.log('- Known bugs in libraries or frameworks');
+}
 /**
  * ErrorResolver Tool
  * 
@@ -1174,4 +1351,3 @@ function formatSearchResults(results: ErrorDatabaseEntry[]): string {
   
   return output;
 }
-

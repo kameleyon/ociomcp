@@ -4,9 +4,279 @@ export function activate() {
     console.log("[TOOL] env-manager activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[Env Manager] File written: ${filePath}`);
+  
+  // Check if the file is an environment file
+  if (filePath.endsWith('.env') ||
+      filePath.includes('.env.') ||
+      filePath.endsWith('.env.local') ||
+      filePath.endsWith('.env.development') ||
+      filePath.endsWith('.env.production') ||
+      filePath.endsWith('.env.test')) {
+    console.log(`[Env Manager] Detected environment file change: ${filePath}`);
+    
+    try {
+      // Parse the file to check for sensitive information
+      const envVars = dotenv.parse(content);
+      const sensitiveKeys = Object.keys(envVars).filter(key => {
+        const lowerKey = key.toLowerCase();
+        return lowerKey.includes('key') ||
+               lowerKey.includes('secret') ||
+               lowerKey.includes('password') ||
+               lowerKey.includes('token');
+      });
+      
+      if (sensitiveKeys.length > 0) {
+        console.log(`[Env Manager] Warning: Found potentially sensitive keys: ${sensitiveKeys.join(', ')}`);
+      }
+      
+      return {
+        detected: true,
+        filePath,
+        type: 'env',
+        sensitiveKeys: sensitiveKeys.length > 0 ? sensitiveKeys : undefined
+      };
+    } catch (error) {
+      console.error(`[Env Manager] Error parsing environment file: ${error}`);
+      return {
+        detected: true,
+        filePath,
+        type: 'env',
+        error: String(error)
+      };
+    }
+  }
+  
+  // Check for configuration files that might contain environment variables
+  if (filePath.endsWith('package.json') ||
+      filePath.endsWith('config.json') ||
+      filePath.endsWith('app.json') ||
+      filePath.endsWith('settings.json')) {
+    console.log(`[Env Manager] Detected configuration file: ${filePath}`);
+    return {
+      detected: true,
+      filePath,
+      type: 'config'
+    };
+  }
+  
+  return { detected: false };
+}
+
+export function onSessionStart(context: any) {
+  console.log('[Env Manager] Session started');
+  
+  try {
+    // Check for existing environment files
+    const envFiles = [];
+    
+    // Common environment file names
+    const commonEnvFiles = [
+      '.env',
+      '.env.local',
+      '.env.development',
+      '.env.production',
+      '.env.test'
+    ];
+    
+    // Check if any of the common environment files exist
+    for (const envFile of commonEnvFiles) {
+      if (existsSync(envFile)) {
+        envFiles.push(envFile);
+        
+        // Try to load the environment file
+        try {
+          const result = loadEnvFile(envFile);
+          console.log(`[Env Manager] Loaded environment file: ${envFile} (${result ? 'success' : 'failed'})`);
+        } catch (error) {
+          console.error(`[Env Manager] Error loading environment file ${envFile}: ${error}`);
+        }
+      }
+    }
+    
+    // Log environment information
+    const nodeEnv = process.env.NODE_ENV || 'development';
+    
+    console.log(`[Env Manager] Node environment: ${nodeEnv}`);
+    console.log(`[Env Manager] Found ${envFiles.length} environment files: ${envFiles.join(', ')}`);
+    
+    return {
+      initialized: true,
+      nodeEnv,
+      envFiles
+    };
+  } catch (error) {
+    console.error(`[Env Manager] Error during initialization: ${error}`);
+    return {
+      initialized: false,
+      error: String(error)
+    };
+  }
+}
+
+export function onCommand(command: string, args: any[]) {
+  console.log(`[Env Manager] Command received: ${command}`);
+  
+  try {
+    if (command === 'env.create') {
+      console.log('[Env Manager] Creating environment file');
+      if (args && args.length > 0) {
+        const options = args[0];
+        
+        try {
+          // This is async, so we can't return the result directly
+          createEnvFile(
+            options.filePath,
+            options.variables,
+            options.template,
+            options.environment,
+            options.overwrite
+          ).then(result => {
+            console.log(`[Env Manager] Environment file created: ${result}`);
+          }).catch(error => {
+            console.error(`[Env Manager] Error creating environment file: ${error}`);
+          });
+          
+          return {
+            action: 'create',
+            filePath: options.filePath,
+            started: true
+          };
+        } catch (error) {
+          console.error(`[Env Manager] Error creating environment file: ${error}`);
+          return { action: 'create', error: String(error) };
+        }
+      }
+    } else if (command === 'env.load') {
+      console.log('[Env Manager] Loading environment file');
+      if (args && args.length > 0) {
+        const options = typeof args[0] === 'string' ? { filePath: args[0] } : args[0];
+        
+        try {
+          const result = loadEnvFile(options.filePath, options.override);
+          return {
+            action: 'load',
+            filePath: options.filePath,
+            success: result
+          };
+        } catch (error) {
+          console.error(`[Env Manager] Error loading environment file: ${error}`);
+          return { action: 'load', error: String(error) };
+        }
+      }
+    } else if (command === 'env.get') {
+      console.log('[Env Manager] Getting environment variable');
+      if (args && args.length > 0) {
+        const options = typeof args[0] === 'string' ? { name: args[0] } : args[0];
+        
+        try {
+          const value = getEnvVariable(options.name, options.defaultValue);
+          return {
+            action: 'get',
+            name: options.name,
+            value,
+            found: value !== undefined
+          };
+        } catch (error) {
+          console.error(`[Env Manager] Error getting environment variable: ${error}`);
+          return { action: 'get', error: String(error) };
+        }
+      }
+    } else if (command === 'env.set') {
+      console.log('[Env Manager] Setting environment variable');
+      if (args && args.length > 0) {
+        const options = args[0];
+        
+        try {
+          // This is async, so we can't return the result directly
+          setEnvVariable(
+            options.name,
+            options.value,
+            options.filePath,
+            options.overwrite
+          ).then(result => {
+            console.log(`[Env Manager] Environment variable set: ${result}`);
+          }).catch(error => {
+            console.error(`[Env Manager] Error setting environment variable: ${error}`);
+          });
+          
+          return {
+            action: 'set',
+            name: options.name,
+            started: true
+          };
+        } catch (error) {
+          console.error(`[Env Manager] Error setting environment variable: ${error}`);
+          return { action: 'set', error: String(error) };
+        }
+      }
+    } else if (command === 'env.generate') {
+      console.log('[Env Manager] Generating secret');
+      if (args && args.length > 0) {
+        const options = args[0];
+        
+        try {
+          const secret = generateSecret(options.length, options.type);
+          return {
+            action: 'generate',
+            secret,
+            type: options.type || 'hex',
+            length: options.length || 32
+          };
+        } catch (error) {
+          console.error(`[Env Manager] Error generating secret: ${error}`);
+          return { action: 'generate', error: String(error) };
+        }
+      }
+    } else if (command === 'env.encrypt') {
+      console.log('[Env Manager] Encrypting value');
+      if (args && args.length > 0) {
+        const options = args[0];
+        
+        try {
+          const result = encryptValue(options.value, options.key, options.algorithm);
+          return {
+            action: 'encrypt',
+            encrypted: result.encrypted,
+            iv: result.iv,
+            authTag: result.authTag
+          };
+        } catch (error) {
+          console.error(`[Env Manager] Error encrypting value: ${error}`);
+          return { action: 'encrypt', error: String(error) };
+        }
+      }
+    } else if (command === 'env.decrypt') {
+      console.log('[Env Manager] Decrypting value');
+      if (args && args.length > 0) {
+        const options = args[0];
+        
+        try {
+          const decrypted = decryptValue(
+            options.encrypted,
+            options.key,
+            options.algorithm,
+            options.iv,
+            options.authTag
+          );
+          return {
+            action: 'decrypt',
+            decrypted
+          };
+        } catch (error) {
+          console.error(`[Env Manager] Error decrypting value: ${error}`);
+          return { action: 'decrypt', error: String(error) };
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`[Env Manager] Error processing command: ${error}`);
+    return { action: 'error', error: String(error) };
+  }
+  
+  return { action: 'unknown' };
+}
 /**
  * Environment Manager
  * 

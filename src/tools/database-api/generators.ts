@@ -4,9 +4,61 @@ export function activate() {
     console.log("[TOOL] generators activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Handles file write events for generator-related files.
+ * If a generator config or template changes, triggers regeneration or validation.
+ */
+export function onFileWrite(event?: { path: string; content?: string }) {
+  if (!event || !event.path) {
+    console.warn("[generators] onFileWrite called without event data.");
+    return;
+  }
+  if (event.path.endsWith('.generator.json') || event.path.endsWith('.gen.ts')) {
+    console.log(`[generators] Detected generator file change: ${event.path}`);
+    // Example: re-validate or re-generate output
+    // (In real use, call actual generator logic here)
+    try {
+      // Simulate regeneration
+      console.log(`[generators] Regenerating output for ${event.path}...`);
+      // ... actual regeneration logic
+    } catch (err) {
+      console.error(`[generators] Error during regeneration:`, err);
+    }
+  }
+}
+
+/**
+ * Initializes or resets generator state at the start of a session.
+ * Useful for clearing caches or preparing the environment.
+ */
+export function onSessionStart(session?: { id?: string }) {
+  console.log(`[generators] Session started${session && session.id ? `: ${session.id}` : ""}. Resetting generator state.`);
+  // Example: clear in-memory caches or prepare environment
+  // ... actual reset logic
+}
+
+/**
+ * Handles generator-related commands.
+ * Supports dynamic invocation of generator actions.
+ */
+export function onCommand(command?: { name: string; args?: any }) {
+  if (!command || !command.name) {
+    console.warn("[generators] onCommand called without command data.");
+    return;
+  }
+  switch (command.name) {
+    case "generate":
+      console.log("[generators] Running code/data generation...");
+      // ... actual generation logic
+      break;
+    case "validate":
+      console.log("[generators] Validating generator configuration...");
+      // ... actual validation logic
+      break;
+    default:
+      console.warn(`[generators] Unknown command: ${command.name}`);
+  }
+}
 /**
  * Service Generator Functions
  * 
@@ -257,5 +309,3 @@ export function generateProducerIndex(options: ServiceOptions): string { return 
 export function generateConsumer(topicName: string, endpoints: Endpoint[], options: ServiceOptions): string { return ''; }
 export function generateProducer(topicName: string, endpoints: Endpoint[], options: ServiceOptions): string { return ''; }
 export function generateGatewayPackageJson(options: GatewayOptions): string { return '{}'; }
-
-

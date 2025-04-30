@@ -4,9 +4,140 @@ export function activate() {
     console.log("[TOOL] project-plan activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+import * as fs from 'fs/promises';
+import * as path from 'path';
+
+// Store project plans in memory
+const projectPlans: Record<string, ProjectPlan> = {};
+
+export async function onFileWrite(filePath?: string) {
+  if (!filePath) return;
+  
+  try {
+    // Check if the file is related to project planning
+    if (filePath.includes('project-plan') || filePath.endsWith('.plan.json')) {
+      console.log(`[project-plan] Detected change in project plan file: ${filePath}`);
+      
+      // Read the file and update the in-memory project plan
+      const content = await fs.readFile(filePath, 'utf-8');
+      try {
+        const plan = JSON.parse(content);
+        if (plan.id && plan.name) {
+          projectPlans[plan.id] = plan;
+          console.log(`[project-plan] Updated project plan: ${plan.name}`);
+        }
+      } catch (err) {
+        console.error(`[project-plan] Error parsing project plan file: ${err}`);
+      }
+    }
+  } catch (err) {
+    console.error(`[project-plan] Error processing file change: ${err}`);
+  }
+}
+
+export async function onSessionStart() {
+  console.log('[project-plan] Session started');
+  
+  try {
+    // Create project plans directory if it doesn't exist
+    const plansDir = path.join(process.cwd(), 'project-plans');
+    await fs.mkdir(plansDir, { recursive: true });
+    
+    // Load existing project plans
+    try {
+      const files = await fs.readdir(plansDir);
+      const planFiles = files.filter(file => file.endsWith('.plan.json'));
+      
+      for (const file of planFiles) {
+        try {
+          const content = await fs.readFile(path.join(plansDir, file), 'utf-8');
+          const plan = JSON.parse(content);
+          if (plan.id && plan.name) {
+            projectPlans[plan.id] = plan;
+          }
+        } catch (err) {
+          console.error(`[project-plan] Error loading plan file ${file}: ${err}`);
+        }
+      }
+      
+      console.log(`[project-plan] Loaded ${Object.keys(projectPlans).length} project plans`);
+    } catch (err) {
+      // Directory might not exist yet
+      console.log('[project-plan] No existing project plans found');
+    }
+    
+    return {
+      initialized: true,
+      plansLoaded: Object.keys(projectPlans).length,
+      message: 'Project planning initialized'
+    };
+  } catch (err) {
+    console.error(`[project-plan] Error initializing: ${err}`);
+    return {
+      initialized: false,
+      message: `Error initializing project planning: ${err}`
+    };
+  }
+}
+
+export async function onCommand(command?: { name: string; args?: any[] }) {
+  const name = command?.name;
+  const args = command?.args || [];
+  
+  switch (name) {
+    case 'project-plan:create': {
+      const planName = args[0] || 'New Project Plan';
+      const planDescription = args[1] || 'Project plan description';
+      
+      const plan = createEmptyProjectPlan(planName, planDescription);
+      projectPlans[plan.id] = plan;
+      
+      // Save the plan to disk
+      try {
+        const plansDir = path.join(process.cwd(), 'project-plans');
+        await fs.mkdir(plansDir, { recursive: true });
+        await fs.writeFile(
+          path.join(plansDir, `${plan.id}.plan.json`),
+          JSON.stringify(plan, null, 2),
+          'utf-8'
+        );
+        
+        console.log(`[project-plan] Created new project plan: ${plan.name}`);
+        return { success: true, plan };
+      } catch (err) {
+        console.error(`[project-plan] Error saving project plan: ${err}`);
+        return { success: false, error: `Error saving project plan: ${err}` };
+      }
+    }
+    case 'project-plan:list': {
+      return {
+        success: true,
+        plans: Object.values(projectPlans).map(plan => ({
+          id: plan.id,
+          name: plan.name,
+          phases: plan.phases.length,
+          progress: calculateProgress(plan)
+        }))
+      };
+    }
+    case 'project-plan:get': {
+      const planId = args[0];
+      if (!planId) {
+        return { success: false, error: 'Plan ID is required' };
+      }
+      
+      const plan = projectPlans[planId];
+      if (!plan) {
+        return { success: false, error: `Plan with ID ${planId} not found` };
+      }
+      
+      return { success: true, plan };
+    }
+    default:
+      console.log(`[project-plan] Unknown command: ${name}`);
+      return { success: false, error: `Unknown command: ${name}` };
+  }
+}
 /**
  * Project Plan Model
  * Represents a complete project plan with phases, tasks, and timelines

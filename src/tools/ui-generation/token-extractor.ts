@@ -4,9 +4,60 @@ export function activate() {
     console.log("[TOOL] token-extractor activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string): void {
+    // State 1: File write detection
+    console.log(`[TOOL] Token Extractor detected file write: ${filePath}`);
+    
+    // State 2: File content analysis
+    const tokens = extractTokensFromContent(content);
+    if (Object.keys(tokens).length > 0) {
+        console.log(`[TOOL] Detected ${Object.keys(tokens).length} potential design tokens in file: ${filePath}`);
+        
+        // State 3: Token processing
+        processDetectedTokens(tokens, filePath);
+    }
+}
+
+export function onSessionStart(sessionId: string, context: any): void {
+    // State 1: Session initialization
+    console.log(`[TOOL] Token Extractor session started with ID: ${sessionId}`);
+    
+    // State 2: Context analysis
+    if (context && context.projectType) {
+        console.log(`[TOOL] Detected project type: ${context.projectType}`);
+        
+        // State 3: Initialize project-specific token handling
+        initializeProjectTokenHandling(context.projectType);
+    }
+}
+
+export function onCommand(command: string, args: string[]): void {
+    // State 1: Command validation
+    if (!command || !args) {
+        console.error('[TOOL] Invalid command format');
+        return;
+    }
+    
+    // State 2: Command processing
+    switch (command.toLowerCase()) {
+        case 'extract':
+            // Handle token extraction command
+            handleTokenExtraction(args);
+            break;
+        case 'generate':
+            // Handle token generation command
+            handleTokenGeneration(args);
+            break;
+        case 'convert':
+            // Handle token conversion command
+            handleTokenConversion(args);
+            break;
+        default:
+            // State 3: Unknown command handling
+            console.error(`[TOOL] Unknown command: ${command}`);
+            displayCommandHelp();
+    }
+}
 /**
  * Token Extractor
  * 
@@ -55,7 +106,7 @@ export const GenerateTokenExtractorSchema = z.object({
 /**
  * Token Extractor options interface
  */
-interface TokenExtractorOptions {
+export interface TokenExtractorOptions {
   name: string;
   framework: 'react' | 'vue' | 'angular' | 'svelte' | 'solid' | 'html';
   format: 'css' | 'scss' | 'less' | 'js' | 'ts' | 'json';
@@ -92,7 +143,7 @@ interface TokenExtractorOptions {
  * @param name Component name
  * @returns Formatted component name
  */
-function formatComponentName(name: string): string {
+export function formatComponentName(name: string): string {
   return name
     .split(/[-_\s]+/)
     .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
@@ -105,7 +156,7 @@ function formatComponentName(name: string): string {
  * @param color Hex color code
  * @returns Inverted color
  */
-function invertColor(color: string): string {
+export function invertColor(color: string): string {
   // Remove the # if present
   let hex = color.replace('#', '');
   
@@ -129,7 +180,7 @@ function invertColor(color: string): string {
  * @param str String to convert
  * @returns Kebab-case string
  */
-function toKebabCase(str: string): string {
+export function toKebabCase(str: string): string {
   return str
     .replace(/([a-z])([A-Z])/g, '$1-$2')
     .replace(/[\s_]+/g, '-')
@@ -142,10 +193,85 @@ function toKebabCase(str: string): string {
  * @param str String to convert
  * @returns camelCase string
  */
-function toCamelCase(str: string): string {
+export function toCamelCase(str: string): string {
   return str
     .replace(/[-_\s]+(.)?/g, (_, c) => c ? c.toUpperCase() : '')
     .replace(/^[A-Z]/, c => c.toLowerCase());
+}
+
+/**
+ * Extracts design tokens from content
+ * 
+ * @param content File content
+ * @returns Extracted tokens
+ */
+export function extractTokensFromContent(content: string): Record<string, any> {
+  // Placeholder for actual token extraction logic
+  console.log('[TOOL] Extracting tokens from content (placeholder)');
+  return {}; // Return empty object for now
+}
+
+/**
+ * Processes detected design tokens
+ * 
+ * @param tokens Detected tokens
+ * @param filePath Source file path
+ */
+export function processDetectedTokens(tokens: Record<string, any>, filePath: string): void {
+  // Placeholder for actual token processing logic
+  console.log('[TOOL] Processing detected tokens (placeholder)');
+}
+
+/**
+ * Initializes project-specific token handling
+ * 
+ * @param projectType Project type
+ */
+export function initializeProjectTokenHandling(projectType: string): void {
+  // Placeholder for actual initialization logic
+  console.log(`[TOOL] Initializing token handling for project type: ${projectType} (placeholder)`);
+}
+
+/**
+ * Handles token extraction command
+ * 
+ * @param args Command arguments
+ */
+export function handleTokenExtraction(args: string[]): void {
+  // Placeholder for actual extraction command handling
+  console.log('[TOOL] Handling token extraction command (placeholder)');
+  console.log('Args:', args);
+}
+
+/**
+ * Handles token generation command
+ * 
+ * @param args Command arguments
+ */
+export function handleTokenGeneration(args: string[]): void {
+  // Placeholder for actual generation command handling
+  console.log('[TOOL] Handling token generation command (placeholder)');
+  console.log('Args:', args);
+}
+
+/**
+ * Handles token conversion command
+ * 
+ * @param args Command arguments
+ */
+export function handleTokenConversion(args: string[]): void {
+  // Placeholder for actual conversion command handling
+  console.log('[TOOL] Handling token conversion command (placeholder)');
+  console.log('Args:', args);
+}
+
+/**
+ * Displays command help for Token Extractor
+ */
+export function displayCommandHelp(): void {
+  // Placeholder for actual help display
+  console.log('[TOOL] Displaying Token Extractor command help (placeholder)');
+  console.log('Available commands: extract, generate, convert');
 }
 
 /**
@@ -154,7 +280,7 @@ function toCamelCase(str: string): string {
  * @param options Token Extractor options
  * @returns Map of file paths to content
  */
-function generateTokenExtractor(options: TokenExtractorOptions): Map<string, string> {
+export function generateTokenExtractor(options: TokenExtractorOptions): Map<string, string> {
   const {
     name,
     framework,
@@ -226,7 +352,7 @@ function generateTokenExtractor(options: TokenExtractorOptions): Map<string, str
  * @param tokenFiles Map of file paths to content
  * @param options Token Extractor options
  */
-function generateCssTokens(tokenFiles: Map<string, string>, options: TokenExtractorOptions): void {
+export function generateCssTokens(tokenFiles: Map<string, string>, options: TokenExtractorOptions): void {
   const {
     name,
     format,
@@ -596,7 +722,7 @@ function generateCssTokens(tokenFiles: Map<string, string>, options: TokenExtrac
  * @param tokenFiles Map of file paths to content
  * @param options Token Extractor options
  */
-function generateJsTokens(tokenFiles: Map<string, string>, options: TokenExtractorOptions): void {
+export function generateJsTokens(tokenFiles: Map<string, string>, options: TokenExtractorOptions): void {
   const {
     name,
     format,
@@ -831,7 +957,7 @@ function generateJsTokens(tokenFiles: Map<string, string>, options: TokenExtract
  * @param tokenFiles Map of file paths to content
  * @param options Token extractor options
  */
-function generateReactThemeProvider(tokenFiles: Map<string, string>, options: TokenExtractorOptions): void {
+export function generateReactThemeProvider(tokenFiles: Map<string, string>, options: TokenExtractorOptions): void {
   const {
     name,
     format,
@@ -904,7 +1030,7 @@ function generateReactThemeProvider(tokenFiles: Map<string, string>, options: To
  * @param tokenFiles Map of file paths to content
  * @param options Token extractor options
  */
-function generateVueThemeProvider(tokenFiles: Map<string, string>, options: TokenExtractorOptions): void {
+export function generateVueThemeProvider(tokenFiles: Map<string, string>, options: TokenExtractorOptions): void {
   const {
     name,
     format,
@@ -954,7 +1080,7 @@ function generateVueThemeProvider(tokenFiles: Map<string, string>, options: Toke
   content += `  provide() {\n`;
   content += `    return {\n`;
   content += `      theme: tokens\n`;
-  content += `    };\n`;
+    content += `    };\n`;
   content += `  }\n`;
   content += `};\n`;
   content += `</script>\n\n`;
@@ -973,7 +1099,7 @@ function generateVueThemeProvider(tokenFiles: Map<string, string>, options: Toke
  * @param tokenFiles Map of file paths to content
  * @param options Token extractor options
  */
-function generateAngularThemeProvider(tokenFiles: Map<string, string>, options: TokenExtractorOptions): void {
+export function generateAngularThemeProvider(tokenFiles: Map<string, string>, options: TokenExtractorOptions): void {
   const {
     name,
     format,
@@ -1044,7 +1170,7 @@ function generateAngularThemeProvider(tokenFiles: Map<string, string>, options: 
  * @param tokenFiles Map of file paths to content
  * @param options Token extractor options
  */
-function generateSvelteThemeProvider(tokenFiles: Map<string, string>, options: TokenExtractorOptions): void {
+export function generateSvelteThemeProvider(tokenFiles: Map<string, string>, options: TokenExtractorOptions): void {
   const {
     name,
     format,
@@ -1106,4 +1232,3 @@ function generateSvelteThemeProvider(tokenFiles: Map<string, string>, options: T
   // Add component file to tokenFiles
   tokenFiles.set(`${outputDir}/ThemeProvider.svelte`, componentContent);
 }
-

@@ -4,9 +4,112 @@ export function activate() {
     console.log("[TOOL] cmd-executor activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[CMD Executor] File written: ${filePath}`);
+  
+  // Check if the file is a script or configuration file
+  const extension = path.extname(filePath).toLowerCase();
+  const scriptExtensions = ['.sh', '.bat', '.cmd', '.ps1', '.js', '.py', '.rb'];
+  
+  if (scriptExtensions.includes(extension)) {
+    console.log(`[CMD Executor] Detected script file: ${filePath}`);
+    return {
+      detected: true,
+      filePath,
+      type: 'script',
+      extension
+    };
+  }
+  
+  // Check for package.json changes
+  if (filePath.endsWith('package.json')) {
+    console.log(`[CMD Executor] Detected package.json change: ${filePath}`);
+    return {
+      detected: true,
+      filePath,
+      type: 'package',
+    };
+  }
+  
+  return { detected: false };
+}
+
+export function onSessionStart(context: any) {
+  console.log('[CMD Executor] Session started');
+  
+  // Clear active processes map on session start
+  activeProcesses.clear();
+  
+  // Log system information
+  const platform = process.platform;
+  const arch = process.arch;
+  const nodeVersion = process.version;
+  
+  console.log(`[CMD Executor] Platform: ${platform}, Architecture: ${arch}, Node.js: ${nodeVersion}`);
+  
+  return {
+    initialized: true,
+    platform,
+    arch,
+    nodeVersion,
+    activeProcesses: 0
+  };
+}
+
+export function onCommand(command: string, args: any[]) {
+  console.log(`[CMD Executor] Command received: ${command}`);
+  
+  if (command === 'cmd.execute') {
+    console.log('[CMD Executor] Executing command');
+    if (args && args.length > 0) {
+      const options = typeof args[0] === 'string'
+        ? { command: args[0] }
+        : args[0];
+      
+      try {
+        // Start execution but don't wait for it to complete
+        executeCommand(options).catch(err => {
+          console.error(`[CMD Executor] Error executing command: ${err}`);
+        });
+        
+        return {
+          action: 'execute',
+          command: options.command,
+          pid: -1, // Will be set by the actual execution
+          started: true
+        };
+      } catch (error) {
+        console.error(`[CMD Executor] Error executing command: ${error}`);
+        return { action: 'execute', error: String(error) };
+      }
+    }
+  } else if (command === 'cmd.kill') {
+    console.log('[CMD Executor] Killing process');
+    if (args && args.length > 0) {
+      const pid = typeof args[0] === 'number' ? args[0] : args[0].pid;
+      const signal = args[0].signal || 'SIGTERM';
+      
+      try {
+        const result = killCommand(pid, signal);
+        return { action: 'kill', pid, signal, success: result };
+      } catch (error) {
+        console.error(`[CMD Executor] Error killing process: ${error}`);
+        return { action: 'kill', error: String(error) };
+      }
+    }
+  } else if (command === 'cmd.list') {
+    console.log('[CMD Executor] Listing active processes');
+    try {
+      const processes = getActiveProcesses();
+      return { action: 'list', processes };
+    } catch (error) {
+      console.error(`[CMD Executor] Error listing processes: ${error}`);
+      return { action: 'list', error: String(error) };
+    }
+  }
+  
+  return { action: 'unknown' };
+}
 /**
  * Command Executor
  * 
@@ -14,6 +117,7 @@ export function onCommand() { /* no-op */ }
  */
 
 import { spawn, ChildProcess } from 'child_process';
+import path from 'path';
 import { z } from 'zod';
 
 /**
@@ -328,4 +432,3 @@ export async function handleListActiveProcesses() {
     };
   }
 }
-

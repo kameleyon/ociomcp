@@ -4,9 +4,89 @@ export function activate() {
     console.log("[TOOL] code-analyzer activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[Code-Analyzer] File written: ${filePath}`);
+  
+  // Check if the file is a source code file
+  const extension = path.extname(filePath).toLowerCase();
+  const language = defaultConfig.fileExtensionToLanguage[extension as keyof typeof defaultConfig.fileExtensionToLanguage];
+  
+  if (language) {
+    console.log(`[Code-Analyzer] Detected source file change: ${filePath} (${language})`);
+    
+    // Perform basic analysis
+    const lines = content.split('\n');
+    const lineCount = lines.length;
+    
+    // Check for potential issues
+    const issues = [];
+    
+    // Check for console.log statements
+    const consoleLogMatches = content.match(/console\.log\(/g) || [];
+    if (consoleLogMatches.length > 0) {
+      issues.push({
+        type: 'quality',
+        description: 'Console.log statements should be removed in production code',
+        occurrences: consoleLogMatches.length,
+        severity: 'low',
+      });
+    }
+    
+    // Check for TODO comments
+    const todoMatches = content.match(/\/\/\s*TODO/g) || [];
+    if (todoMatches.length > 0) {
+      issues.push({
+        type: 'quality',
+        description: 'TODO comments found',
+        occurrences: todoMatches.length,
+        severity: 'low',
+      });
+    }
+    
+    return {
+      detected: true,
+      filePath,
+      language,
+      lineCount,
+      issues: issues.length > 0 ? issues : undefined
+    };
+  }
+  
+  return { detected: false };
+}
+
+export function onSessionStart(context: any) {
+  console.log('[Code-Analyzer] Session started');
+  
+  // Initialize code analyzer with supported languages
+  console.log(`[Code-Analyzer] Initialized with ${defaultConfig.supportedLanguages.length} supported languages`);
+  
+  return {
+    initialized: true,
+    supportedLanguages: defaultConfig.supportedLanguages,
+    fileExtensions: Object.keys(defaultConfig.fileExtensionToLanguage)
+  };
+}
+
+export function onCommand(command: string, args: any) {
+  console.log(`[Code-Analyzer] Command received: ${command}`);
+  
+  if (command === 'code.analyze') {
+    console.log('[Code-Analyzer] Analyzing code');
+    return { action: 'analyze', args };
+  } else if (command === 'code.analyzeProject') {
+    console.log('[Code-Analyzer] Analyzing project');
+    return { action: 'analyzeProject', args };
+  } else if (command === 'code.getRefactoring') {
+    console.log('[Code-Analyzer] Getting refactoring suggestions');
+    return { action: 'getRefactoring', args };
+  } else if (command === 'code.checkSyntax') {
+    console.log('[Code-Analyzer] Checking syntax');
+    return { action: 'checkSyntax', args };
+  }
+  
+  return { action: 'unknown' };
+}
 import { z } from 'zod';
 import * as fs from 'fs/promises';
 import * as path from 'path';

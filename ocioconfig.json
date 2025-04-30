@@ -133,7 +133,9 @@
         "autoMode": true,
         "preferences": {
           "includeNodeModules": false,
-          "compression": true
+          "compression": true,
+          "snapshotInterval": 300000,
+          "autoSnapshotOnSessionStart": true
         }
       },
       "DebugAssist": {

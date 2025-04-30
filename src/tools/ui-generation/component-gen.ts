@@ -4,9 +4,144 @@ export function activate() {
     console.log("[TOOL] component-gen activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export async function onSessionStart(sessionId: string) {
+  console.log(`[TOOL] Component generator initialized for session: ${sessionId}`);
+  
+  // Check for existing component templates or configurations
+  setTimeout(() => {
+    console.log('[TOOL] Checking for existing component templates...');
+    checkExistingTemplates();
+  }, 3000); // Delay to ensure project files are loaded
+}
+
+export async function onFileWrite(filePath: string, content: string) {
+  console.log(`[TOOL] Component generator processing file: ${filePath}`);
+  
+  // Check if the file is a component template file
+  const isTemplateFile = filePath.includes('component-templates') || filePath.endsWith('.template.ts');
+  
+  if (isTemplateFile) {
+    console.log(`[TOOL] Detected change in component template file: ${filePath}`);
+    // In a real implementation, we might reload or update the templates
+  }
+  
+  // Check if the file is a generated component file
+  const isComponentFile = filePath.includes('components/') && 
+                          (filePath.endsWith('.js') || filePath.endsWith('.jsx') || filePath.endsWith('.ts') || filePath.endsWith('.tsx') || filePath.endsWith('.vue') || filePath.endsWith('.svelte'));
+  
+  if (isComponentFile) {
+    console.log(`[TOOL] Detected generated component file: ${filePath}`);
+    // In a real implementation, we might update metadata or run tests
+  }
+}
+
+export async function onCommand(command: string, args: any[]) {
+  if (command === 'generate-component') {
+    console.log('[TOOL] Generating component...');
+    
+    const options = args[0];
+    
+    return handleGenerateComponent(options);
+  } else if (command === 'generate-component-template') {
+    console.log('[TOOL] Generating component template...');
+    
+    const options = args[0];
+    
+    return handleGenerateComponentTemplate(options);
+  } else if (command === 'list-component-templates') {
+    console.log('[TOOL] Listing component templates...');
+    
+    return handleListComponentTemplates();
+  } else if (command === 'generate-storybook-story') {
+    console.log('[TOOL] Generating Storybook story...');
+    
+    const componentPath = args[0];
+    const outputPath = args[1];
+    const options = args[2] || {};
+    
+    return handleGenerateStorybookStory({
+      componentPath,
+      outputPath,
+      ...options
+    });
+  } else if (command === 'generate-component-test') {
+    console.log('[TOOL] Generating component test...');
+    
+    const componentPath = args[0];
+    const outputPath = args[1];
+    const options = args[2] || {};
+    
+    return handleGenerateComponentTest({
+      componentPath,
+      outputPath,
+      ...options
+    });
+  }
+  
+  return null;
+}
+
+/**
+ * Handles the generate-component command
+ */
+async function handleGenerateComponent(options: ComponentOptions): Promise<any> {
+  console.log('[TOOL] Handling generate-component command with options:', options);
+  // Placeholder implementation
+  return { success: true, message: 'Component generated (mock)' };
+}
+
+/**
+ * Handles the generate-component-template command
+ */
+async function handleGenerateComponentTemplate(options: any): Promise<any> {
+  console.log('[TOOL] Handling generate-component-template command with options:', options);
+  // Placeholder implementation
+  return { success: true, message: 'Component template generated (mock)' };
+}
+
+/**
+ * Handles the list-component-templates command
+ */
+async function handleListComponentTemplates(): Promise<any> {
+  console.log('[TOOL] Handling list-component-templates command');
+  // Placeholder implementation
+  return { success: true, templates: ['basic', 'card', 'form'] };
+}
+
+/**
+ * Handles the generate-storybook-story command
+ */
+async function handleGenerateStorybookStory(options: any): Promise<any> {
+  console.log('[TOOL] Handling generate-storybook-story command with options:', options);
+  // Placeholder implementation
+  return { success: true, message: 'Storybook story generated (mock)' };
+}
+
+/**
+ * Handles the generate-component-test command
+ */
+async function handleGenerateComponentTest(options: any): Promise<any> {
+  console.log('[TOOL] Handling generate-component-test command with options:', options);
+  // Placeholder implementation
+  return { success: true, message: 'Component test generated (mock)' };
+}
+
+/**
+ * Checks for existing component templates or configurations
+ */
+function checkExistingTemplates() {
+  console.log('[TOOL] Checking for existing component templates...');
+  
+  // This is a placeholder - in a real implementation, this would scan the filesystem
+  // For now, we'll just log a message
+  console.log('[TOOL] Recommendation: Use the "generate-component" command to create new components');
+  console.log('[TOOL] Common UI generation tasks:');
+  console.log('- Generating basic components');
+  console.log('- Generating components with specific features (props, state, etc.)');
+  console.log('- Generating components for different frameworks (React, Vue, Angular)');
+  console.log('- Generating Storybook stories for components');
+  console.log('- Generating tests for components');
+}
 /**
  * Component Generator
  * 
@@ -878,4 +1013,3 @@ const \${name}: React.FC<Props> = ({ ${Object.keys(props).join(', ')} }) => {
 export default \${name};
 `;
 }
-

@@ -4,9 +4,110 @@ export function activate() {
     console.log("[TOOL] project-gen activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[TOOL] Project generator processing file: ${filePath}`);
+  
+  // Check if the file is a project configuration file
+  const isConfigFile = filePath.endsWith('package.json') || 
+                       filePath.endsWith('.config.js') || 
+                       filePath.endsWith('.config.ts');
+  
+  if (isConfigFile) {
+    console.log(`[TOOL] Detected change in project configuration file: ${filePath}`);
+    // In a real implementation, we might update project settings or dependencies
+  }
+}
+
+export function onSessionStart(sessionId: string) {
+  console.log(`[TOOL] Project generator initialized for session: ${sessionId}`);
+  
+  // Check for existing project configurations or templates
+  setTimeout(() => {
+    console.log('[TOOL] Checking for existing project configurations...');
+    checkExistingConfigurations();
+  }, 3000); // Delay to ensure project files are loaded
+}
+
+export async function onCommand(command: string, args: any[]) {
+  if (command === 'generate-project') {
+    console.log('[TOOL] Generating project...');
+    
+    const options = args[0];
+    
+    return handleGenerateProject(options);
+  } else if (command === 'list-project-templates') {
+    console.log('[TOOL] Listing project templates...');
+    
+    return handleListProjectTemplates();
+  } else if (command === 'get-project-template') {
+    console.log('[TOOL] Getting project template...');
+    
+    const templateName = args[0];
+    const framework = args[1] || 'react';
+    
+    return handleGetProjectTemplate(templateName, framework);
+  } else if (command === 'generate-project-from-template') {
+    console.log('[TOOL] Generating project from template...');
+    
+    const templateName = args[0];
+    const options = args[1];
+    
+    return handleGenerateProjectFromTemplate(templateName, options);
+  }
+  
+  return null;
+}
+
+/**
+ * Checks for existing project configurations or templates
+ */
+function checkExistingConfigurations() {
+  console.log('[TOOL] Checking for existing project configurations...');
+  
+  // This is a placeholder - in a real implementation, this would scan the filesystem
+  // For now, we'll just log a message
+  console.log('[TOOL] Recommendation: Use the "generate-project" command to create a new project');
+  console.log('[TOOL] Common project generation tasks:');
+  console.log('- Generating projects for different frameworks (React, Vue, Angular)');
+  console.log('- Generating projects with specific features (routing, state management)');
+  console.log('- Generating projects from templates');
+}
+
+/**
+ * Handles the generate-project command
+ */
+async function handleGenerateProject(options: ProjectOptions): Promise<any> {
+  console.log('[TOOL] Handling generate-project command with options:', options);
+  // Placeholder implementation
+  return { success: true, message: 'Project generated (mock)' };
+}
+
+/**
+ * Handles the list-project-templates command
+ */
+async function handleListProjectTemplates(): Promise<any> {
+  console.log('[TOOL] Handling list-project-templates command');
+  // Placeholder implementation
+  return { success: true, templates: ['basic-react', 'nextjs-starter', 'vue-dashboard'] };
+}
+
+/**
+ * Handles the get-project-template command
+ */
+async function handleGetProjectTemplate(templateName: string, framework: string): Promise<any> {
+  console.log(`[TOOL] Handling get-project-template command for ${templateName} (${framework})`);
+  // Placeholder implementation
+  return { success: true, template: { name: templateName, framework: framework, description: 'Mock project template' } };
+}
+
+/**
+ * Handles the generate-project-from-template command
+ */
+async function handleGenerateProjectFromTemplate(templateName: string, options: any): Promise<any> {
+  console.log(`[TOOL] Handling generate-project-from-template command for ${templateName} with options:`, options);
+  // Placeholder implementation
+  return { success: true, message: `Project generated from template ${templateName} (mock)` };
+}
 /**
  * Project Generator
  * 
@@ -179,4 +280,3 @@ export default App;
 
   return projectFiles;
 }
-

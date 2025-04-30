@@ -4,9 +4,119 @@ export function activate() {
     console.log("[TOOL] icon-manager activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[TOOL] Icon manager processing file: ${filePath}`);
+  
+  // Check if the file is an icon file (SVG) or related to icon management
+  const isIconFile = filePath.endsWith('.svg') || filePath.includes('icon-manager');
+  
+  if (isIconFile) {
+    console.log(`[TOOL] Detected change in icon-related file: ${filePath}`);
+    // In a real implementation, we might update the icon database or regenerate icon components
+  }
+}
+
+export function onSessionStart(sessionId: string) {
+  console.log(`[TOOL] Icon manager initialized for session: ${sessionId}`);
+  
+  // Check for existing icon configurations or custom icons
+  setTimeout(() => {
+    console.log('[TOOL] Checking for existing icon configurations...');
+    checkExistingConfigurations();
+  }, 3000); // Delay to ensure project files are loaded
+}
+
+export async function onCommand(command: string, args: any[]) {
+  if (command === 'generate-icon-manager') {
+    console.log('[TOOL] Generating icon manager...');
+    
+    const options = args[0];
+    
+    return handleGenerateIconManager(options);
+  } else if (command === 'list-icons') {
+    console.log('[TOOL] Listing available icons...');
+    
+    const library = args[0] || 'lucide';
+    const query = args[1];
+    const limit = args[2] || 20;
+    
+    return handleListIcons(library, query, limit);
+  } else if (command === 'get-icon-svg') {
+    console.log('[TOOL] Getting icon SVG...');
+    
+    const iconName = args[0];
+    const library = args[1] || 'lucide';
+    
+    return handleGetIconSvg(iconName, library);
+  } else if (command === 'add-custom-icon') {
+    console.log('[TOOL] Adding custom icon...');
+    
+    const iconName = args[0];
+    const iconSvg = args[1];
+    
+    return handleAddCustomIcon(iconName, iconSvg);
+  } else if (command === 'remove-custom-icon') {
+    console.log('[TOOL] Removing custom icon...');
+    
+    const iconName = args[0];
+    
+    return handleRemoveCustomIcon(iconName);
+  }
+  
+  return null;
+}
+
+/**
+ * Checks for existing icon configurations or custom icons
+ */
+function checkExistingConfigurations() {
+  console.log('[TOOL] Checking for existing icon configurations...');
+  
+  // This is a placeholder - in a real implementation, this would scan the filesystem
+  // For now, we'll just log a message
+  console.log('[TOOL] Recommendation: Use the "generate-icon-manager" command to create an icon manager for your project');
+  console.log('[TOOL] Common icon management tasks:');
+  console.log('- Listing available icons from libraries');
+  console.log('- Getting SVG code for a specific icon');
+  console.log('- Adding and removing custom icons');
+  console.log('- Generating icon manager components for different frameworks');
+}
+
+/**
+ * Handles the list-icons command
+ */
+async function handleListIcons(library: string, query?: string, limit: number = 20): Promise<any> {
+  console.log(`[TOOL] Handling list-icons command for library: ${library}, query: ${query}, limit: ${limit}`);
+  // Placeholder implementation
+  return { success: true, icons: ['activity', 'bell', 'box', 'camera', 'cloud'].filter(icon => query ? icon.includes(query) : true).slice(0, limit) };
+}
+
+/**
+ * Handles the get-icon-svg command
+ */
+async function handleGetIconSvg(iconName: string, library: string): Promise<any> {
+  console.log(`[TOOL] Handling get-icon-svg command for icon: ${iconName}, library: ${library}`);
+  // Placeholder implementation
+  return { success: true, svg: '<svg>...</svg>' };
+}
+
+/**
+ * Handles the add-custom-icon command
+ */
+async function handleAddCustomIcon(iconName: string, iconSvg: string): Promise<any> {
+  console.log(`[TOOL] Handling add-custom-icon command for icon: ${iconName}`);
+  // Placeholder implementation
+  return { success: true, message: `Custom icon "${iconName}" added (mock)` };
+}
+
+/**
+ * Handles the remove-custom-icon command
+ */
+async function handleRemoveCustomIcon(iconName: string): Promise<any> {
+  console.log(`[TOOL] Handling remove-custom-icon command for icon: ${iconName}`);
+  // Placeholder implementation
+  return { success: true, message: `Custom icon "${iconName}" removed (mock)` };
+}
 /**
  * Icon Manager Module
  *
@@ -942,4 +1052,3 @@ ${customIcons.map(icon => `  '${icon.name}': '${icon.svg}'`).join(',\n')}
     iconFiles.set('icons.ts', customIconsContent);
   }
 }
-

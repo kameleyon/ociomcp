@@ -4,9 +4,78 @@ export function activate() {
     console.log("[TOOL] legal-creator activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Handles file write events for legal config or template files.
+ * If a relevant file changes, triggers regeneration of legal content.
+ */
+export async function onFileWrite(event?: { path: string; content?: string }) {
+  if (!event || !event.path) {
+    console.warn("[legal-creator] onFileWrite called without event data.");
+    return;
+  }
+  try {
+    if (event.path.endsWith('.legal-config.json')) {
+      console.log(`[legal-creator] Detected legal config file change: ${event.path}`);
+      const config = JSON.parse(event.content || await (await import('fs/promises')).readFile(event.path, 'utf-8'));
+      const content = generateLegalContent(
+        config.type,
+        config.company,
+        config.outputFormat,
+        config.options
+      );
+      // Optionally write to file or log
+      console.log(`[legal-creator] Legal content regenerated for ${event.path}`);
+    } else if (event.path.endsWith('.legal-template.md')) {
+      console.log(`[legal-creator] Detected legal template file change: ${event.path}`);
+      // Optionally reload or re-apply template
+      // ... actual logic could go here
+    }
+  } catch (err) {
+    console.error(`[legal-creator] Error during file-triggered legal content generation:`, err);
+  }
+}
+
+/**
+ * Initializes or resets legal creator state at the start of a session.
+ */
+export function onSessionStart(session?: { id?: string }) {
+  console.log(`[legal-creator] Session started${session && session.id ? `: ${session.id}` : ""}. Preparing legal creator environment.`);
+  // Example: clear temp files, reset state, etc.
+  // ... actual reset logic
+}
+
+/**
+ * Handles legal creator commands.
+ * Supports dynamic invocation of legal content generation or validation.
+ */
+export async function onCommand(command?: { name: string; args?: any }) {
+  if (!command || !command.name) {
+    console.warn("[legal-creator] onCommand called without command data.");
+    return;
+  }
+  switch (command.name) {
+    case "generate-legal-content":
+      console.log("[legal-creator] Generating legal content...");
+      try {
+        await handleGenerateLegalContent(command.args);
+        console.log("[legal-creator] Legal content generation complete.");
+      } catch (err) {
+        console.error("[legal-creator] Legal content generation failed:", err);
+      }
+      break;
+    case "validate-legal-schema":
+      console.log("[legal-creator] Validating legal content schema...");
+      try {
+        GenerateLegalContentSchema.parse(command.args);
+        console.log("[legal-creator] Legal content schema validation successful.");
+      } catch (err) {
+        console.error("[legal-creator] Legal content schema validation failed:", err);
+      }
+      break;
+    default:
+      console.warn(`[legal-creator] Unknown command: ${command.name}`);
+  }
+}
 /**
  * Legal Creator
  * 
@@ -682,4 +751,3 @@ export async function handleGenerateLegalContent(args: any) {
     };
   }
 }
-

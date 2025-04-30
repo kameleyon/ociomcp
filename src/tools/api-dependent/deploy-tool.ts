@@ -4,11 +4,101 @@ export function activate() {
     console.log("[TOOL] deploy-tool activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[Deploy-Tool] File written: ${filePath}`);
+  
+  // Check if the file is a deployment configuration file
+  const fileName = path.basename(filePath);
+  
+  // Check against known configuration file names
+  for (const [provider, config] of Object.entries(defaultConfig.providerConfigs)) {
+    if (fileName === config.configFileName) {
+      console.log(`[Deploy-Tool] Detected ${provider} configuration file change: ${filePath}`);
+      return {
+        detected: true,
+        filePath,
+        provider,
+        configType: 'deployment'
+      };
+    }
+  }
+  
+  // Check for package.json changes which might affect deployment
+  if (fileName === 'package.json') {
+    console.log('[Deploy-Tool] Detected package.json change, might affect deployment');
+    return {
+      detected: true,
+      filePath,
+      configType: 'package'
+    };
+  }
+  
+  // Check for environment files
+  if (fileName.startsWith('.env') || fileName === 'environment.ts' || fileName === 'environment.js') {
+    console.log('[Deploy-Tool] Detected environment file change, might affect deployment');
+    return {
+      detected: true,
+      filePath,
+      configType: 'environment'
+    };
+  }
+  
+  return { detected: false };
+}
+
+export function onSessionStart(context: any) {
+  console.log('[Deploy-Tool] Session started');
+  
+  // Initialize deployment tool
+  console.log('[Deploy-Tool] Initializing deployment tool');
+  
+  // Get supported providers
+  const supportedProviders = Object.keys(defaultConfig.providerConfigs);
+  console.log(`[Deploy-Tool] Supported providers: ${supportedProviders.join(', ')}`);
+  
+  return {
+    initialized: true,
+    supportedProviders,
+    defaultProvider: context?.defaultProvider || 'vercel'
+  };
+}
+
+export function onCommand(command: string, args: any) {
+  console.log(`[Deploy-Tool] Command received: ${command}`);
+  
+  if (command === 'deploy.project') {
+    console.log('[Deploy-Tool] Deploying project');
+    return { action: 'deployProject', args };
+  } else if (command === 'deploy.getStatus') {
+    console.log('[Deploy-Tool] Getting deployment status');
+    return { action: 'getDeploymentStatus', args };
+  } else if (command === 'deploy.configure') {
+    console.log('[Deploy-Tool] Configuring deployment');
+    return { action: 'configureDeployment', args };
+  } else if (command === 'deploy.validateConfig') {
+    console.log('[Deploy-Tool] Validating deployment configuration');
+    const { projectPath, provider = 'vercel' } = args || {};
+    
+    if (projectPath) {
+      const providerConfig = defaultConfig.providerConfigs[provider as keyof typeof defaultConfig.providerConfigs];
+      const configFilePath = path.join(projectPath, providerConfig.configFileName);
+      
+      return {
+        action: 'validateConfig',
+        configExists: fsSync.existsSync(configFilePath),
+        configPath: configFilePath,
+        provider
+      };
+    }
+    
+    return { action: 'validateConfig', success: false, error: 'Missing project path' };
+  }
+  
+  return { action: 'unknown' };
+}
 import { z } from 'zod';
 import * as fs from 'fs/promises';
+import * as fsSync from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import { exec } from 'child_process';

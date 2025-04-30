@@ -4,9 +4,438 @@ export function activate() {
     console.log("[TOOL] page-gen activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[TOOL] Page generator processing file: ${filePath}`);
+  
+  // Check if the file is a page file
+  const isPageFile = filePath.includes('page') || 
+                     filePath.includes('pages/') || 
+                     filePath.endsWith('.page.tsx') || 
+                     filePath.endsWith('.page.jsx') || 
+                     filePath.endsWith('.page.vue') || 
+                     filePath.endsWith('.page.svelte') || 
+                     filePath.endsWith('.html');
+  
+  if (isPageFile) {
+    console.log(`[TOOL] Detected change in page file: ${filePath}`);
+    // In a real implementation, we might analyze the page structure and provide suggestions
+    analyzePageFile(filePath, content);
+  }
+}
+
+export function onSessionStart(sessionId: string) {
+  console.log(`[TOOL] Page generator initialized for session: ${sessionId}`);
+  
+  // Check for existing page files in the project
+  setTimeout(() => {
+    console.log('[TOOL] Checking for existing page files...');
+    checkExistingPageFiles();
+  }, 3000); // Delay to ensure project files are loaded
+}
+
+export function onCommand(command: string, args: any[]) {
+  if (command === 'generate-page') {
+    console.log('[TOOL] Generating page...');
+    
+    const options = args[0];
+    
+    return handleGeneratePage(options);
+  } else if (command === 'list-page-templates') {
+    console.log('[TOOL] Listing page templates...');
+    
+    return handleListPageTemplates();
+  } else if (command === 'get-page-sections') {
+    console.log('[TOOL] Getting page sections...');
+    
+    const pageType = args[0];
+    
+    return handleGetPageSections(pageType);
+  } else if (command === 'analyze-page') {
+    console.log('[TOOL] Analyzing page...');
+    
+    const filePath = args[0];
+    
+    return handleAnalyzePage(filePath);
+  }
+  
+  return null;
+}
+
+/**
+ * Analyzes a page file and provides suggestions
+ */
+function analyzePageFile(filePath: string, content: string): void {
+  console.log(`[TOOL] Analyzing page file: ${filePath}`);
+  
+  try {
+    // Check for common page sections
+    const hasSections = {
+      header: content.includes('<header') || content.includes('<Header') || content.includes('header'),
+      footer: content.includes('<footer') || content.includes('<Footer') || content.includes('footer'),
+      navigation: content.includes('<nav') || content.includes('<Nav') || content.includes('navigation'),
+      hero: content.includes('<hero') || content.includes('<Hero') || content.includes('hero'),
+      features: content.includes('<features') || content.includes('<Features') || content.includes('features'),
+      cta: content.includes('<cta') || content.includes('<CTA') || content.includes('cta'),
+    };
+    
+    // Log findings
+    console.log('[TOOL] Page analysis results:');
+    Object.entries(hasSections).forEach(([section, exists]) => {
+      console.log(`- ${section}: ${exists ? 'Found' : 'Not found'}`);
+    });
+    
+    // Check for SEO meta tags
+    const hasSeoTags = content.includes('<meta name="description"') || 
+                       content.includes('<meta name="keywords"') || 
+                       content.includes('<meta property="og:') || 
+                       content.includes('<Helmet');
+    
+    console.log(`- SEO tags: ${hasSeoTags ? 'Found' : 'Not found'}`);
+    
+    // Check for responsive design
+    const hasResponsiveDesign = content.includes('@media') || 
+                               content.includes('media query') || 
+                               content.includes('responsive');
+    
+    console.log(`- Responsive design: ${hasResponsiveDesign ? 'Found' : 'Not found'}`);
+    
+    // Provide suggestions
+    if (!hasSections.header) {
+      console.log('[TOOL] Suggestion: Consider adding a header section for better navigation');
+    }
+    
+    if (!hasSections.footer) {
+      console.log('[TOOL] Suggestion: Consider adding a footer section for contact information and links');
+    }
+    
+    if (!hasSeoTags) {
+      console.log('[TOOL] Suggestion: Add SEO meta tags to improve search engine visibility');
+    }
+    
+    if (!hasResponsiveDesign) {
+      console.log('[TOOL] Suggestion: Implement responsive design for better mobile experience');
+    }
+  } catch (error) {
+    console.error(`[TOOL] Error analyzing page file: ${error}`);
+  }
+}
+
+/**
+ * Checks for existing page files in the project
+ */
+function checkExistingPageFiles(): void {
+  console.log('[TOOL] Checking for existing page files...');
+  
+  // This is a placeholder - in a real implementation, this would scan the filesystem
+  // For now, we'll just log a message
+  console.log('[TOOL] Recommendation: Use the "generate-page" command to create new pages');
+  console.log('[TOOL] Common page generation tasks:');
+  console.log('- Creating landing pages');
+  console.log('- Creating dashboard pages');
+  console.log('- Creating authentication pages');
+  console.log('- Creating profile pages');
+  console.log('- Creating error pages');
+}
+
+/**
+ * Handles the generate-page command
+ */
+async function handleGeneratePage(options: any): Promise<any> {
+  console.log('[TOOL] Handling generate-page command with options:', options);
+  
+  try {
+    // Validate options
+    if (!options || !options.name) {
+      return {
+        success: false,
+        message: 'Missing required option: name'
+      };
+    }
+    
+    // Set default options
+    const pageOptions: PageOptions = {
+      name: options.name,
+      framework: options.framework || 'react',
+      sections: options.sections || ['header', 'hero', 'features', 'footer'],
+      styling: options.styling || 'css',
+      typescript: options.typescript !== undefined ? options.typescript : true,
+      responsive: options.responsive !== undefined ? options.responsive : true,
+      outputDir: options.outputDir,
+      description: options.description,
+      seo: options.seo,
+      layout: options.layout || 'default',
+      theme: options.theme,
+      customSections: options.customSections
+    };
+    
+    // Generate page content based on framework
+    let pageContent = '';
+    
+    switch (pageOptions.framework) {
+      case 'react':
+        pageContent = generateReactPage(pageOptions);
+        break;
+      case 'vue':
+        pageContent = generateVuePage(pageOptions);
+        break;
+      case 'html':
+        pageContent = generateHtmlPage(pageOptions);
+        break;
+      default:
+        return {
+          success: false,
+          message: `Unsupported framework: ${pageOptions.framework}`
+        };
+    }
+    
+    // Return the generated page content
+    return {
+      success: true,
+      message: `Page ${pageOptions.name} generated successfully`,
+      content: pageContent
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: `Error generating page: ${error}`
+    };
+  }
+}
+
+/**
+ * Handles the list-page-templates command
+ */
+async function handleListPageTemplates(): Promise<any> {
+  console.log('[TOOL] Handling list-page-templates command');
+  
+  // Return available page templates
+  return {
+    success: true,
+    templates: [
+      {
+        type: PageType.LANDING,
+        name: 'Landing Page',
+        description: 'A landing page for marketing and conversion',
+        sections: ['header', 'hero', 'features', 'testimonials', 'pricing', 'cta', 'footer']
+      },
+      {
+        type: PageType.DASHBOARD,
+        name: 'Dashboard Page',
+        description: 'A dashboard page for displaying data and analytics',
+        sections: ['header', 'sidebar', 'stats', 'charts', 'tables', 'footer']
+      },
+      {
+        type: PageType.AUTH,
+        name: 'Authentication Page',
+        description: 'A page for user login and registration',
+        sections: ['header', 'auth-form', 'footer']
+      },
+      {
+        type: PageType.PROFILE,
+        name: 'Profile Page',
+        description: 'A user profile page',
+        sections: ['header', 'profile-header', 'profile-details', 'footer']
+      },
+      {
+        type: PageType.SETTINGS,
+        name: 'Settings Page',
+        description: 'A page for user settings',
+        sections: ['header', 'sidebar', 'settings-form', 'footer']
+      },
+      {
+        type: PageType.DOCUMENTATION,
+        name: 'Documentation Page',
+        description: 'A documentation page with sidebar navigation',
+        sections: ['header', 'sidebar', 'content', 'footer']
+      },
+      {
+        type: PageType.BLOG,
+        name: 'Blog Page',
+        description: 'A blog page with articles',
+        sections: ['header', 'blog-header', 'blog-posts', 'sidebar', 'footer']
+      },
+      {
+        type: PageType.PRODUCT,
+        name: 'Product Page',
+        description: 'A product page with details and images',
+        sections: ['header', 'product-gallery', 'product-details', 'related-products', 'footer']
+      },
+      {
+        type: PageType.CHECKOUT,
+        name: 'Checkout Page',
+        description: 'A checkout page for e-commerce',
+        sections: ['header', 'checkout-form', 'order-summary', 'footer']
+      },
+      {
+        type: PageType.ERROR,
+        name: 'Error Page',
+        description: 'An error page (404, 500, etc.)',
+        sections: ['header', 'error-message', 'footer']
+      }
+    ]
+  };
+}
+
+/**
+ * Handles the get-page-sections command
+ */
+async function handleGetPageSections(pageType: string): Promise<any> {
+  console.log(`[TOOL] Handling get-page-sections command for page type: ${pageType}`);
+  
+  // Return sections for the specified page type
+  switch (pageType) {
+    case PageType.LANDING:
+      return {
+        success: true,
+        sections: ['header', 'hero', 'features', 'testimonials', 'pricing', 'cta', 'footer']
+      };
+    case PageType.DASHBOARD:
+      return {
+        success: true,
+        sections: ['header', 'sidebar', 'stats', 'charts', 'tables', 'footer']
+      };
+    case PageType.AUTH:
+      return {
+        success: true,
+        sections: ['header', 'auth-form', 'footer']
+      };
+    case PageType.PROFILE:
+      return {
+        success: true,
+        sections: ['header', 'profile-header', 'profile-details', 'footer']
+      };
+    case PageType.SETTINGS:
+      return {
+        success: true,
+        sections: ['header', 'sidebar', 'settings-form', 'footer']
+      };
+    case PageType.DOCUMENTATION:
+      return {
+        success: true,
+        sections: ['header', 'sidebar', 'content', 'footer']
+      };
+    case PageType.BLOG:
+      return {
+        success: true,
+        sections: ['header', 'blog-header', 'blog-posts', 'sidebar', 'footer']
+      };
+    case PageType.PRODUCT:
+      return {
+        success: true,
+        sections: ['header', 'product-gallery', 'product-details', 'related-products', 'footer']
+      };
+    case PageType.CHECKOUT:
+      return {
+        success: true,
+        sections: ['header', 'checkout-form', 'order-summary', 'footer']
+      };
+    case PageType.ERROR:
+      return {
+        success: true,
+        sections: ['header', 'error-message', 'footer']
+      };
+    default:
+      return {
+        success: false,
+        message: `Unknown page type: ${pageType}`
+      };
+  }
+}
+
+/**
+ * Handles the analyze-page command
+ */
+async function handleAnalyzePage(filePath: string): Promise<any> {
+  console.log(`[TOOL] Handling analyze-page command for file: ${filePath}`);
+  
+  try {
+    // Read the file content
+    const content = await fs.readFile(filePath, 'utf8');
+    
+    // Analyze the page
+    const analysis = {
+      sections: {
+        header: content.includes('<header') || content.includes('<Header') || content.includes('header'),
+        footer: content.includes('<footer') || content.includes('<Footer') || content.includes('footer'),
+        navigation: content.includes('<nav') || content.includes('<Nav') || content.includes('navigation'),
+        hero: content.includes('<hero') || content.includes('<Hero') || content.includes('hero'),
+        features: content.includes('<features') || content.includes('<Features') || content.includes('features'),
+        cta: content.includes('<cta') || content.includes('<CTA') || content.includes('cta'),
+      },
+      seo: {
+        hasMeta: content.includes('<meta name="description"') || 
+                content.includes('<meta name="keywords"') || 
+                content.includes('<meta property="og:') || 
+                content.includes('<Helmet'),
+        hasTitle: content.includes('<title>') || content.includes('<Title>'),
+        hasCanonical: content.includes('rel="canonical"')
+      },
+      responsive: content.includes('@media') || 
+                 content.includes('media query') || 
+                 content.includes('responsive'),
+      accessibility: {
+        hasAltText: content.includes('alt='),
+        hasAriaLabels: content.includes('aria-'),
+        hasSemanticTags: content.includes('<header') || 
+                         content.includes('<footer') || 
+                         content.includes('<nav') || 
+                         content.includes('<main') || 
+                         content.includes('<section') || 
+                         content.includes('<article')
+      }
+    };
+    
+    // Generate suggestions
+    const suggestions = [];
+    
+    if (!analysis.sections.header) {
+      suggestions.push('Consider adding a header section for better navigation');
+    }
+    
+    if (!analysis.sections.footer) {
+      suggestions.push('Consider adding a footer section for contact information and links');
+    }
+    
+    if (!analysis.seo.hasMeta) {
+      suggestions.push('Add SEO meta tags to improve search engine visibility');
+    }
+    
+    if (!analysis.seo.hasTitle) {
+      suggestions.push('Add a title tag for better SEO');
+    }
+    
+    if (!analysis.seo.hasCanonical) {
+      suggestions.push('Add a canonical link to prevent duplicate content issues');
+    }
+    
+    if (!analysis.responsive) {
+      suggestions.push('Implement responsive design for better mobile experience');
+    }
+    
+    if (!analysis.accessibility.hasAltText) {
+      suggestions.push('Add alt text to images for better accessibility');
+    }
+    
+    if (!analysis.accessibility.hasAriaLabels) {
+      suggestions.push('Add ARIA labels to improve accessibility');
+    }
+    
+    if (!analysis.accessibility.hasSemanticTags) {
+      suggestions.push('Use semantic HTML tags for better accessibility and SEO');
+    }
+    
+    return {
+      success: true,
+      analysis,
+      suggestions
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: `Error analyzing page: ${error}`
+    };
+  }
+}
 /**
  * Page Generator
  * 
@@ -925,4 +1354,3 @@ function includeFooter(options: PageOptions): boolean {
   // Implementation determines if a footer should be included
   return options.sections.includes('footer');
 }
-

@@ -4,9 +4,115 @@ export function activate() {
     console.log("[TOOL] pwa-converter activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[TOOL] PWA converter processing file: ${filePath}`);
+  
+  // Check if the file is a manifest or service worker file
+  const isPWAFile = filePath.endsWith('manifest.json') || filePath.endsWith('service-worker.js');
+  
+  if (isPWAFile) {
+    console.log(`[TOOL] Detected change in PWA file: ${filePath}`);
+    // In a real implementation, we might validate the manifest or service worker
+  }
+}
+
+export function onSessionStart(sessionId: string) {
+  console.log(`[TOOL] PWA converter initialized for session: ${sessionId}`);
+  
+  // Check for existing PWA configurations
+  setTimeout(() => {
+    console.log('[TOOL] Checking for existing PWA configurations...');
+    checkExistingPWAConfigurations();
+  }, 3000); // Delay to ensure project files are loaded
+}
+
+export async function onCommand(command: string, args: any[]) {
+  if (command === 'generate-pwa') {
+    console.log('[TOOL] Generating PWA files...');
+    
+    const options = args[0];
+    
+    return handleGeneratePWA(options);
+  } else if (command === 'validate-manifest') {
+    console.log('[TOOL] Validating manifest...');
+    
+    const manifestPath = args[0] || 'manifest.json';
+    
+    return handleValidateManifest(manifestPath);
+  } else if (command === 'validate-service-worker') {
+    console.log('[TOOL] Validating service worker...');
+    
+    const serviceWorkerPath = args[0] || 'service-worker.js';
+    
+    return handleValidateServiceWorker(serviceWorkerPath);
+  } else if (command === 'generate-pwa-icons') {
+    console.log('[TOOL] Generating PWA icons...');
+    
+    const sourceIconPath = args[0];
+    const outputDir = args[1] || 'icons';
+    const sizes = args[2] || [192, 512];
+    
+    return handleGeneratePWAIcons({
+      sourceIconPath,
+      outputDir,
+      sizes
+    });
+  }
+  
+  return null;
+}
+
+/**
+ * Checks for existing PWA configurations
+ */
+function checkExistingPWAConfigurations() {
+  console.log('[TOOL] Checking for existing PWA configurations...');
+  
+  // This is a placeholder - in a real implementation, this would scan the filesystem
+  // For now, we'll just log a message
+  console.log('[TOOL] Recommendation: Use the "generate-pwa" command to create PWA files for your project');
+  console.log('[TOOL] Common PWA tasks:');
+  console.log('- Generating manifest.json');
+  console.log('- Generating service-worker.js');
+  console.log('- Generating PWA icons');
+  console.log('- Validating manifest and service worker');
+}
+
+/**
+ * Handles the generate-pwa command
+ */
+async function handleGeneratePWA(options: PWAOptions): Promise<any> {
+  console.log('[TOOL] Handling generate-pwa command with options:', options);
+  // Placeholder implementation
+  return { success: true, message: 'PWA files generated (mock)' };
+}
+
+/**
+ * Handles the validate-manifest command
+ */
+async function handleValidateManifest(manifestPath: string): Promise<any> {
+  console.log(`[TOOL] Handling validate-manifest command for ${manifestPath}`);
+  // Placeholder implementation
+  return { success: true, valid: true, message: 'Manifest is valid (mock)' };
+}
+
+/**
+ * Handles the validate-service-worker command
+ */
+async function handleValidateServiceWorker(serviceWorkerPath: string): Promise<any> {
+  console.log(`[TOOL] Handling validate-service-worker command for ${serviceWorkerPath}`);
+  // Placeholder implementation
+  return { success: true, valid: true, message: 'Service worker is valid (mock)' };
+}
+
+/**
+ * Handles the generate-pwa-icons command
+ */
+async function handleGeneratePWAIcons(options: { sourceIconPath: string; outputDir: string; sizes: number[] }): Promise<any> {
+  console.log('[TOOL] Handling generate-pwa-icons command with options:', options);
+  // Placeholder implementation
+  return { success: true, message: 'PWA icons generated (mock)' };
+}
 /**
  * PWA Converter
  * 

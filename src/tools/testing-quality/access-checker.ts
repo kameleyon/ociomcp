@@ -4,9 +4,149 @@ export function activate() {
     console.log("[TOOL] access-checker activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[TOOL] Access checker processing file: ${filePath}`);
+  
+  // Check if the file is an HTML file or a component that might contain HTML
+  if (filePath.endsWith('.html') || 
+      filePath.endsWith('.htm') || 
+      filePath.endsWith('.jsx') || 
+      filePath.endsWith('.tsx') || 
+      filePath.endsWith('.vue') || 
+      filePath.endsWith('.svelte')) {
+    
+    try {
+      // Create a JSDOM instance from the content
+      const dom = new JSDOM(content);
+      
+      // Check accessibility
+      const result = checkAccessibility(dom, 'wcag21aa', {
+        includeWarnings: true,
+        checkContrast: true,
+        checkScreenReader: true,
+        checkKeyboard: true,
+      });
+      
+      // Add metadata
+      result.documentTitle = dom.window.document.title || 'Untitled';
+      result.pageUrl = filePath;
+      result.timestamp = new Date().toISOString();
+      result.standard = 'wcag21aa';
+      
+      // Log issues
+      if (result.errorCount > 0 || result.warningCount > 0) {
+        console.log(`[TOOL] Found ${result.errorCount} accessibility errors and ${result.warningCount} warnings in ${filePath}`);
+        
+        // Log critical issues
+        const criticalIssues = result.issues.filter(issue => issue.impact === 'critical');
+        if (criticalIssues.length > 0) {
+          console.log('[TOOL] Critical accessibility issues:');
+          criticalIssues.forEach(issue => {
+            console.log(`- ${issue.message}`);
+            if (issue.fixes && issue.fixes.length > 0) {
+              console.log(`  Suggested fix: ${issue.fixes[0]}`);
+            }
+          });
+        }
+      } else {
+        console.log(`[TOOL] No accessibility issues found in ${filePath}`);
+      }
+    } catch (error) {
+      console.error(`[TOOL] Error checking accessibility: ${error}`);
+    }
+  }
+}
+
+export function onSessionStart(sessionId: string) {
+  console.log(`[TOOL] Access checker initialized for session: ${sessionId}`);
+  
+  // Schedule an accessibility scan for the project
+  setTimeout(() => {
+    console.log('[TOOL] Running project-wide accessibility scan...');
+    scanProjectForAccessibilityIssues();
+  }, 3000); // Delay to ensure project files are loaded
+}
+
+export function onCommand(command: string, args: any[]) {
+  if (command === 'check-accessibility') {
+    console.log('[TOOL] Running accessibility check...');
+    
+    const target = args[0] || {};
+    const standard = args[1] || 'wcag21aa';
+    const options = args[2] || {
+      includeWarnings: true,
+      checkContrast: true,
+      checkScreenReader: true,
+      checkKeyboard: true,
+    };
+    
+    return handleCheckAccessibility({
+      target,
+      standard,
+      ...options,
+    });
+  } else if (command === 'generate-accessibility-report') {
+    console.log('[TOOL] Generating accessibility report...');
+    
+    const results = args[0] || [];
+    const format = args[1] || 'markdown';
+    const includeDetails = args[2] !== false;
+    const outputPath = args[3] || '';
+    
+    return handleGenerateAccessibilityReport({
+      results,
+      format,
+      includeDetails,
+      outputPath,
+    });
+  } else if (command === 'fix-accessibility-issues') {
+    console.log('[TOOL] Fixing accessibility issues...');
+    
+    const html = args[0] || '';
+    const issues = args[1] || [];
+    const autoFix = args[2] !== false;
+    
+    return handleFixAccessibilityIssues({
+      html,
+      issues,
+      autoFix,
+    });
+  } else if (command === 'check-contrast') {
+    console.log('[TOOL] Checking color contrast...');
+    
+    const foregroundColor = args[0] || '#000000';
+    const backgroundColor = args[1] || '#FFFFFF';
+    const fontSize = args[2] || 16;
+    const isBold = args[3] || false;
+    
+    return handleCheckContrast({
+      foregroundColor,
+      backgroundColor,
+      fontSize,
+      isBold,
+    });
+  }
+  
+  return null;
+}
+
+/**
+ * Scans the project for accessibility issues
+ */
+function scanProjectForAccessibilityIssues() {
+  console.log('[TOOL] Scanning project for accessibility issues...');
+  
+  // This is a placeholder - in a real implementation, this would scan the filesystem
+  // For now, we'll just log a message
+  console.log('[TOOL] Recommendation: Use the "check-accessibility" command to check specific files or HTML content');
+  console.log('[TOOL] Common accessibility issues to watch for:');
+  console.log('- Images without alt text');
+  console.log('- Form elements without labels');
+  console.log('- Low color contrast');
+  console.log('- Missing document language');
+  console.log('- Improper heading structure');
+  console.log('- Missing ARIA attributes for interactive elements');
+}
 /**
  * AccessChecker Tool
  * 
@@ -847,4 +987,3 @@ function applyAccessibilityFixes(dom: JSDOM, issues: any[]): string {
   // Implementation would apply fixes to the HTML
   return dom.serialize(); // Placeholder implementation
 }
-

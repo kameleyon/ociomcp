@@ -4,9 +4,93 @@ export function activate() {
     console.log("[TOOL] component-templates activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[TOOL] Component templates processing file: ${filePath}`);
+  
+  // Check if the file is a component template file
+  const isTemplateFile = filePath.includes('component-templates') || filePath.endsWith('.template.ts');
+  
+  if (isTemplateFile) {
+    console.log(`[TOOL] Detected change in component template file: ${filePath}`);
+    // In a real implementation, we might reload or update the templates
+  }
+}
+
+export function onSessionStart(sessionId: string) {
+  console.log(`[TOOL] Component templates initialized for session: ${sessionId}`);
+  
+  // Check for existing component templates
+  setTimeout(() => {
+    console.log('[TOOL] Checking for existing component templates...');
+    checkExistingTemplates();
+  }, 3000); // Delay to ensure project files are loaded
+}
+
+export function onCommand(command: string, args: any[]) {
+  if (command === 'list-component-templates') {
+    console.log('[TOOL] Listing component templates...');
+    
+    return handleListComponentTemplates();
+  } else if (command === 'get-component-template') {
+    console.log('[TOOL] Getting component template...');
+    
+    const templateName = args[0];
+    const framework = args[1] || 'react';
+    
+    return handleGetComponentTemplate(templateName, framework);
+  } else if (command === 'generate-component-from-template') {
+    console.log('[TOOL] Generating component from template...');
+    
+    const templateName = args[0];
+    const options = args[1];
+    
+    return handleGenerateComponentFromTemplate(templateName, options);
+  }
+  
+  return null;
+}
+
+/**
+ * Checks for existing component templates
+ */
+function checkExistingTemplates() {
+  console.log('[TOOL] Checking for existing component templates...');
+  
+  // This is a placeholder - in a real implementation, this would scan the filesystem
+  // For now, we'll just log a message
+  console.log('[TOOL] Recommendation: Use the "list-component-templates" command to see available templates');
+  console.log('[TOOL] Common template tasks:');
+  console.log('- Listing available templates');
+  console.log('- Getting a specific template');
+  console.log('- Generating a component from a template');
+}
+
+/**
+ * Handles the list-component-templates command
+ */
+async function handleListComponentTemplates(): Promise<any> {
+  console.log('[TOOL] Handling list-component-templates command');
+  // Placeholder implementation
+  return { success: true, templates: ['basic', 'card', 'form', 'list', 'table', 'hero', 'feature', 'pricing', 'cta', 'footer'] };
+}
+
+/**
+ * Handles the get-component-template command
+ */
+async function handleGetComponentTemplate(templateName: string, framework: string): Promise<any> {
+  console.log(`[TOOL] Handling get-component-template command for ${templateName} (${framework})`);
+  // Placeholder implementation
+  return { success: true, template: { name: templateName, framework: framework, content: 'Mock template content' } };
+}
+
+/**
+ * Handles the generate-component-from-template command
+ */
+async function handleGenerateComponentFromTemplate(templateName: string, options: any): Promise<any> {
+  console.log(`[TOOL] Handling generate-component-from-template command for ${templateName} with options:`, options);
+  // Placeholder implementation
+  return { success: true, message: `Component generated from template ${templateName} (mock)` };
+}
 /**
  * Component Templates
  * Provides templates for generating React components with various styles and configurations

@@ -4,9 +4,149 @@ export function activate() {
     console.log("[TOOL] git-tool activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Handles file write events for git-related files.
+ * If a relevant file changes, triggers status checks or hooks.
+ */
+export async function onFileWrite(event?: { path: string; content?: string }) {
+  if (!event || !event.path) {
+    console.warn("[git-tool] onFileWrite called without event data.");
+    return;
+  }
+  try {
+    if (event.path.endsWith('.gitignore') || event.path.endsWith('.gitattributes') || event.path.endsWith('.gitmodules')) {
+      console.log(`[git-tool] Detected git config file change: ${event.path}`);
+      // Optionally trigger git status or reload hooks
+      // ... actual logic could go here
+    }
+  } catch (err) {
+    console.error(`[git-tool] Error during file-triggered git operation:`, err);
+  }
+}
+
+/**
+ * Initializes or resets git tool state at the start of a session.
+ */
+export function onSessionStart(session?: { id?: string }) {
+  console.log(`[git-tool] Session started${session && session.id ? `: ${session.id}` : ""}. Preparing git tool environment.`);
+  // Example: clear temp files, reset state, etc.
+  // ... actual reset logic
+}
+
+/**
+ * Handles git tool commands.
+ * Supports dynamic invocation of git operations (init, clone, add, commit, push, pull, branch, checkout, merge, status, log, etc.).
+ */
+export async function onCommand(command?: { name: string; args?: any }) {
+  if (!command || !command.name) {
+    console.warn("[git-tool] onCommand called without command data.");
+    return;
+  }
+  switch (command.name) {
+    case "git-init":
+      console.log("[git-tool] Initializing git repository...");
+      try {
+        await handleGitInit(command.args);
+        console.log("[git-tool] Git repository initialization complete.");
+      } catch (err) {
+        console.error("[git-tool] Git repository initialization failed:", err);
+      }
+      break;
+    case "git-clone":
+      console.log("[git-tool] Cloning git repository...");
+      try {
+        await handleGitClone(command.args);
+        console.log("[git-tool] Git repository clone complete.");
+      } catch (err) {
+        console.error("[git-tool] Git repository clone failed:", err);
+      }
+      break;
+    case "git-add":
+      console.log("[git-tool] Adding files to git...");
+      try {
+        await handleGitAdd(command.args);
+        console.log("[git-tool] Git add complete.");
+      } catch (err) {
+        console.error("[git-tool] Git add failed:", err);
+      }
+      break;
+    case "git-commit":
+      console.log("[git-tool] Committing changes...");
+      try {
+        await handleGitCommit(command.args);
+        console.log("[git-tool] Git commit complete.");
+      } catch (err) {
+        console.error("[git-tool] Git commit failed:", err);
+      }
+      break;
+    case "git-push":
+      console.log("[git-tool] Pushing changes...");
+      try {
+        await handleGitPush(command.args);
+        console.log("[git-tool] Git push complete.");
+      } catch (err) {
+        console.error("[git-tool] Git push failed:", err);
+      }
+      break;
+    case "git-pull":
+      console.log("[git-tool] Pulling changes...");
+      try {
+        await handleGitPull(command.args);
+        console.log("[git-tool] Git pull complete.");
+      } catch (err) {
+        console.error("[git-tool] Git pull failed:", err);
+      }
+      break;
+    case "git-branch":
+      console.log("[git-tool] Managing git branches...");
+      try {
+        await handleGitBranch(command.args);
+        console.log("[git-tool] Git branch operation complete.");
+      } catch (err) {
+        console.error("[git-tool] Git branch operation failed:", err);
+      }
+      break;
+    case "git-checkout":
+      console.log("[git-tool] Checking out git branch...");
+      try {
+        await handleGitCheckout(command.args);
+        console.log("[git-tool] Git checkout complete.");
+      } catch (err) {
+        console.error("[git-tool] Git checkout failed:", err);
+      }
+      break;
+    case "git-merge":
+      console.log("[git-tool] Merging git branch...");
+      try {
+        await handleGitMerge(command.args);
+        console.log("[git-tool] Git merge complete.");
+      } catch (err) {
+        console.error("[git-tool] Git merge failed:", err);
+      }
+      break;
+    case "git-status":
+      console.log("[git-tool] Getting git status...");
+      try {
+        await handleGitStatus(command.args);
+        console.log("[git-tool] Git status complete.");
+      } catch (err) {
+        console.error("[git-tool] Git status failed:", err);
+      }
+      break;
+    case "git-log":
+      console.log("[git-tool] Getting git log...");
+      try {
+        await handleGitLog(command.args);
+        console.log("[git-tool] Git log complete.");
+      } catch (err) {
+        console.error("[git-tool] Git log failed:", err);
+      }
+      break;
+    // Add more git operations as needed...
+    default:
+      console.warn(`[git-tool] Unknown command: ${command.name}`);
+  }
+}
 /**
  * Git Tool
  * 
@@ -1385,4 +1525,3 @@ export async function handleGitLog(args: any) {
     };
   }
 }
-

@@ -4,9 +4,204 @@ export function activate() {
     console.log("[TOOL] test-generator activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+// Track generated test files
+const generatedTests: Record<string, TestFile[]> = {
+  unit: [],
+  integration: [],
+  e2e: []
+};
+
+// Track test configurations
+const testConfigs: Record<string, TestConfig> = {};
+
+export async function onFileWrite(filePath: string, content: string) {
+  console.log(`[TOOL] Test generator processing file: ${filePath}`);
+  
+  // Check if the file is a source file that might need tests
+  const isSourceFile = /\.(js|ts|jsx|tsx)$/i.test(filePath) &&
+                        !filePath.includes('.test.') &&
+                        !filePath.includes('.spec.');
+    
+  if (isSourceFile) {
+    console.log(`[TOOL] Detected change in source file: ${filePath}`);
+    
+    // Check if we already have tests for this file
+    const testPath = filePath.replace(/\.(js|ts|jsx|tsx)$/, '.test.$1');
+    
+    try {
+      await fs.access(testPath);
+      console.log(`[TOOL] Test file exists: ${testPath}`);
+    } catch (err) {
+      console.log(`[TOOL] No test file found for: ${filePath}`);
+      console.log(`[TOOL] Consider generating tests with the test-generator:generate-unit command`);
+    }
+  }
+  
+  // Check if the file is a test file
+  const isTestFile = /\.(test|spec)\.(js|ts|jsx|tsx)$/i.test(filePath);
+  
+  if (isTestFile) {
+    console.log(`[TOOL] Test file modified: ${filePath}`);
+    // In a real implementation, we might analyze test coverage
+  }
+}
+
+export async function onSessionStart(sessionId: string) {
+  console.log(`[TOOL] Test generator initialized for session: ${sessionId}`);
+  
+  try {
+    // Initialize test tracking
+    generatedTests.unit = [];
+    generatedTests.integration = [];
+    generatedTests.e2e = [];
+    
+    // Detect test framework in project
+    let detectedFramework = 'jest'; // Default
+    
+    try {
+      // Check for package.json to detect test framework
+      const packageJsonPath = path.join(process.cwd(), 'package.json');
+      const packageJsonContent = await fs.readFile(packageJsonPath, 'utf-8');
+      const packageJson = JSON.parse(packageJsonContent);
+      
+      if (packageJson.devDependencies) {
+        if (packageJson.devDependencies.jest) {
+          detectedFramework = 'jest';
+        } else if (packageJson.devDependencies.mocha) {
+          detectedFramework = 'mocha';
+        } else if (packageJson.devDependencies.vitest) {
+          detectedFramework = 'vitest';
+        } else if (packageJson.devDependencies.cypress) {
+          detectedFramework = 'cypress';
+        } else if (packageJson.devDependencies['@playwright/test']) {
+          detectedFramework = 'playwright';
+        }
+      }
+      
+      console.log(`[TOOL] Detected test framework: ${detectedFramework}`);
+    } catch (err) {
+      console.log('[TOOL] No package.json found, using default framework: jest');
+    }
+    
+    return {
+      initialized: true,
+      framework: detectedFramework,
+      message: `Test generator initialized with ${detectedFramework} framework`
+    };
+  } catch (err) {
+    console.error(`[TOOL] Error initializing: ${err}`);
+    return {
+      initialized: false,
+      message: `Error initializing test generator: ${err}`
+    };
+  }
+}
+
+export async function onCommand(command: string, args: any[]) {
+  if (command === 'generate-unit-tests') {
+    console.log('[TOOL] Generating unit tests...');
+    
+    const sourcePath = args[0];
+    const outputPath = args[1];
+    const framework = args[2] || 'jest';
+    const testingLibrary = args[3];
+    const coverage = args[4] || 80;
+    const includeSnapshots = args[5] !== false;
+    const includeMocks = args[6] !== false;
+    
+    return handleGenerateUnitTests({
+      sourcePath,
+      outputPath,
+      framework,
+      testingLibrary,
+      coverage,
+      includeSnapshots,
+      includeMocks
+    });
+  } else if (command === 'generate-integration-tests') {
+    console.log('[TOOL] Generating integration tests...');
+    
+    const sourcePaths = args[0];
+    const outputPath = args[1];
+    const framework = args[2] || 'jest';
+    const testingLibrary = args[3];
+    const coverage = args[4] || 70;
+    const includeSnapshots = args[5] !== false;
+    const includeMocks = args[6] !== false;
+    
+    return handleGenerateIntegrationTests({
+      sourcePaths,
+      outputPath,
+      framework,
+      testingLibrary,
+      coverage,
+      includeSnapshots,
+      includeMocks
+    });
+  } else if (command === 'generate-e2e-tests') {
+    console.log('[TOOL] Generating E2E tests...');
+    
+    const appUrl = args[0];
+    const appPath = args[1];
+    const outputPath = args[2];
+    const framework = args[3] || 'playwright';
+    const browser = args[4] || 'chromium';
+    const scenarios = args[5];
+    const includeScreenshots = args[6] !== false;
+    const includeVideos = args[7] !== false;
+    
+    return handleGenerateE2ETests({
+      appUrl,
+      appPath,
+      outputPath,
+      framework,
+      browser,
+      scenarios,
+      includeScreenshots,
+      includeVideos
+    });
+  } else if (command === 'analyze-test-coverage') {
+    console.log('[TOOL] Analyzing test coverage...');
+    
+    const testPath = args[0];
+    const sourcePath = args[1];
+    const framework = args[2] || 'jest';
+    const threshold = args[3] || 80;
+    const generateReport = args[4] !== false;
+    const reportFormat = args[5] || 'html';
+    
+    return handleAnalyzeTestCoverage({
+      testPath,
+      sourcePath,
+      framework,
+      threshold,
+      generateReport,
+      reportFormat
+    });
+  } else if (command === 'generate-test-config') {
+    console.log('[TOOL] Generating test configuration...');
+    
+    const projectPath = args[0] || '.';
+    const framework = args[1] || 'jest';
+    const testingLibrary = args[2];
+    const coverage = args[3] !== false;
+    const typescript = args[4] !== false;
+    const eslint = args[5] !== false;
+    const prettier = args[6] !== false;
+    
+    return handleGenerateTestConfig({
+      projectPath,
+      framework,
+      testingLibrary,
+      coverage,
+      typescript,
+      eslint,
+      prettier
+    });
+  }
+  
+  return null;
+}
 /**
  * TestGenerator Tool
  * 
@@ -851,4 +1046,3 @@ function generatePackageJsonUpdates(options: z.infer<typeof GenerateTestConfigSc
     scripts: {} 
   }; // Placeholder implementation
 }
-

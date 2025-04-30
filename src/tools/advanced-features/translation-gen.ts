@@ -4,9 +4,47 @@ export function activate() {
     console.log("[TOOL] translation-gen activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[Translation-Gen] File written: ${filePath}`);
+  // Check if file is a source code file that might need translation extraction
+  const sourceExtensions = ['.js', '.jsx', '.ts', '.tsx', '.vue', '.svelte'];
+  const isSourceFile = sourceExtensions.some(ext => filePath.endsWith(ext));
+  
+  if (isSourceFile) {
+    console.log('[Translation-Gen] Detected source file change, checking for translation keys');
+    // This could trigger automatic extraction of translation keys
+    return { shouldExtract: true, filePath };
+  }
+  return { shouldExtract: false };
+}
+
+export function onSessionStart(context: any) {
+  console.log('[Translation-Gen] Session started');
+  // Initialize translation generator settings
+  const config = {
+    sourceLocale: context?.sourceLocale || 'en',
+    targetLocales: context?.targetLocales || ['es', 'fr', 'de', 'ja'],
+    outputFormat: context?.outputFormat || 'json',
+    outputDir: context?.outputDir || './locales'
+  };
+  console.log(`[Translation-Gen] Initialized with source locale: ${config.sourceLocale}`);
+  return { initialized: true, config };
+}
+
+export function onCommand(command: string, args: any) {
+  console.log(`[Translation-Gen] Command received: ${command}`);
+  if (command === 'translation.generate') {
+    console.log('[Translation-Gen] Generating translations');
+    return { action: 'generate', args };
+  } else if (command === 'translation.extract') {
+    console.log('[Translation-Gen] Extracting translation keys');
+    return { action: 'extract', args };
+  } else if (command === 'translation.merge') {
+    console.log('[Translation-Gen] Merging translation files');
+    return { action: 'merge', args };
+  }
+  return { action: 'unknown' };
+}
 /**
  * Translation Generator
  * 

@@ -4,9 +4,164 @@ export function activate() {
     console.log("[TOOL] session-killer activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[Session Killer] File written: ${filePath}`);
+  
+  // Check if the file is a session configuration file
+  if (filePath.endsWith('sessions.json') ||
+      filePath.endsWith('session-config.json')) {
+    console.log(`[Session Killer] Detected session configuration file: ${filePath}`);
+    return {
+      detected: true,
+      filePath,
+      type: 'session-config'
+    };
+  }
+  
+  return { detected: false };
+}
+
+export function onSessionStart(context: any) {
+  console.log('[Session Killer] Session started');
+  
+  try {
+    // Log platform information
+    const platform = process.platform;
+    console.log(`[Session Killer] Platform: ${platform}`);
+    
+    // Get active processes and monitored processes
+    const activeProcesses = getActiveProcesses();
+    const monitoredProcesses = getMonitoredProcesses();
+    
+    console.log(`[Session Killer] Found ${activeProcesses.length} active processes and ${monitoredProcesses.length} monitored processes`);
+    
+    // Check for any stale sessions that might need to be cleaned up
+    if (activeProcesses.length > 0 || monitoredProcesses.length > 0) {
+      console.log('[Session Killer] Found existing sessions that might need cleanup');
+    }
+    
+    return {
+      initialized: true,
+      platform,
+      activeProcesses: activeProcesses.length,
+      monitoredProcesses: monitoredProcesses.length
+    };
+  } catch (error) {
+    console.error(`[Session Killer] Error during initialization: ${error}`);
+    try {
+      console.error(`Error using API for token counting: ${error}`);
+      // Fall back to simple estimation if API call fails
+      return {
+        initialized: false,
+        error: String(error)
+      };
+    } catch (nestedError) {
+      return {
+        initialized: false,
+        error: 'Multiple errors occurred'
+      };
+    }
+  }
+}
+
+export function onCommand(command: string, args: any[]) {
+  console.log(`[Session Killer] Command received: ${command}`);
+  
+  try {
+    if (command === 'session.kill') {
+      console.log('[Session Killer] Killing session');
+      if (args && args.length > 0) {
+        const pid = typeof args[0] === 'number' ? args[0] : args[0].pid;
+        const force = args[0].force === true;
+        const signal = args[0].signal || 'SIGTERM';
+        
+        try {
+          // This is async, so we can't return the result directly
+          killSession(pid, force, signal).then(result => {
+            console.log(`[Session Killer] Session ${pid} killed: ${result}`);
+          }).catch(error => {
+            console.error(`[Session Killer] Error killing session: ${error}`);
+          });
+          
+          return {
+            action: 'kill',
+            pid,
+            force,
+            signal,
+            started: true
+          };
+        } catch (error) {
+          console.error(`[Session Killer] Error killing session: ${error}`);
+          return { action: 'kill', error: String(error) };
+        }
+      }
+    } else if (command === 'session.killAll') {
+      console.log('[Session Killer] Killing all sessions');
+      
+      const force = args && args.length > 0 ? args[0].force === true : false;
+      const signal = args && args.length > 0 ? args[0].signal || 'SIGTERM' : 'SIGTERM';
+      const excludePids = args && args.length > 0 ? args[0].excludePids || [] : [];
+      
+      try {
+        // This is async, so we can't return the result directly
+        killAllSessions(force, signal, excludePids).then(count => {
+          console.log(`[Session Killer] Killed ${count} sessions`);
+        }).catch(error => {
+          console.error(`[Session Killer] Error killing all sessions: ${error}`);
+        });
+        
+        return {
+          action: 'killAll',
+          force,
+          signal,
+          excludePids,
+          started: true
+        };
+      } catch (error) {
+        console.error(`[Session Killer] Error killing all sessions: ${error}`);
+        return { action: 'killAll', error: String(error) };
+      }
+    } else if (command === 'session.killByCommand') {
+      console.log('[Session Killer] Killing sessions by command');
+      if (args && args.length > 0) {
+        const commandPattern = typeof args[0] === 'string' ? args[0] : args[0].command;
+        const force = args[0].force === true;
+        const signal = args[0].signal || 'SIGTERM';
+        
+        try {
+          // This is async, so we can't return the result directly
+          killSessionsByCommand(commandPattern, force, signal).then(count => {
+            console.log(`[Session Killer] Killed ${count} sessions matching command: ${commandPattern}`);
+          }).catch(error => {
+            console.error(`[Session Killer] Error killing sessions by command: ${error}`);
+          });
+          
+          return {
+            action: 'killByCommand',
+            command: commandPattern,
+            force,
+            signal,
+            started: true
+          };
+        } catch (error) {
+          console.error(`[Session Killer] Error killing sessions by command: ${error}`);
+          return { action: 'killByCommand', error: String(error) };
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`[Session Killer] Error processing command: ${error}`);
+    try {
+      console.error(`Error using API for token counting: ${error}`);
+      // Fall back to simple estimation if API call fails
+      return { action: 'error', error: String(error) };
+    } catch (nestedError) {
+      return { action: 'error', error: 'Multiple errors occurred' };
+    }
+  }
+  
+  return { action: 'unknown' };
+}
 /**
  * Session Killer
  * 

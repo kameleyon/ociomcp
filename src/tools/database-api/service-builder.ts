@@ -4,9 +4,114 @@ export function activate() {
     console.log("[TOOL] service-builder activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+/**
+ * Handles file write events for service, gateway, or orchestrator config files.
+ * If a relevant file changes, auto-generates the corresponding boilerplate.
+ */
+export async function onFileWrite(event?: { path: string; content?: string }) {
+  if (!event || !event.path) {
+    console.warn("[service-builder] onFileWrite called without event data.");
+    return;
+  }
+  try {
+    if (event.path.endsWith('.service.json')) {
+      console.log(`[service-builder] Detected service config file change: ${event.path}`);
+      const config = JSON.parse(event.content || await (await import('fs/promises')).readFile(event.path, 'utf-8'));
+      await handleCreateService(config);
+      console.log(`[service-builder] Service boilerplate regenerated for ${event.path}`);
+    } else if (event.path.endsWith('.gateway.json')) {
+      console.log(`[service-builder] Detected gateway config file change: ${event.path}`);
+      const config = JSON.parse(event.content || await (await import('fs/promises')).readFile(event.path, 'utf-8'));
+      await handleCreateGateway(config);
+      console.log(`[service-builder] Gateway boilerplate regenerated for ${event.path}`);
+    } else if (event.path.endsWith('.orchestrator.json')) {
+      console.log(`[service-builder] Detected orchestrator config file change: ${event.path}`);
+      const config = JSON.parse(event.content || await (await import('fs/promises')).readFile(event.path, 'utf-8'));
+      await handleCreateOrchestrator(config);
+      console.log(`[service-builder] Orchestrator boilerplate regenerated for ${event.path}`);
+    }
+  } catch (err) {
+    console.error(`[service-builder] Error during file-triggered generation:`, err);
+  }
+}
+
+/**
+ * Initializes or resets service builder state at the start of a session.
+ */
+export function onSessionStart(session?: { id?: string }) {
+  console.log(`[service-builder] Session started${session && session.id ? `: ${session.id}` : ""}. Preparing service builder environment.`);
+  // Example: clear temp files, reset state, etc.
+  // ... actual reset logic
+}
+
+/**
+ * Handles service-builder commands.
+ * Supports dynamic invocation of service/gateway/orchestrator creation or validation.
+ */
+export async function onCommand(command?: { name: string; args?: any }) {
+  if (!command || !command.name) {
+    console.warn("[service-builder] onCommand called without command data.");
+    return;
+  }
+  switch (command.name) {
+    case "create-service":
+      console.log("[service-builder] Creating microservice...");
+      try {
+        await handleCreateService(command.args);
+        console.log("[service-builder] Microservice creation complete.");
+      } catch (err) {
+        console.error("[service-builder] Microservice creation failed:", err);
+      }
+      break;
+    case "create-gateway":
+      console.log("[service-builder] Creating API gateway...");
+      try {
+        await handleCreateGateway(command.args);
+        console.log("[service-builder] API gateway creation complete.");
+      } catch (err) {
+        console.error("[service-builder] API gateway creation failed:", err);
+      }
+      break;
+    case "create-orchestrator":
+      console.log("[service-builder] Creating orchestrator configuration...");
+      try {
+        await handleCreateOrchestrator(command.args);
+        console.log("[service-builder] Orchestrator creation complete.");
+      } catch (err) {
+        console.error("[service-builder] Orchestrator creation failed:", err);
+      }
+      break;
+    case "validate-service":
+      console.log("[service-builder] Validating service configuration...");
+      try {
+        CreateServiceSchema.parse(command.args);
+        console.log("[service-builder] Service validation successful.");
+      } catch (err) {
+        console.error("[service-builder] Service validation failed:", err);
+      }
+      break;
+    case "validate-gateway":
+      console.log("[service-builder] Validating gateway configuration...");
+      try {
+        CreateGatewaySchema.parse(command.args);
+        console.log("[service-builder] Gateway validation successful.");
+      } catch (err) {
+        console.error("[service-builder] Gateway validation failed:", err);
+      }
+      break;
+    case "validate-orchestrator":
+      console.log("[service-builder] Validating orchestrator configuration...");
+      try {
+        CreateOrchestratorSchema.parse(command.args);
+        console.log("[service-builder] Orchestrator validation successful.");
+      } catch (err) {
+        console.error("[service-builder] Orchestrator validation failed:", err);
+      }
+      break;
+    default:
+      console.warn(`[service-builder] Unknown command: ${command.name}`);
+  }
+}
 /**
  * ServiceBuilder Tool
  * 
@@ -18,248 +123,79 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { z } from 'zod';
 
-// Dummy generator functions to fix TypeScript errors
-// These will be implemented in generators.ts later
-function generateOrchestrator(options: any): Record<string, string> {
+/**
+ * Exported generator functions for orchestrator, package, etc.
+ * These are stubs and should be implemented in generators.ts.
+ */
+export function generateOrchestrator(options: any): Record<string, string> {
   return {};
 }
 
-function generatePackageJson(options: any): string {
-  return '';
-}
+// All other generator stubs (not exported for index.ts)
+function generatePackageJson(options: any): string { return ''; }
+function generateReadme(options: any): string { return ''; }
+function generateGitignore(): string { return ''; }
+function generateTsConfig(): string { return ''; }
+function generateDockerfile(options: any): string { return ''; }
+function generateDockerignore(): string { return ''; }
+function generateExpressApp(options: any): string { return ''; }
+function generateExpressServer(options: any): string { return ''; }
+function generateExpressRouteIndex(options: any): string { return ''; }
+function groupEndpointsByBasePath(endpoints: any[]): Record<string, any[]> { return {}; }
+function generateExpressRoutes(routeName: string, endpoints: any[], options: any): string { return ''; }
+function generateModelIndex(options: any): string { return ''; }
+function generateModel(model: any, options: any): string { return ''; }
+function generateAuthMiddleware(options: any): string { return ''; }
+function generateConfig(options: any): string { return ''; }
+function generateLogger(options: any): string { return ''; }
+function generateEnvExample(options: any): string { return ''; }
+function generateFastifyApp(options: any): string { return ''; }
+function generateFastifyServer(options: any): string { return ''; }
+function generateFastifyRouteIndex(options: any): string { return ''; }
+function generateFastifyRoutes(routeName: string, endpoints: any[], options: any): string { return ''; }
+function generateFastifyAuthPlugin(options: any): string { return ''; }
+function generateNestJsMain(options: any): string { return ''; }
+function generateNestJsAppModule(options: any): string { return ''; }
+function generateNestJsModule(moduleName: string, options: any): string { return ''; }
+function generateNestJsController(moduleName: string, endpoints: any[], options: any): string { return ''; }
+function generateNestJsService(moduleName: string, endpoints: any[], options: any): string { return ''; }
+function generateNestJsDtoIndex(moduleName: string, endpoints: any[]): string { return ''; }
+function generateNestJsDto(endpoint: any, options: any): string { return ''; }
+function generateNestJsEntity(model: any, options: any): string { return ''; }
+function generateNestJsAuthModule(options: any): string { return ''; }
+function generateNestJsAuthService(options: any): string { return ''; }
+function generateNestJsAuthController(options: any): string { return ''; }
+function generateNestJsJwtAuthGuard(options: any): string { return ''; }
+function generateNestJsJwtStrategy(options: any): string { return ''; }
+function generateNestJsConfig(options: any): string { return ''; }
+function generateNestJsHttpExceptionFilter(options: any): string { return ''; }
+function generateNestJsLoggingInterceptor(options: any): string { return ''; }
+function generateApolloServer(options: any): string { return ''; }
+function generateApolloSchema(options: any): string { return ''; }
+function generateApolloResolverIndex(options: any): string { return ''; }
+function generateApolloResolver(model: any, options: any): string { return ''; }
+function generateApolloAuth(options: any): string { return ''; }
+function generateGrpcServer(options: any): string { return ''; }
+function generateProtoDefinition(options: any): string { return ''; }
+function generateGrpcServiceIndex(options: any): string { return ''; }
+function generateGrpcService(model: any, options: any): string { return ''; }
+function generateGrpcAuthMiddleware(options: any): string { return ''; }
+function generateSocketIoServer(options: any): string { return ''; }
+function generateSocketIoEventIndex(options: any): string { return ''; }
+function generateSocketIoEvents(eventName: string, endpoints: any[], options: any): string { return ''; }
+function generateSocketIoAuthMiddleware(options: any): string { return ''; }
+function generateMessagingServer(options: any): string { return ''; }
+function generateConsumerIndex(options: any): string { return ''; }
+function generateProducerIndex(options: any): string { return ''; }
+function generateConsumer(topicName: string, endpoints: any[], options: any): string { return ''; }
+function generateProducer(topicName: string, endpoints: any[], options: any): string { return ''; }
+function generateGatewayReadme(options: any): string { return ''; }
+function generateGatewayPackageJson(options: any): string { return ''; }
 
-function generateReadme(options: any): string {
-  return '';
-}
-
-function generateGitignore(): string {
-  return '';
-}
-
-function generateTsConfig(): string {
-  return '';
-}
-
-function generateDockerfile(options: any): string {
-  return '';
-}
-
-function generateDockerignore(): string {
-  return '';
-}
-
-function generateExpressApp(options: any): string {
-  return '';
-}
-
-function generateExpressServer(options: any): string {
-  return '';
-}
-
-function generateExpressRouteIndex(options: any): string {
-  return '';
-}
-
-function groupEndpointsByBasePath(endpoints: any[]): Record<string, any[]> {
-  return {};
-}
-
-function generateExpressRoutes(routeName: string, endpoints: any[], options: any): string {
-  return '';
-}
-
-function generateModelIndex(options: any): string {
-  return '';
-}
-
-function generateModel(model: any, options: any): string {
-  return '';
-}
-
-function generateAuthMiddleware(options: any): string {
-  return '';
-}
-
-function generateConfig(options: any): string {
-  return '';
-}
-
-function generateLogger(options: any): string {
-  return '';
-}
-
-function generateEnvExample(options: any): string {
-  return '';
-}
-
-function generateFastifyApp(options: any): string {
-  return '';
-}
-
-function generateFastifyServer(options: any): string {
-  return '';
-}
-
-function generateFastifyRouteIndex(options: any): string {
-  return '';
-}
-
-function generateFastifyRoutes(routeName: string, endpoints: any[], options: any): string {
-  return '';
-}
-
-function generateFastifyAuthPlugin(options: any): string {
-  return '';
-}
-
-function generateNestJsMain(options: any): string {
-  return '';
-}
-
-function generateNestJsAppModule(options: any): string {
-  return '';
-}
-
-function generateNestJsModule(moduleName: string, options: any): string {
-  return '';
-}
-
-function generateNestJsController(moduleName: string, endpoints: any[], options: any): string {
-  return '';
-}
-
-function generateNestJsService(moduleName: string, endpoints: any[], options: any): string {
-  return '';
-}
-
-function generateNestJsDtoIndex(moduleName: string, endpoints: any[]): string {
-  return '';
-}
-
-function generateNestJsDto(endpoint: any, options: any): string {
-  return '';
-}
-
-function generateNestJsEntity(model: any, options: any): string {
-  return '';
-}
-
-function generateNestJsAuthModule(options: any): string {
-  return '';
-}
-
-function generateNestJsAuthService(options: any): string {
-  return '';
-}
-
-function generateNestJsAuthController(options: any): string {
-  return '';
-}
-
-function generateNestJsJwtAuthGuard(options: any): string {
-  return '';
-}
-
-function generateNestJsJwtStrategy(options: any): string {
-  return '';
-}
-
-function generateNestJsConfig(options: any): string {
-  return '';
-}
-
-function generateNestJsHttpExceptionFilter(options: any): string {
-  return '';
-}
-
-function generateNestJsLoggingInterceptor(options: any): string {
-  return '';
-}
-
-function generateApolloServer(options: any): string {
-  return '';
-}
-
-function generateApolloSchema(options: any): string {
-  return '';
-}
-
-function generateApolloResolverIndex(options: any): string {
-  return '';
-}
-
-function generateApolloResolver(model: any, options: any): string {
-  return '';
-}
-
-function generateApolloAuth(options: any): string {
-  return '';
-}
-
-function generateGrpcServer(options: any): string {
-  return '';
-}
-
-function generateProtoDefinition(options: any): string {
-  return '';
-}
-
-function generateGrpcServiceIndex(options: any): string {
-  return '';
-}
-
-function generateGrpcService(model: any, options: any): string {
-  return '';
-}
-
-function generateGrpcAuthMiddleware(options: any): string {
-  return '';
-}
-
-function generateSocketIoServer(options: any): string {
-  return '';
-}
-
-function generateSocketIoEventIndex(options: any): string {
-  return '';
-}
-
-function generateSocketIoEvents(eventName: string, endpoints: any[], options: any): string {
-  return '';
-}
-
-function generateSocketIoAuthMiddleware(options: any): string {
-  return '';
-}
-
-function generateMessagingServer(options: any): string {
-  return '';
-}
-
-function generateConsumerIndex(options: any): string {
-  return '';
-}
-
-function generateProducerIndex(options: any): string {
-  return '';
-}
-
-function generateConsumer(topicName: string, endpoints: any[], options: any): string {
-  return '';
-}
-
-function generateProducer(topicName: string, endpoints: any[], options: any): string {
-  return '';
-}
-
-
-function generateGatewayReadme(options: any): string {
-  return '';
-}
-
-function generateGatewayPackageJson(options: any): string {
-  return '';
-}
+/**
+ * Export schemas and handlers for use in index.ts and other modules.
+ * (Exports are handled at the point of definition below.)
+ */
 
 // Define schemas for ServiceBuilder tool
 export const CreateServiceSchema = z.object({
@@ -1041,4 +977,3 @@ function generateGateway(options: GatewayOptions): Record<string, string> {
   // Return the generated files
   return files;
 }
-

@@ -4,9 +4,93 @@ export function activate() {
     console.log("[TOOL] page-templates activated (passive mode)");
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(filePath: string, content: string) {
+  console.log(`[TOOL] Page templates processing file: ${filePath}`);
+  
+  // Check if the file is a page template file
+  const isTemplateFile = filePath.includes('page-templates') || filePath.endsWith('.template.ts');
+  
+  if (isTemplateFile) {
+    console.log(`[TOOL] Detected change in page template file: ${filePath}`);
+    // In a real implementation, we might reload or update the templates
+  }
+}
+
+export function onSessionStart(sessionId: string) {
+  console.log(`[TOOL] Page templates initialized for session: ${sessionId}`);
+  
+  // Check for existing page templates
+  setTimeout(() => {
+    console.log('[TOOL] Checking for existing page templates...');
+    checkExistingTemplates();
+  }, 3000); // Delay to ensure project files are loaded
+}
+
+export function onCommand(command: string, args: any[]) {
+  if (command === 'list-page-templates') {
+    console.log('[TOOL] Listing page templates...');
+    
+    return handleListPageTemplates();
+  } else if (command === 'get-page-template') {
+    console.log('[TOOL] Getting page template...');
+    
+    const templateName = args[0];
+    const framework = args[1] || 'react';
+    
+    return handleGetPageTemplate(templateName, framework);
+  } else if (command === 'generate-page-from-template') {
+    console.log('[TOOL] Generating page from template...');
+    
+    const templateName = args[0];
+    const options = args[1];
+    
+    return handleGeneratePageFromTemplate(templateName, options);
+  }
+  
+  return null;
+}
+
+/**
+ * Checks for existing page templates
+ */
+function checkExistingTemplates() {
+  console.log('[TOOL] Checking for existing page templates...');
+  
+  // This is a placeholder - in a real implementation, this would scan the filesystem
+  // For now, we'll just log a message
+  console.log('[TOOL] Recommendation: Use the "list-page-templates" command to see available templates');
+  console.log('[TOOL] Common template tasks:');
+  console.log('- Listing available page templates');
+  console.log('- Getting a specific page template');
+  console.log('- Generating a page from a template');
+}
+
+/**
+ * Handles the list-page-templates command
+ */
+async function handleListPageTemplates(): Promise<any> {
+  console.log('[TOOL] Handling list-page-templates command');
+  // Placeholder implementation
+  return { success: true, templates: Object.values(PageType) };
+}
+
+/**
+ * Handles the get-page-template command
+ */
+async function handleGetPageTemplate(templateName: string, framework: string): Promise<any> {
+  console.log(`[TOOL] Handling get-page-template command for ${templateName} (${framework})`);
+  // Placeholder implementation
+  return { success: true, template: { name: templateName, framework: framework, content: 'Mock page template content' } };
+}
+
+/**
+ * Handles the generate-page-from-template command
+ */
+async function handleGeneratePageFromTemplate(templateName: string, options: any): Promise<any> {
+  console.log(`[TOOL] Handling generate-page-from-template command for ${templateName} with options:`, options);
+  // Placeholder implementation
+  return { success: true, message: `Page generated from template ${templateName} (mock)` };
+}
 /**
  * Page Templates
  * Provides templates for generating React pages with various layouts and sections

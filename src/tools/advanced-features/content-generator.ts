@@ -1,12 +1,102 @@
-// Auto-generated safe fallback for content-generator
+/**
+ * Content Generator Tool
+ * Provides functionality for generating various types of content
+ */
+
+// Configuration for auto-generation
+const AUTO_GENERATE_INTERVAL = 10 * 60 * 1000; // 10 minutes
+let lastGenerationTime = 0;
+
+// Store for generated content templates
+const contentTemplates: ContentTemplate[] = [];
 
 export function activate() {
-    console.log("[TOOL] content-generator activated (passive mode)");
+    console.log("[TOOL] content-generator activated ✅");
+    // Initialize content templates
+    loadContentTemplates();
 }
 
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
+export function onFileWrite(event: { path: string; content: string }) {
+    // Check if this is a content-related file
+    if (isContentFile(event.path)) {
+        console.log(`[Content Generator] Content file modified: ${event.path}`);
+        
+        // Auto-generate related content if needed
+        const now = Date.now();
+        if (now - lastGenerationTime > AUTO_GENERATE_INTERVAL) {
+            generateRelatedContent(event.path, event.content)
+                .then(result => {
+                    lastGenerationTime = now;
+                    console.log(`[Content Generator] Generated related content for ${event.path}`);
+                })
+                .catch(err => {
+                    console.error('[Content Generator Error]', err);
+                });
+        }
+    }
+}
+
+export function onSessionStart() {
+    console.log("[Content Generator] Session started, refreshing content templates");
+    // Refresh content templates at session start
+    loadContentTemplates()
+        .then(() => console.log(`[Content Generator] Loaded ${contentTemplates.length} templates`))
+        .catch(err => console.error('[Content Generator Error]', err));
+}
+
+export function onCommand(cmd: string) {
+    const [action, ...args] = cmd.trim().split(/\s+/);
+
+    if (action === "generate") {
+        const type = args[0] as ContentType;
+        const subtype = args[1];
+        
+        if (!type) {
+            return { error: "Content type is required" };
+        }
+        
+        try {
+            const options: ContentOptions = {
+                type,
+                subtype,
+                format: 'markdown'
+            };
+            
+            let content = '';
+            
+            switch (type) {
+                case ContentType.LEGAL:
+                    content = generateLegalContent({
+                        ...options,
+                        company: { name: "Example Company", description: "An example company" }
+                    });
+                    break;
+                case ContentType.SEO:
+                    content = generateSeoContent({
+                        ...options,
+                        website: {
+                            url: "https://example.com",
+                            title: "Example Website",
+                            description: "An example website"
+                        }
+                    });
+                    break;
+                default:
+                    return { error: `Unsupported content type: ${type}` };
+            }
+            
+            return { content };
+        } catch (error) {
+            return { error: String(error) };
+        }
+    }
+    
+    if (action === "list-templates") {
+        return { templates: contentTemplates.map(t => `${t.type}/${t.subtype}: ${t.description}`) };
+    }
+    
+    return { error: `Unknown command: ${action}` };
+}
 /**
  * Content Generator
  * Provides functionality for generating various types of content
@@ -325,6 +415,160 @@ function generateMetaTags(website: ContentOptions['website']): string {
 <meta name="author" content="${website.url}">`;
 }
 
+/**
+ * Checks if a file is a content-related file
+ * @param filePath Path to the file
+ * @returns True if the file is content-related
+ */
+function isContentFile(filePath: string): boolean {
+  // Check file extensions and paths that are content-related
+  const contentExtensions = ['.md', '.html', '.txt', '.json'];
+  const contentPaths = ['content', 'docs', 'legal', 'marketing', 'seo'];
+  
+  const ext = filePath.substring(filePath.lastIndexOf('.')).toLowerCase();
+  
+  // Check if the file has a content-related extension
+  if (contentExtensions.includes(ext)) {
+    return true;
+  }
+  
+  // Check if the file is in a content-related directory
+  for (const path of contentPaths) {
+    if (filePath.toLowerCase().includes(`/${path}/`)) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+/**
+ * Loads content templates from predefined sources
+ * @returns Promise that resolves when templates are loaded
+ */
+async function loadContentTemplates(): Promise<void> {
+  try {
+    // Clear existing templates
+    contentTemplates.length = 0;
+    
+    // Add legal templates
+    contentTemplates.push({
+      type: ContentType.LEGAL,
+      subtype: LegalContentType.PRIVACY_POLICY,
+      template: 'privacy-policy-template',
+      variables: ['companyName', 'effectiveDate', 'contactEmail'],
+      description: 'Privacy Policy template'
+    });
+    
+    contentTemplates.push({
+      type: ContentType.LEGAL,
+      subtype: LegalContentType.TERMS_OF_SERVICE,
+      template: 'terms-of-service-template',
+      variables: ['companyName', 'effectiveDate'],
+      description: 'Terms of Service template'
+    });
+    
+    // Add SEO templates
+    contentTemplates.push({
+      type: ContentType.SEO,
+      subtype: SeoContentType.META_TAGS,
+      template: 'meta-tags-template',
+      variables: ['title', 'description', 'keywords'],
+      description: 'Meta tags template'
+    });
+    
+    contentTemplates.push({
+      type: ContentType.SEO,
+      subtype: SeoContentType.SCHEMA_MARKUP,
+      template: 'schema-markup-template',
+      variables: ['url', 'title', 'description'],
+      description: 'Schema markup template'
+    });
+    
+    console.log(`[Content Generator] Loaded ${contentTemplates.length} templates`);
+  } catch (error) {
+    console.error('[Content Generator] Error loading templates:', error);
+    throw error;
+  }
+}
+
+/**
+ * Generates content related to a modified file
+ * @param filePath Path to the modified file
+ * @param content Content of the modified file
+ * @returns Promise that resolves with the generated content
+ */
+async function generateRelatedContent(filePath: string, content: string): Promise<string> {
+  try {
+    // Determine what type of content to generate based on the file
+    let contentType: ContentType | undefined;
+    let subtype: string | undefined;
+    
+    if (filePath.includes('/legal/')) {
+      contentType = ContentType.LEGAL;
+      
+      if (filePath.includes('privacy')) {
+        subtype = LegalContentType.PRIVACY_POLICY;
+      } else if (filePath.includes('terms')) {
+        subtype = LegalContentType.TERMS_OF_SERVICE;
+      } else if (filePath.includes('cookie')) {
+        subtype = LegalContentType.COOKIE_POLICY;
+      }
+    } else if (filePath.includes('/seo/') || filePath.includes('/meta/')) {
+      contentType = ContentType.SEO;
+      
+      if (filePath.includes('meta')) {
+        subtype = SeoContentType.META_TAGS;
+      } else if (filePath.includes('schema')) {
+        subtype = SeoContentType.SCHEMA_MARKUP;
+      } else if (filePath.includes('sitemap')) {
+        subtype = SeoContentType.SITEMAP;
+      }
+    }
+    
+    if (!contentType) {
+      return '';
+    }
+    
+    // Extract company name or website URL from content if possible
+    const companyNameMatch = content.match(/company[:\s]+([A-Za-z0-9\s]+)/i);
+    const companyName = companyNameMatch ? companyNameMatch[1].trim() : 'Example Company';
+    
+    const urlMatch = content.match(/https?:\/\/[A-Za-z0-9.-]+\.[A-Za-z]{2,}/);
+    const url = urlMatch ? urlMatch[0] : 'https://example.com';
+    
+    // Generate appropriate content
+    if (contentType === ContentType.LEGAL) {
+      return generateLegalContent({
+        type: ContentType.LEGAL,
+        subtype,
+        company: {
+          name: companyName,
+          description: `${companyName} is a company that provides services.`
+        },
+        legal: {
+          effectiveDate: new Date().toLocaleDateString(),
+          contactEmail: `contact@${url.replace(/^https?:\/\//, '').replace(/\/.*$/, '')}`
+        }
+      });
+    } else if (contentType === ContentType.SEO) {
+      return generateSeoContent({
+        type: ContentType.SEO,
+        subtype,
+        website: {
+          url,
+          title: `${companyName} - Official Website`,
+          description: `${companyName} provides high-quality services to customers worldwide.`
+        }
+      });
+    }
+    
+    return '';
+  } catch (error) {
+    console.error('[Content Generator] Error generating related content:', error);
+    throw error;
+  }
+}
 /**
  * Generates schema markup
  */

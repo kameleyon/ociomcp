@@ -11,15 +11,62 @@ export function activate() {
  * - Can monitor for specific file types that should be previewed
  */
 export function onFileWrite(event: { path: string; content: string }) {
+  console.log(`[Browser Launcher] File written: ${event.path}`);
+  
   // Check if the file is an HTML file that should be automatically opened
   if (event.path.endsWith('.html') || event.path.endsWith('.htm')) {
     console.log(`[Browser Launcher] Detected HTML file change: ${event.path}`);
     
-    // Could automatically open the file in the browser
-    // openFileInBrowser(event.path).catch(err =>
-    //   console.error(`[Browser Launcher] Failed to open file: ${err}`)
-    // );
+    // Check if the file is a complete HTML document
+    const isCompleteHtml = event.content.includes('<!DOCTYPE html>') ||
+                          event.content.includes('<html>') ||
+                          event.content.includes('<HTML>');
+    
+    if (isCompleteHtml) {
+      console.log(`[Browser Launcher] Detected complete HTML document: ${event.path}`);
+      
+      // We don't automatically open the file, but return information about it
+      return {
+        detected: true,
+        filePath: event.path,
+        type: 'html',
+        isComplete: true,
+        canOpen: true
+      };
+    } else {
+      return {
+        detected: true,
+        filePath: event.path,
+        type: 'html',
+        isComplete: false,
+        canOpen: true
+      };
+    }
   }
+  
+  // Check for CSS files
+  if (event.path.endsWith('.css')) {
+    console.log(`[Browser Launcher] Detected CSS file change: ${event.path}`);
+    return {
+      detected: true,
+      filePath: event.path,
+      type: 'css',
+      canOpen: false
+    };
+  }
+  
+  // Check for JavaScript files
+  if (event.path.endsWith('.js')) {
+    console.log(`[Browser Launcher] Detected JavaScript file change: ${event.path}`);
+    return {
+      detected: true,
+      filePath: event.path,
+      type: 'javascript',
+      canOpen: false
+    };
+  }
+  
+  return { detected: false };
 }
 
 /**
@@ -31,10 +78,47 @@ export function onFileWrite(event: { path: string; content: string }) {
 export function onSessionStart(session: { id: string; startTime: number }) {
   console.log(`[Browser Launcher] New session started: ${session.id}`);
   
-  // Could check for running local servers
-  // checkRunningServers().then(servers => {
-  //   console.log(`[Browser Launcher] Found ${servers.length} running local servers`);
-  // });
+  try {
+    // Check for running local servers by checking common ports
+    const commonPorts = [3000, 8000, 8080, 4200, 5000, 5173, 5174, 3001];
+    
+    // Log the platform information
+    const platform = process.platform;
+    console.log(`[Browser Launcher] Platform: ${platform}`);
+    
+    // Check each port asynchronously
+    for (const port of commonPorts) {
+      isPortInUse(port).then(inUse => {
+        if (inUse) {
+          console.log(`[Browser Launcher] Found server running on port ${port}`);
+        }
+      }).catch(error => {
+        console.error(`[Browser Launcher] Error checking port ${port}: ${error}`);
+      });
+    }
+    
+    // Find an available port for potential use
+    findAvailablePort().then(port => {
+      if (port) {
+        console.log(`[Browser Launcher] Found available port: ${port}`);
+      }
+    }).catch(error => {
+      console.error(`[Browser Launcher] Error finding available port: ${error}`);
+    });
+    
+    return {
+      initialized: true,
+      sessionId: session.id,
+      platform,
+      startTime: session.startTime
+    };
+  } catch (error) {
+    console.error(`[Browser Launcher] Error during initialization: ${error}`);
+    return {
+      initialized: false,
+      error: String(error)
+    };
+  }
 }
 
 /**
@@ -44,29 +128,130 @@ export function onSessionStart(session: { id: string; startTime: number }) {
  * - Can perform browser operations
  */
 export function onCommand(command: { name: string; args: any[] }) {
-  if (command.name === 'browser:open') {
-    console.log('[Browser Launcher] Opening URL in browser...');
-    // Open URL in browser
-    if (command.args && command.args.length > 0) {
-      return openInBrowser(command.args[0]);
+  console.log(`[Browser Launcher] Command received: ${command.name}`);
+  
+  try {
+    if (command.name === 'browser:open') {
+      console.log('[Browser Launcher] Opening URL in browser...');
+      // Open URL in browser
+      if (command.args && command.args.length > 0) {
+        const url = typeof command.args[0] === 'string' ? command.args[0] : command.args[0].url;
+        const browser = command.args[0].browser || 'default';
+        const incognito = command.args[0].incognito || false;
+        const wait = command.args[0].wait || false;
+        
+        // Start the browser opening process but don't wait for it to complete
+        openInBrowser(url, browser, incognito, wait).then(result => {
+          console.log(`[Browser Launcher] URL opened: ${result}`);
+        }).catch(error => {
+          console.error(`[Browser Launcher] Error opening URL: ${error}`);
+        });
+        
+        return {
+          action: 'open',
+          url,
+          browser,
+          incognito,
+          started: true
+        };
+      }
+    } else if (command.name === 'browser:open-file') {
+      console.log('[Browser Launcher] Opening file in browser...');
+      // Open file in browser
+      if (command.args && command.args.length > 0) {
+        const filePath = typeof command.args[0] === 'string' ? command.args[0] : command.args[0].filePath;
+        const browser = command.args[0].browser || 'default';
+        const incognito = command.args[0].incognito || false;
+        const wait = command.args[0].wait || false;
+        
+        // Start the file opening process but don't wait for it to complete
+        openFileInBrowser(filePath, browser, incognito, wait).then(result => {
+          console.log(`[Browser Launcher] File opened: ${result}`);
+        }).catch(error => {
+          console.error(`[Browser Launcher] Error opening file: ${error}`);
+        });
+        
+        return {
+          action: 'openFile',
+          filePath,
+          browser,
+          incognito,
+          started: true
+        };
+      }
+    } else if (command.name === 'browser:open-server') {
+      console.log('[Browser Launcher] Opening local server in browser...');
+      // Open local server in browser
+      if (command.args && command.args.length > 0) {
+        const port = typeof command.args[0] === 'number' ? command.args[0] : command.args[0].port;
+        const path = command.args[0].path || '/';
+        const hostname = command.args[0].hostname || 'localhost';
+        const browser = command.args[0].browser || 'default';
+        const incognito = command.args[0].incognito || false;
+        const wait = command.args[0].wait || false;
+        
+        // Start the server opening process but don't wait for it to complete
+        openLocalServer(port, path, hostname, browser, incognito, wait).then(result => {
+          console.log(`[Browser Launcher] Server opened: ${result}`);
+        }).catch(error => {
+          console.error(`[Browser Launcher] Error opening server: ${error}`);
+        });
+        
+        return {
+          action: 'openServer',
+          port,
+          path,
+          hostname,
+          browser,
+          incognito,
+          started: true
+        };
+      }
+    } else if (command.name === 'browser:check-port') {
+      console.log('[Browser Launcher] Checking if port is in use...');
+      // Check if port is in use
+      if (command.args && command.args.length > 0) {
+        const port = typeof command.args[0] === 'number' ? command.args[0] : command.args[0].port;
+        
+        // Start the port checking process but don't wait for it to complete
+        isPortInUse(port).then(inUse => {
+          console.log(`[Browser Launcher] Port ${port} in use: ${inUse}`);
+        }).catch(error => {
+          console.error(`[Browser Launcher] Error checking port: ${error}`);
+        });
+        
+        return {
+          action: 'checkPort',
+          port,
+          started: true
+        };
+      }
+    } else if (command.name === 'browser:find-port') {
+      console.log('[Browser Launcher] Finding available port...');
+      // Find available port
+      const startPort = command.args && command.args.length > 0 ? command.args[0].startPort : 3000;
+      const endPort = command.args && command.args.length > 0 ? command.args[0].endPort : 9000;
+      
+      // Start the port finding process but don't wait for it to complete
+      findAvailablePort(startPort, endPort).then(port => {
+        console.log(`[Browser Launcher] Found available port: ${port}`);
+      }).catch(error => {
+        console.error(`[Browser Launcher] Error finding port: ${error}`);
+      });
+      
+      return {
+        action: 'findPort',
+        startPort,
+        endPort,
+        started: true
+      };
     }
+  } catch (error) {
+    console.error(`[Browser Launcher] Error processing command: ${error}`);
+    return { action: 'error', error: String(error) };
   }
   
-  if (command.name === 'browser:open-file') {
-    console.log('[Browser Launcher] Opening file in browser...');
-    // Open file in browser
-    if (command.args && command.args.length > 0) {
-      return openFileInBrowser(command.args[0]);
-    }
-  }
-  
-  if (command.name === 'browser:open-server') {
-    console.log('[Browser Launcher] Opening local server in browser...');
-    // Open local server in browser
-    if (command.args && command.args.length > 0) {
-      return openLocalServer(command.args[0]);
-    }
-  }
+  return { action: 'unknown' };
 }
 /**
  * Browser Launcher

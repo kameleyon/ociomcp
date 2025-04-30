@@ -1,12 +1,5 @@
 // Auto-generated safe fallback for session-state
 
-export function activate() {
-    console.log("[TOOL] session-state activated (passive mode)");
-}
-
-export function onFileWrite() { /* no-op */ }
-export function onSessionStart() { /* no-op */ }
-export function onCommand() { /* no-op */ }
 import { SessionState } from '../context-management/chat-transition.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -88,5 +81,109 @@ export class SessionStateManager {
       console.error(`Failed to delete session state: ${error}`);
       return false;
     }
+  }
+}
+
+// Singleton instance for session state management
+const sessionStateManager = new SessionStateManager();
+
+export function activate() {
+    console.log("[TOOL] session-state activated (passive mode)");
+}
+
+export async function onFileWrite(filePath?: string) {
+  if (!filePath) return;
+  
+  try {
+    // Check if the file is a session state file
+    if (filePath.includes('.optimuscode-state') && filePath.endsWith('.json')) {
+      console.log(`[session-state] Detected change in session state file: ${filePath}`);
+      // In a real implementation, we might validate the state file
+    }
+  } catch (err) {
+    console.error(`[session-state] Error processing file change: ${err}`);
+  }
+}
+
+export async function onSessionStart() {
+  console.log('[session-state] Session started');
+  
+  try {
+    // Initialize the state directory
+    await sessionStateManager.initialize();
+    
+    // List existing sessions
+    const sessions = await sessionStateManager.listSessions();
+    console.log(`[session-state] Loaded ${sessions.length} existing sessions`);
+    
+    return {
+      initialized: true,
+      sessionsLoaded: sessions.length,
+      message: 'Session state manager initialized'
+    };
+  } catch (err) {
+    console.error(`[session-state] Error initializing: ${err}`);
+    return {
+      initialized: false,
+      message: `Error initializing session state manager: ${err}`
+    };
+  }
+}
+
+export async function onCommand(command?: { name: string; args?: any[] }) {
+  const name = command?.name;
+  const args = command?.args || [];
+  
+  switch (name) {
+    case 'session-state:save': {
+      const sessionId = args[0];
+      const state = args[1];
+      
+      if (!sessionId || !state) {
+        return { success: false, message: 'Session ID and state are required' };
+      }
+      
+      try {
+        await sessionStateManager.saveState(sessionId, state);
+        console.log(`[session-state] Saved session state for ${sessionId}`);
+        return { success: true, message: `Saved session state for ${sessionId}` };
+      } catch (err) {
+        console.error(`[session-state] Error saving session state: ${err}`);
+        return { success: false, message: `Error saving session state: ${err}` };
+      }
+    }
+    case 'session-state:load': {
+      const sessionId = args[0];
+      
+      if (!sessionId) {
+        return { success: false, message: 'Session ID is required' };
+      }
+      
+      try {
+        const state = await sessionStateManager.loadState(sessionId);
+        if (state) {
+          console.log(`[session-state] Loaded session state for ${sessionId}`);
+          return { success: true, state };
+        } else {
+          return { success: false, message: `Session state not found for ${sessionId}` };
+        }
+      } catch (err) {
+        console.error(`[session-state] Error loading session state: ${err}`);
+        return { success: false, message: `Error loading session state: ${err}` };
+      }
+    }
+    case 'session-state:list': {
+      try {
+        const sessions = await sessionStateManager.listSessions();
+        console.log(`[session-state] Listed sessions: ${sessions.join(', ')}`);
+        return { success: true, sessions };
+      } catch (err) {
+        console.error(`[session-state] Error listing sessions: ${err}`);
+        return { success: false, message: `Error listing sessions: ${err}` };
+      }
+    }
+    default:
+      console.log(`[session-state] Unknown command: ${name}`);
+      return { message: `Unknown command: ${name}` };
   }
 }
