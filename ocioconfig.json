@@ -35,7 +35,7 @@
         }
       },
       "AutoContinue": {
-        "autoMode": true,
+        "autoMode": false,
         "preferences": {
           "maxMessages": 3,
           "maxTokenUsagePercentage": 85,
@@ -57,7 +57,7 @@
         }
       },
       "ChatInitiator": {
-        "autoMode": true,
+        "autoMode": false,
         "preferences": {
           "preserveContext": true,
           "includeSummary": true

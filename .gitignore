@@ -3,3 +3,8 @@ dist/
 .env
 *.log
 .DS_Store
+docs/*
+
+# Ignore old tools but keep the code-tools directory
+src/tools/oldtools/*
+!src/tools/code-tools/*.ts

@@ -1,3 +1,0 @@
-@echo off
-echo OptimusCode MCP starting with automatic tool activation...
-node dist/run-with-tools.js %*

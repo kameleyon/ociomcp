@@ -13,4 +13,4 @@ set ENCRYPTION_KEY=optimuscode-mcp-encryption-key
 set ENABLE_AUTOMATED_TOOLS=true
 
 echo Starting MCP Server... 1>&2
-node dist/index.js
+node dist/src/index.js
